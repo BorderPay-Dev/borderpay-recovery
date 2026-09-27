@@ -1,0 +1,44 @@
+name: New business KYB intake routing
+on:
+  push:
+    branches: [feat/new-business-kyb-intake]
+    paths: ['supabase/functions/_shared/kyb-portal-*.ts', 'supabase/functions/bridge-kyb-link/index.ts', 'supabase/functions/get-user-profile/index.ts', 'tests/unit/kyb_portal_*', '.github/workflows/new-business-kyb-intake.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test tests/unit/kyb_portal_handoff_test.ts tests/unit/kyb_portal_status_test.ts
+      - run: |
+          python3 tests/audit/kyb_backend_launcher_audit.py
+          python3 tests/audit/bridge_kyb_existing_customer_resume_audit.py
+          python3 tests/audit/bridge_kyb_cross_platform_callback_audit.py
+          python3 tests/audit/get_user_profile_kyb_payload_audit.py
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require operational real-intake portal
+        run: |
+          python3 - <<'PYTHON'
+          import json,urllib.request
+          r=json.load(urllib.request.urlopen('https://kyb.borderpayvelocity.xyz/api/health',timeout=20))
+          assert r['status']=='ok' and r['environment']=='intake' and r['financialProvisioning'] is False
+          PYTHON
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy only verification link and verification-status projection
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.KYB_EDGE_DEPLOY_TOKEN }}
+        run: |
+          supabase functions deploy bridge-kyb-link --project-ref orwrcpwsffjlvzuraxjc --use-api
+          supabase functions deploy get-user-profile --project-ref orwrcpwsffjlvzuraxjc --use-api
