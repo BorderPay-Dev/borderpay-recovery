@@ -1,4 +1,4 @@
-import { kybPortalHandoff } from "../_shared/kyb-portal-handoff.ts";
+import { kybPortalHandoff, newBusinessKybEligible, newBusinessKybEnabled } from "../_shared/kyb-portal-handoff.ts";
 import { customerAppOrigin } from "../_shared/white-label-config.ts";
 // bridge-kyb-link v5 — embedded /v0/kyc_links flow for business accounts.
 //
@@ -244,7 +244,12 @@ Deno.serve(async (req: Request) => {
     }, 409);
   }
 
-  const portal = await kybPortalHandoff(user, token);
+  // Only new, unrestricted business profiles use BorderPay intake. No client-selected user ID.
+  const {data: intakeProfile, error: intakeProfileError} = await supa.from("user_profiles")
+    .select("account_type, account_status, bridge_customer_id, bridge_account_status").eq("id", user.id).maybeSingle();
+  const newBusinessEnabled = !intakeProfileError && newBusinessKybEligible(intakeProfile)
+    && await newBusinessKybEnabled(supa);
+  const portal = await kybPortalHandoff(user, token, fetch, newBusinessEnabled);
   if (portal) return json(portal, portal.success ? 200 : 503);
 
   if (!bridgeOnboardingEnabled()) {

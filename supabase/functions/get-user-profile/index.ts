@@ -1,3 +1,4 @@
+import {newBusinessKybEligible,newBusinessKybEnabled} from "../_shared/kyb-portal-handoff.ts";
 import {kybPortalStatus} from "../_shared/kyb-portal-status.ts";
 // get-user-profile — provider-neutral; email_confirmed
 // derived from auth.users.email_confirmed_at.
@@ -112,7 +113,7 @@ Deno.serve(async (req) => {
 
     let portalStatus: string | null = null;
     if (accountType === "business" && !profile?.bridge_customer_id && !accountAccessRestricted) {
-      try { portalStatus = await kybPortalStatus(user, token); }
+      try { portalStatus = await kybPortalStatus(user, token, fetch, newBusinessKybEligible(profile) && await newBusinessKybEnabled(supabase)); }
       catch { return new Response(JSON.stringify({success:false,error:"Verification status is temporarily unavailable. Please try again."}),{status:503,headers:{...corsHeaders,"Content-Type":"application/json"}}); }
     }
 
