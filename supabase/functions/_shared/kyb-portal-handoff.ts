@@ -25,5 +25,6 @@ export function newBusinessKybEligible(profile: Record<string, unknown> | null):
 }
 export async function newBusinessKybEnabled(supa: {from: (table: string) => any}): Promise<boolean> {
  const {data,error}=await supa.from('app_config').select('value').eq('key','kyb_portal_onboarding').maybeSingle();
- return !error && data?.value?.enabled === true && data?.value?.new_business_only === true;
+ if(error)return false;
+ try {const value=typeof data?.value==='string'?JSON.parse(data.value):data?.value;return value?.enabled===true&&value?.new_business_only===true;}catch{return false;}
 }

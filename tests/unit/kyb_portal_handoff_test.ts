@@ -1,4 +1,4 @@
-import { kybPortalHandoff, newBusinessKybEligible } from '../../supabase/functions/_shared/kyb-portal-handoff.ts';
+import { kybPortalHandoff, newBusinessKybEligible, newBusinessKybEnabled } from '../../supabase/functions/_shared/kyb-portal-handoff.ts';
 function assert(value: unknown, message = 'assertion failed'): asserts value { if (!value) throw Error(message); }
 const approved = { app_metadata: { kyb_synthetic_test: true } };
 Deno.test('nonpilot users never call the KYB portal; user_metadata cannot opt in', async () => {
@@ -26,4 +26,11 @@ Deno.test('new-business route excludes existing provider customers and restricte
 Deno.test('explicit new-business route returns the same mobile response contract without Bridge terms',async()=>{
  const fake=(()=>Promise.resolve(Response.json({url:'https://kyb.borderpayvelocity.xyz/#launch=opaque',expiresAt:new Date(Date.now()+300000).toISOString()}))) as typeof fetch;
  const r=await kybPortalHandoff({},'synthetic',fake,true);assert(r?.success===true);const d=r?.data as Record<string,unknown>;assert(d.tos_required===false&&d.tos_link_url===null&&d.verification_mode==='borderpay');
+});
+
+Deno.test('production route configuration reads the existing text column and fails closed',async()=>{
+ const db=(value:unknown,error:unknown=null)=>({from:()=>({select:()=>({eq:()=>({maybeSingle:()=>Promise.resolve({data:{value},error})})})})});
+ assert(await newBusinessKybEnabled(db(JSON.stringify({enabled:true,new_business_only:true}))));
+ for(const value of [null,'broken','true','{}','{"enabled":"true","new_business_only":true}','{"enabled":true}'])assert(!await newBusinessKybEnabled(db(value)));
+ assert(!await newBusinessKybEnabled(db('{"enabled":true,"new_business_only":true}',{message:'unavailable'})));
 });
