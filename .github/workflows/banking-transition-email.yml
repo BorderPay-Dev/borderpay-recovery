@@ -5,6 +5,8 @@ on:
   pull_request:
     paths:
       - 'supabase/functions/_shared/email-templates/banking-transition*'
+      - 'supabase/functions/_shared/email-templates/business-migration*'
+      - 'tests/business-migration-email.test.ts'
       - 'tests/banking-transition-email.test.ts'
 permissions:
   contents: read
@@ -16,4 +18,4 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test --no-config tests/banking-transition-email.test.ts tests/invoice-hub-email.test.ts tests/mobile-app-update-email.test.ts
+      - run: deno test --no-config tests/business-migration-email.test.ts tests/banking-transition-email.test.ts tests/invoice-hub-email.test.ts tests/mobile-app-update-email.test.ts
