@@ -1,3 +1,4 @@
+import type { OnboardingAuthorizationRequest } from "./types.js";
 import type {
   BorderPayErrorEnvelope,
   BorderPayGatewayHealth,
@@ -140,7 +141,7 @@ export class BorderPayClient {
   }
 
   createOnboardingAuthorization(
-    input: Record<string, unknown>,
+    input: OnboardingAuthorizationRequest,
     idempotencyKey: string,
   ) {
     return this.call<Record<string, unknown>>({

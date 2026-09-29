@@ -1,3 +1,4 @@
+import { isBusinessAccount, BUSINESS_ONLY_MESSAGE } from "./business-only.ts";
 import { getFinancialAccessBlock } from "./account-access.ts";
 import { loadAndAssertBridgeIdentityInvariant } from "./bridge-identity-invariant.ts";
 import {
@@ -123,15 +124,27 @@ export function apiPaymentRequest(
     "currency",
     "amount",
     "bridge_wallet_id",
+    "wallet_id",
   ]);
   const destination = pick(t.destination, [
     "payment_rail",
     "currency",
     "bridge_wallet_id",
+    "wallet_id",
     "external_account_id",
     "external_wallet_id",
     "address",
   ]);
+  // Public wallet names map to the existing canonical payment before SCA hashing.
+  // Legacy aliases remain accepted privately for compatibility; conflicting IDs fail.
+  for (const party of [source, destination]) {
+    if (party.wallet_id && party.bridge_wallet_id && party.wallet_id !== party.bridge_wallet_id) {
+      throw new CustomerApiError("invalid_request", "Conflicting wallet identifiers.");
+    }
+    if (party.wallet_id) party.bridge_wallet_id = party.wallet_id;
+    delete party.wallet_id;
+    if (String(party.payment_rail || "").toLowerCase() === "borderpay_wallet") party.payment_rail = "bridge_wallet";
+  }
   source.currency = String(source.currency || "").toUpperCase();
   destination.currency = String(destination.currency || "").toUpperCase();
   source.payment_rail = String(source.payment_rail || "").toLowerCase();
@@ -253,6 +266,7 @@ async function requireCustomerAccess(db: any, userId: string) {
       409,
     );
   }
+  if (!isBusinessAccount(identity.context.account_type)) throw new CustomerApiError("business_accounts_only", BUSINESS_ONLY_MESSAGE, 403);
   return identity.context;
 }
 async function register(
@@ -319,6 +333,7 @@ export async function handleCustomerApi(
   ctx: CustomerApiContext,
   session: CustomerSession,
 ) {
+  if (body.account_type != null && !isBusinessAccount(body.account_type)) throw new CustomerApiError("business_accounts_only", BUSINESS_ONLY_MESSAGE, 403);
   const identity = await requireCustomerAccess(db, session.userId);
   const core = (endpoint: string, payload: unknown) =>
     callCustomerCore(endpoint, session.authorization, payload);
@@ -334,9 +349,7 @@ export async function handleCustomerApi(
     route === "POST /v1/customers" || route === "POST /v1/verification-links"
   ) {
     const result = await core(
-      identity.account_type === "business"
-        ? "bridge-kyb-link"
-        : "bridge-kyc-link",
+      "bridge-kyb-link",
       {},
     );
     const refreshed = await loadAndAssertBridgeIdentityInvariant(
