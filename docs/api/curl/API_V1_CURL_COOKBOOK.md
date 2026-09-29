@@ -1,14 +1,13 @@
 # BorderPay API v1 Curl Cookbook (Step 2F)
 
-Source of truth: `docs/api/openapi-v1.yaml` (v1.0.1)
+Source of truth: `docs/api/openapi-v1.yaml` (v1.0.2)
 
 ## 0) Environment
 ```bash
-export GATEWAY_URL="https://orwrcpwsffjlvzuraxjc.supabase.co/functions/v1/public-api-gateway"
-export ADMIN_URL="https://orwrcpwsffjlvzuraxjc.supabase.co/functions/v1/api-gateway-admin"
+export GATEWAY_URL="https://sandbox.api.borderpayafrica.com"
 export API_KEY="<issued_plain_api_key>"
-export ADMIN_JWT="<admin_jwt_or_service_role>"
 export MODE="sandbox"
+export CUSTOMER_ACCESS_TOKEN="<business_customer_session>"
 ```
 
 ## 1) Gateway health
@@ -16,27 +15,32 @@ export MODE="sandbox"
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/health" \
   -H "x-borderpay-mode: $MODE" \
   -d '{"method":"GET"}'
 ```
 
+## Business signup authorization
+Before customer operations, POST `/v1/onboarding-authorizations` using the partner key, a unique Idempotency-Key and:
+```json
+{"external_user_id":"synthetic-business-001","onboarding_channel":"api","requested_account_types":["business"]}
+```
+Complete hosted business signup and KYB. Obtain that business customer's session token. Personal-account onboarding is not supported. Owners/directors verify within the business application.
+
 ## 2) Create customer
 ```bash
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/customers" \
   -H "x-borderpay-mode: $MODE" \
   -H "Idempotency-Key: idem-customer-001" \
   -d '{
-    "account_type":"individual",
-    "email":"partner-user@example.com",
-    "country_code":"NG",
-    "full_name":"Partner User",
-    "borderpay_user_id":"partner_ref_001"
+    "account_type":"business"
   }'
 ```
 
@@ -47,6 +51,7 @@ export CUSTOMER_ID="<customer_id_from_previous_response>"
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/wallets" \
   -H "x-borderpay-mode: $MODE" \
@@ -63,6 +68,7 @@ curl -s "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/virtual-accounts" \
   -H "x-borderpay-mode: $MODE" \
@@ -83,6 +89,7 @@ curl -s "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/transfers" \
   -H "x-borderpay-mode: $MODE" \
@@ -110,6 +117,7 @@ curl -s "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/payouts" \
   -H "x-borderpay-mode: $MODE" \
@@ -137,6 +145,7 @@ curl -s "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
@@ -149,6 +158,7 @@ curl -s "$GATEWAY_URL" \
 curl -s "$ADMIN_URL" \
   -X POST \
   -H "Authorization: Bearer $ADMIN_JWT" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "action":"upsert_tenant",
@@ -165,6 +175,7 @@ export TENANT_ID="<tenant_id_from_previous_response>"
 curl -s "$ADMIN_URL" \
   -X POST \
   -H "Authorization: Bearer $ADMIN_JWT" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d "{
     \"action\":\"create_api_key\",
@@ -187,6 +198,7 @@ curl -s "$ADMIN_URL" \
 curl -is "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
@@ -197,6 +209,7 @@ curl -is "$GATEWAY_URL" \
 curl -is "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
@@ -210,6 +223,7 @@ curl -is "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
@@ -220,9 +234,13 @@ curl -s "$GATEWAY_URL" \
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
   -H "Idempotency-Key: idem-mismatch-001" \
   -d '{"endpoint_url":"https://example.com/b"}'
 ```
+
+## Sandbox availability
+The sandbox domain and a successful health response do not imply that customer operations are enabled. Ask BorderPay to confirm your tenant's test environment before onboarding or payment tests. Use synthetic data only. Production keys must never be used as a sandbox fallback.

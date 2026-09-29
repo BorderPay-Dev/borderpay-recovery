@@ -13,7 +13,7 @@ const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MONEY_RE = /^\d+(\.\d{1,12})?$/;
 
-const ACCOUNT_TYPES = new Set(["individual", "business"]);
+const ACCOUNT_TYPES = new Set(["business"]);
 const VA_FIAT_CURRENCIES = new Set(["USD", "EUR", "GBP"]);
 const STABLECOIN_SYMBOLS = new Set(["USDC", "USDT", "PYUSD", "USDB", "EURC"]);
 const STABLECOIN_CHAINS = new Set([
@@ -77,7 +77,7 @@ function optionalUuid(v: unknown): string | undefined {
 }
 
 export type CustomerCreateInput = {
-  account_type: "individual" | "business";
+  account_type: "business";
   email: string;
   country_code: string;
   full_name?: string;
@@ -92,7 +92,7 @@ export function validateCustomerCreate(
 ): ValidationResult<CustomerCreateInput> {
   const account = stringField(body?.account_type).toLowerCase();
   if (!ACCOUNT_TYPES.has(account)) {
-    return invalid("account_type must be individual|business", {
+    return invalid("account_type must be business only", {
       field: "account_type",
     });
   }
@@ -116,15 +116,6 @@ export function validateCustomerCreate(
     });
   }
 
-  if (account === "individual") {
-    const fullName = optionalString(body?.full_name);
-    if (!fullName || fullName.length < 2) {
-      return invalid("full_name is required for individual account_type", {
-        field: "full_name",
-      });
-    }
-  }
-
   if (account === "business") {
     const companyName = optionalString(body?.company_name);
     if (!companyName || companyName.length < 2) {
@@ -137,7 +128,7 @@ export function validateCustomerCreate(
   return {
     ok: true,
     value: {
-      account_type: account as "individual" | "business",
+      account_type: account as "business",
       email,
       country_code: country,
       full_name: optionalString(body?.full_name),
