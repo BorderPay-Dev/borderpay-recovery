@@ -79,6 +79,7 @@ paths:
       operationId: createCustomer
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CustomerAuthorization'
       requestBody:
         required: true
         content:
@@ -102,6 +103,7 @@ paths:
       operationId: createWallet
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CustomerAuthorization'
       requestBody:
         required: true
         content:
@@ -125,6 +127,7 @@ paths:
       operationId: createVirtualAccount
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CustomerAuthorization'
       requestBody:
         required: true
         content:
@@ -148,6 +151,7 @@ paths:
       operationId: createTransfer
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CustomerAuthorization'
       requestBody:
         required: true
         content:
@@ -171,6 +175,7 @@ paths:
       operationId: createPayout
       parameters:
         - $ref: '#/components/parameters/IdempotencyKey'
+        - $ref: '#/components/parameters/CustomerAuthorization'
       requestBody:
         required: true
         content:
@@ -218,6 +223,12 @@ components:
       bearerFormat: API_KEY_OR_JWT
 
   parameters:
+    CustomerAuthorization:
+      name: X-BorderPay-Customer-Authorization
+      in: header
+      required: true
+      schema: { type: string }
+      description: Bearer token for the authenticated business user belonging to this partner.
     IdempotencyKey:
       in: header
       name: Idempotency-Key
@@ -310,23 +321,23 @@ components:
         success: { type: boolean, const: true }
         data:
           type: object
-          required: [customer_id, provider]
+          required: [customer_id, account_type]
           properties:
             customer_id: { type: string }
-            provider: { type: string, enum: [borderpay] }
+            account_type: { type: string, enum: [business] }
 
     CreateWalletRequest:
       type: object
-      required: [customer_id, symbol, chain]
+      required: [symbol, chain]
       properties:
         customer_id:
           type: string
         symbol:
           type: string
-          enum: [USDC, USDT, PYUSD, USDB, EURC]
+          enum: [USDC, USDT, EURC]
         chain:
           type: string
-          enum: [ETH, SOL, BSC, POLYGON, TRON, BASE, OPTIMISM, ARBITRUM]
+          enum: [TRON, BASE]
 
     CreateWalletResponse:
       type: object
@@ -344,20 +355,11 @@ components:
 
     CreateVirtualAccountRequest:
       type: object
-      required: [customer_id, currency, destination]
+      required: [currency]
       properties:
-        customer_id:
-          type: string
-        currency:
-          type: string
-          enum: [USD, EUR, GBP]
-        destination:
-          type: object
-          required: [rail, currency, address]
-          properties:
-            rail: { type: string }
-            currency: { type: string }
-            address: { type: string }
+        customer_id: { type: string, description: Optional matching business customer ID }
+        currency: { type: string, enum: [USD, EUR, GBP] }
+      description: BorderPay selects settlement details; do not provide a destination.
 
     CreateVirtualAccountResponse:
       type: object
@@ -417,7 +419,7 @@ components:
           properties:
             transfer_id: { type: string }
             state: { type: string }
-            provider: { type: string, enum: [borderpay] }
+            account_type: { type: string, enum: [business] }
 
     CreateWebhookRequest:
       type: object

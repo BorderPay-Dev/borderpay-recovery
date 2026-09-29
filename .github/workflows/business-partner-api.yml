@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 24
       - name: Verify business eligibility, tenant isolation, payment authorization and aliases
-        run: deno test --no-config --allow-env --allow-read --allow-net tests/business-partner-policy.test.ts tests/api-customer-runtime.test.ts
+        run: deno test --no-config --allow-env --allow-read --allow-net tests/business-partner-policy.test.ts tests/api-customer-runtime.test.ts tests/business-public-contract.test.ts
       - name: Type-check deployed entrypoints
         run: deno check --no-config supabase/functions/public-api-gateway/index.ts supabase/functions/auth-signup/index.ts
       - name: Build and test public SDK

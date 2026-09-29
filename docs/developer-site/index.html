@@ -309,15 +309,10 @@ console.log(await response.json());</code></pre>
   -X POST \
   -H "Authorization: Bearer $BORDERPAY_API_KEY" \
   -H "Idempotency-Key: va_2026_07_15_001" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "cus_...",
-    "currency": "EUR",
-    "destination": {
-      "payment_rail": "base",
-      "currency": "USDC",
-      "wallet_id": "wlt_..."
-    }
+    "currency": "EUR"
   }'</code></pre>
           </div>
         </section>
@@ -325,9 +320,9 @@ console.log(await response.json());</code></pre>
         <section id="transfers" class="doc-section split" data-search="transfers payouts suppliers external account ach wire sepa faster payments stablecoin">
           <div class="section-copy">
             <p class="eyebrow">Transfers & Payouts</p>
-            <h2>Cross-border supplier payment flow</h2>
+            <h2>Cross-border supplier payment flow</h2><p>Non-EEA payouts require the customer transaction PIN. EEA business payouts require payment authorization with PIN and TOTP before submission. Keep the same payment and Idempotency-Key.</p>
             <p>
-              Create a customer, create a wallet, collect funds through an eligible virtual account, then use transfers
+              Complete business signup and KYB, authenticate the business customer, collect funds through an eligible virtual account, then use transfers
               and payouts to convert stablecoins into the recipient rail where the route is enabled.
             </p>
             <div class="flow-strip">
@@ -346,6 +341,7 @@ console.log(await response.json());</code></pre>
   -X POST \
   -H "Authorization: Bearer $BORDERPAY_API_KEY" \
   -H "Idempotency-Key: payout_INV_2049" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
     "source": {
@@ -359,7 +355,8 @@ console.log(await response.json());</code></pre>
       "currency": "USD",
       "external_account_id": "ext_..."
     },
-    "idempotency_key": "payout_INV_2049"
+    "idempotency_key": "payout_INV_2049",
+    "transaction_pin": "&lt;customer_transaction_pin&gt;"
   }'</code></pre>
           </div>
         </section>

@@ -8,9 +8,10 @@ const client = new BorderPayClient({
 });
 console.log((await client.health()).data);
 // This authorizes a business signup; it does not approve the business or open accounts.
-console.log((await client.createOnboardingAuthorization({
+await client.createOnboardingAuthorization({
   external_user_id: "synthetic-business-001",
   onboarding_channel: "api",
   requested_account_types: ["business"],
-}, "sandbox-business-001")).data);
+}, "sandbox-business-001");
+console.log("Business signup authorization created; continue the hosted onboarding flow securely.");
 // Complete hosted business signup, KYB and owner verification before customer operations.
