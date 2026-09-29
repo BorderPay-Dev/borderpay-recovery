@@ -51,6 +51,17 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: latest
+      - name: Check production baseline
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          functions=json.load(urllib.request.urlopen(req))
+          versions={f['slug']:f['version'] for f in functions}
+          assert versions['auth-signup']==450 and versions['public-api-gateway']==268, 'Production changed since audit; rebase before deployment'
+          PYBASE
       - name: Deploy only business signup and partner API
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}

@@ -43,7 +43,7 @@ const session = {
   endUserId: "end-user",
   authorization: "Bearer customer-token",
 };
-function database(country = "FR", status = "active") {
+function database(country = "FR", status = "active", accountType = "business") {
   const calls: any[] = [];
   const db: any = {
     calls,
@@ -66,7 +66,7 @@ function database(country = "FR", status = "active") {
         table === "user_profiles"
           ? {
             id: user,
-            account_type: "business",
+            account_type: accountType,
             country: "PL",
             bridge_customer_id: "customer",
             bridge_kyc_status: "approved",
@@ -409,4 +409,11 @@ Deno.test("public wallet identifiers retain the canonical payment and SCA hash",
 Deno.test("personal customer requests cannot reach identity or provider calls",async()=>{
  const db=new Proxy({}, {get(){throw new Error("Unexpected database access");}});
  await assertRejects(()=>handleCustomerApi(db,"POST /v1/customers",{account_type:"individual"},ctx,session),CustomerApiError,"business accounts only");
+});
+
+Deno.test("an authenticated personal profile cannot impersonate a business",async()=>{
+ for(const route of ["POST /v1/customers","POST /v1/verification-links","POST /v1/wallets"]) {
+  const db=database("FR","active","individual");
+  await assertRejects(()=>handleCustomerApi(db,route,{account_type:"business"},ctx,session),CustomerApiError,"business accounts only");
+ }
 });
