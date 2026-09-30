@@ -1,0 +1,17 @@
+name: Live business email validation
+on:
+  push:
+    branches: [fix/live-business-email-validation]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --allow-read tests/live-business-email.test.ts tests/signup-boundary.test.ts tests/signup-captcha-config.test.ts
+      - run: deno check --no-config supabase/functions/auth-signup/index.ts
