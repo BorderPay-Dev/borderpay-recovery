@@ -222,7 +222,7 @@ console.log(await response.json());</code></pre>
             <article class="env-card">
               <span class="pill">Sandbox</span>
               <h3>sandbox.api.borderpayafrica.com</h3>
-              <p>Test keys, test webhooks, provider sandbox simulations, and non-live balance flows.</p>
+              <p>Test keys, isolated synthetic businesses, test webhooks and non-live balances. <a href="/api/SANDBOX_TESTING.md">Sandbox integration guide and current limitations</a>.</p>
             </article>
             <article class="env-card">
               <span class="pill live">Production</span>
@@ -461,7 +461,7 @@ const result = await verifyBorderPayWebhook({
   signingSecret: process.env.BORDERPAY_WEBHOOK_SECRET,
 });</code></pre>
           </div>
-        </section>
+        <p>Signature: <code>v1=HMAC-SHA256-hex(secret, timestamp + "." + rawBody)</code>. Timestamp: Unix seconds. Reject timestamps outside ±300 seconds and deduplicate by event ID. See the <a href="/api/SANDBOX_TESTING.md">sandbox guide</a> for explicit test deposit events and external bank accounts.</p></section>
 
         <section id="errors" class="doc-section" data-search="errors invalid request unauthorized forbidden idempotency replay mismatch rate limited internal error">
           <div class="section-title">

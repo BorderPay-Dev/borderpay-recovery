@@ -89,7 +89,7 @@ export async function handleSandboxApi(db:any,route:string,body:Obj,ctx:{tenantI
   for(const field of ["street_line_1","city","postal_code","country"])required(address?.[field],`registered_address.${field}`);
   if(!/^[A-Z]{3}$/.test(address.country))throw new SandboxError("invalid_request","Use an ISO alpha-3 registered country.");
   const name=required(body.business_legal_name||body.business_name,"business_legal_name");
-  const data=await sandboxRequest(db,"POST","/v0/customers",{type:"business",business_legal_name:name,email,business_type:body.business_type||"llc",registered_address:address,physical_address:body.physical_address||address,signed_agreement_id:"00000000-0000-4000-8000-000000000001"},await sha256Hex(`sandbox-customer:${tid}:${auth.resource_id}`),fetcher);
+  const data=await sandboxRequest(db,"POST","/v0/customers",{type:"business",business_legal_name:name,business_name:name,first_name:name,email,business_type:body.business_type||"llc",address:{...address,state:address.subdivision},registered_address:address,physical_address:body.physical_address||address,signed_agreement_id:"00000000-0000-4000-8000-000000000001"},await sha256Hex(`sandbox-customer:${tid}:${auth.resource_id}`),fetcher);
   const cid=id(data.id,"customer_id");await save("customer",cid,cid,{name,country:address.country});
   await save("authorization",auth.resource_id,null,{...auth.metadata,customer_id:cid});
   return ok({customer_id:cid,account_type:"business",verification_status:data.status||data.kyc_status},201);
@@ -124,6 +124,7 @@ export async function handleSandboxApi(db:any,route:string,body:Obj,ctx:{tenantI
   const a=body.account;if(!a||!["us","iban","gb"].includes(a.account_type))throw new SandboxError("invalid_request","A US, IBAN or GB account is required.");
   if(a.account_owner_type!=="business")throw new SandboxError("business_accounts_only","External beneficiaries must be businesses.",403);
   const payload=pick(a,["account_type","account_owner_type","account_owner_name","first_name","last_name","business_name","bank_name","currency","address","account","iban","gb"]);
+  if(payload.address?.subdivision){payload.address={...payload.address,state:payload.address.subdivision};delete payload.address.subdivision;}
   const d=await call("POST",base+"/external_accounts",payload);await save("external_account",id(d.id,"external_account_id"),cid,{});return ok({external_account_id:d.id,status:d.active===false?"inactive":"active",account_type:d.account_type},201);
  }
  if(route==="GET /v1/external-accounts"){

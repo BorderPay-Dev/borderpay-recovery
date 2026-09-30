@@ -215,6 +215,57 @@ paths:
         default:
           $ref: '#/components/responses/ErrorResponse'
 
+  /sandbox/approve-customer:
+    post:
+      operationId: simulateCustomerApproval
+      summary: Request synthetic business approval (sandbox only)
+      description: Requires customers:write. See SANDBOX_TESTING.md. Never a production compliance approval.
+      responses:
+        '200':
+          description: Simulation requested
+  /sandbox/deposits:
+    post:
+      operationId: simulateWalletFunding
+      summary: Simulate wallet funding (sandbox only)
+      description: Requires wallets:write and a tenant-owned synthetic customer and wallet. See SANDBOX_TESTING.md.
+      responses:
+        '200':
+          description: Simulation requested; inspect wallet balance
+  /sandbox/webhook-events:
+    post:
+      operationId: simulateDepositWebhook
+      summary: Queue a signed synthetic virtual-account event
+      description: Requires webhooks:write and tenant-owned customer and VA. Does not change balances. See SANDBOX_TESTING.md.
+      responses:
+        '202':
+          description: Test event queued
+  /external-accounts:
+    get:
+      summary: Get external accounts
+      description: Requires external_accounts:read and customer authorization in production. See SANDBOX_TESTING.md for isolated sandbox usage and account fields.
+      responses:
+        '200':
+          description: Result; inspect returned status and errors
+    post:
+      summary: Post external accounts
+      description: Requires external_accounts:write and customer authorization in production. See SANDBOX_TESTING.md for isolated sandbox usage and account fields.
+      responses:
+        '200':
+          description: Result; inspect returned status and errors
+    delete:
+      summary: Delete external accounts
+      description: Requires external_accounts:write and customer authorization in production. See SANDBOX_TESTING.md for isolated sandbox usage and account fields.
+      responses:
+        '200':
+          description: Result; inspect returned status and errors
+  /beneficiary-authorizations:
+    post:
+      summary: Post beneficiary authorizations
+      description: Requires external_accounts:write and customer authorization in production. See SANDBOX_TESTING.md for isolated sandbox usage and account fields.
+      responses:
+        '200':
+          description: Result; inspect returned status and errors
+
 components:
   securitySchemes:
     BearerAuth:
