@@ -171,6 +171,7 @@ begin
  for q in select o.end_user_id,u.tenant_id,u.user_id,u.external_user_id from public.api_customer_link_outbox o
  join public.api_tenant_end_users u on u.id=o.end_user_id
  join public.api_tenants t on t.id=u.tenant_id and t.is_active and t.default_mode='production'
+ join public.api_partner_approvals a on a.tenant_id=t.id and a.status='approved' and 'api'=any(a.approved_products)
  where o.completed_at is null and o.next_attempt_at<=now() order by o.created_at limit 100 for update of o skip locked loop
   begin
    select b.bridge_customer_id::text into cid from public.business_profiles b join public.user_profiles p on p.id=b.user_id
