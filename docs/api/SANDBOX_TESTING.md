@@ -105,4 +105,4 @@ This is the sandbox test envelope. Production event-field coverage must be valid
 ## Current validation, September 30, 2026
 
 Synthetic customer creation, test approval, BASE wallet creation, simulated USDC funding, USD virtual account creation, US business external-account creation and ACH payout submission were exercised against the sandbox. Payout submission returned `in_review`, not completed.
-EUR virtual-account creation returned a name/address validation error. GBP returned a missing customer entitlement. These corridors must not be represented as tested or ready until successful retesting. Production onboarding and payment authorization remain separate go-live checks.
+EUR virtual-account creation returned a name/address validation error. GBP virtual-account creation passed after explicitly requesting its sandbox entitlement for a synthetic GB business. EUR must not be represented as tested or ready until successful retesting. Production onboarding and payment authorization remain separate go-live checks.

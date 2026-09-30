@@ -39,6 +39,6 @@ jobs:
           import urllib.request,json,os
           req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
           versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
-          assert versions['public-api-gateway']==271, 'Gateway changed since audit'
+          assert versions['public-api-gateway']==272, 'Gateway changed since audit'
           PYBASE
           supabase functions deploy public-api-gateway --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
