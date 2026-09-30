@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.118.0
       - name: Deploy only partner gateway
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SANDBOX_GATEWAY_DEPLOY_TOKEN }}
