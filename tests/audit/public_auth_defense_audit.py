@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import re
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -37,7 +38,9 @@ checks = {
     "Enterprise assessment checks hostname": "RECAPTCHA_ALLOWED_HOSTNAMES.has(hostname)" in signup,
     "Enterprise assessment checks risk score": "score < RECAPTCHA_MIN_SCORE" in signup,
     "Enterprise credential is sent in a header, not URL": "X-Goog-Api-Key" in signup and "?key=" not in signup,
-    "required CAPTCHA fails closed without credentials": "captcha_not_configured" in signup and "captchaIsRequired()" in signup,
+    "required CAPTCHA fails closed without credentials": bool(re.search(
+        r'if \(!SIGNUP_CAPTCHA_SECRET\) \{\s*return \{ ok: false, code: "captcha_not_configured"[^\n]+status: 503 \};\s*\}', signup
+    )) and "captchaIsRequired()" not in signup,
     "web token uses action-specific execute": "enterprise.execute(SITE_KEY, { action })" in client,
     "browser key is not used by native runtime": "isNativeRuntime()" in client,
     "signup payload forwards CAPTCHA token": "captcha_token: captchaToken" in api,
