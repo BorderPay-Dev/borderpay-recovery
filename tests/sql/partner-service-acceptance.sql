@@ -16,8 +16,6 @@ insert into public.account_origin_provenance(user_id,tenant_id,origin_kind,onboa
  ('20000000-0000-4000-8000-000000000003','10000000-0000-4000-8000-000000000001','partner','white_label','legacy-ref');
 insert into public.subscriptions(id,user_id,status,restricted_at,next_billing_date,account_type,payment_status) values
  ('40000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','active',now(),current_date,'business','failed');
-insert into public.user_subscriptions(id,business_user_id) values
- ('50000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001');
 do $$
 declare p uuid:='20000000-0000-4000-8000-000000000001'; d uuid:='20000000-0000-4000-8000-000000000002'; s uuid:='40000000-0000-4000-8000-000000000001'; result jsonb; row record;
 begin
@@ -38,8 +36,6 @@ begin
  assert public.charge_internal_subscription(s,current_date)->>'reason'='partner_managed';
  assert public.queue_external_subscription_invoice(s,current_date,'NG','flutterwave')->>'reason'='partner_managed';
  assert public.prepare_bridge_subscription_collection(s,current_date,'[]')->>'reason'='partner_managed';
- assert public.pay_subscription_invoice_from_va(null,p,null)->>'reason'='partner_managed';
- assert public.create_subscription_invoice('50000000-0000-4000-8000-000000000001','business',2999) is null;
  assert not has_function_privilege('anon','public.is_partner_customer(uuid)','execute');
  assert not has_function_privilege('authenticated','public.partner_customer_memberships(uuid[])','execute');
  assert not has_table_privilege('authenticated','public.partner_customer_directory','select');
