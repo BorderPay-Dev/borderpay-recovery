@@ -1,3 +1,4 @@
+import { recipientIsPartner, suppressDirectPartnerEmail } from "../_shared/partner-customer-policy.ts";
 import { applyWhiteLabelEmail, escapeBrand } from "../_shared/white-label-email.ts";
 import { loadPublishedWhiteLabel } from "../_shared/white-label-config.ts";
 // send-email — unified transactional email entrypoint.
@@ -181,6 +182,16 @@ Deno.serve(async (req: Request) => {
     attachments = sanitizeAttachments(body.attachments);
   } catch (e) {
     return json({ success: false, error: (e as Error).message }, 400);
+  }
+
+  // Partner membership applies even for legacy callers without user_id.
+  // Explicit suppression is not delivery; callers must not count it as sent.
+  try {
+    if (suppressDirectPartnerEmail(await recipientIsPartner(supabaseAdmin, body.user_id, body.to), body.template)) {
+      return json({success: true, data: {status: "suppressed", reason: "partner_managed", provider_id: null}});
+    }
+  } catch {
+    return json({success: false, error: "Customer membership lookup unavailable"}, 503);
   }
 
   let whiteLabel: WhiteLabelEmailContext | null = null;
