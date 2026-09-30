@@ -16,7 +16,7 @@ try {
   await import('../supabase/functions/bridge-kyb-link/index.ts');
 } finally { Deno.serve = serve; }
 function assert(value: unknown, message: string): asserts value { if (!value) throw new Error(message); }
-Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current customer in native browser', async () => {
+Deno.test('consumer onboarding is denied; existing business KYB and UBO verification resume in native browser', async () => {
   const originalFetch = globalThis.fetch;
   let business = false;
   let partner = false;
@@ -64,6 +64,13 @@ Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current custo
   try {
     for (partner of [false, true]) {
     for (business of [false, true]) {
+      if (!business) {
+        calls=[]; patches.length=0;
+        const retired=await call();
+        assert(retired.status===403 && retired.body.code==='individual_onboarding_disabled','consumer onboarding must stay disabled');
+        assert(calls.length===0 && patches.length===0,'consumer rejection must not call provider or write profile');
+        continue;
+      }
       for (status of ['incomplete', 'awaiting_ubo', 'needs_ubos']) {
         calls = []; patches.length = 0;
         const response = await call(business ? 'kyb' : undefined);
@@ -82,10 +89,11 @@ Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current custo
         calls = [];
         const terms = await call('terms');
         assert(terms.body.data.tos_accepted === true && calls.length === 1, 'accepted business terms must be acknowledged without reopening');
-      } else {
+      }
+      {
         accepted = false; calls = [];
         const terms = await call();
-        assert(terms.body.data.tos_link_url && !terms.body.data.link_url, 'unaccepted terms must precede individual KYC');
+        assert(terms.body.data.tos_link_url && !terms.body.data.link_url, 'unaccepted terms must precede business KYB');
         assert(!calls.some(c => c.endsWith('/kyc_link')), 'must not open identity before terms');
         accepted = true; unavailable = true; calls = [];
         const failed = await call();

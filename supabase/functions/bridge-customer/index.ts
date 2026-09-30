@@ -1,3 +1,4 @@
+import { businessOnboardingDenial } from "../_shared/business-onboarding-guard.ts";
 // bridge-customer — create or fetch a Bridge customer for the signed-in user.
 //
 // POST body: nothing (uses session). Idempotent on user_profiles.bridge_customer_id.
@@ -59,35 +60,24 @@ Deno.serve(async (req) => {
   }
   logControlledBridgeTraffic("bridge-customer", profile.country, user.id);
 
-  // Idempotent: return existing if any (only reachable for non-blocked
-  // countries, per the gate above).
-  if (profile.bridge_customer_id) {
-    return json({ success: true, data: { bridge_customer_id: profile.bridge_customer_id, account_type: profile.account_type, already_exists: true } });
-  }
-
-  // For business: pull company_name from business_profiles
-  let companyName: string | undefined;
-  let regNumber:  string | undefined;
-  if (profile.account_type === "business") {
-    const { data: biz } = await supa
-      .from("business_profiles")
-      .select("company_name, registration_number, bridge_customer_id, bridge_kyb_status, country")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (!biz?.company_name) return json({ success: false, error: "Please complete your company details first." }, 400);
-    if (["rejected", "paused", "frozen", "offboarded"].includes(String(biz.bridge_kyb_status || "").toLowerCase())) return json({ success: false, error: "This account is restricted.", code: "account_restricted" }, 403);
-    if (biz.bridge_customer_id) return json({ success: true, data: { bridge_customer_id: biz.bridge_customer_id, account_type: profile.account_type, already_exists: true } });
-    if (isBridgeBlocked(biz.country || profile.country)) return json(bridgeCountryBlockResponse(biz.country || profile.country), 403);
-    profile.country = biz.country || profile.country;
-    companyName = biz?.company_name;
-    regNumber   = biz?.registration_number ?? undefined;
-  }
+  const { data: biz, error: businessError } = await supa.from("business_profiles")
+    .select("company_name, registration_number, bridge_customer_id, bridge_kyb_status, country")
+    .eq("user_id", user.id).maybeSingle();
+  if (businessError) return json({success:false,code:"profile_unavailable",error:"Account details are temporarily unavailable. Please try again."},503);
+  const denial = businessOnboardingDenial(user, profile, biz);
+  if (denial) return json({success:false,code:denial.code,error:denial.error},denial.status);
+  const existingCustomerId = biz?.bridge_customer_id || profile.bridge_customer_id;
+  if (existingCustomerId) return json({success:true,data:{bridge_customer_id:existingCustomerId,account_type:"business",already_exists:true}});
+  if (isBridgeBlocked(biz?.country || profile.country)) return json(bridgeCountryBlockResponse(biz?.country || profile.country),403);
+  profile.country = biz?.country || profile.country;
+  const companyName = biz!.company_name;
+  const regNumber = biz!.registration_number ?? undefined;
 
   if (!profile.country) return json({ success: false, error: "Please complete your country details first." }, 400);
 
   try {
     const result = await bridgeProvider.createCustomer({
-      account_type:        profile.account_type as "individual" | "business",
+      account_type:        "business",
       email:               profile.email,
       full_name:           profile.full_name ?? undefined,
       company_name:        companyName,
