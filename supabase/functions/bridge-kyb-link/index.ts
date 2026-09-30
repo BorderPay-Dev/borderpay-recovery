@@ -335,6 +335,9 @@ Deno.serve(async (req: Request) => {
     const customerResult = await bridgeGet(
       `/v0/customers/${encodedCustomerId}`,
     );
+    if (!customerResult.ok) {
+      return json({success:false,code:"verification_temporarily_unavailable",error:"Verification is temporarily unavailable. Please try again."},502);
+    }
     const customer = customerResult.data?.data ?? customerResult.data;
     const termsAccepted = customer?.has_accepted_terms_of_service === true;
     if (customerResult.ok && phase === "terms" && termsAccepted) {

@@ -17,7 +17,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test --no-config --allow-read --allow-env tests/provider-business-boundary.test.ts tests/signup-boundary.test.ts tests/signup-captcha-config.test.ts
+      - run: deno test --no-config --allow-read --allow-env tests/provider-business-boundary.test.ts tests/hosted-verification-resume-http.test.ts tests/signup-boundary.test.ts tests/signup-captcha-config.test.ts
       - run: deno check --no-config supabase/functions/bridge-customer/index.ts supabase/functions/bridge-kyc-link/index.ts supabase/functions/bridge-kyb-link/index.ts
   deploy:
     if: github.event_name == 'workflow_dispatch' && inputs.deploy
@@ -38,10 +38,8 @@ jobs:
           def get(path):
             return json.load(urllib.request.urlopen(urllib.request.Request(root+path,headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})))
           versions={f['slug']:f['version'] for f in get('functions')}
-          for name,version in {'bridge-customer':327,'bridge-kyc-link':344,'bridge-kyb-link':369}.items():
+          for name,version in {'bridge-customer':328,'bridge-kyc-link':345,'bridge-kyb-link':370}.items():
             assert versions[name]==version,name+' changed since audit'
           assert get('config/auth')['disable_signup'] is True,'Raw Auth signup must stay disabled'
           CHECK
-          supabase functions deploy bridge-kyc-link --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
-          supabase functions deploy bridge-customer --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
           supabase functions deploy bridge-kyb-link --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
