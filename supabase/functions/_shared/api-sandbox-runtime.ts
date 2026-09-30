@@ -43,8 +43,8 @@ export async function sandboxRequest(db:any,method:string,path:string,body:unkno
  const data=await res.json().catch(()=>null);
  if(!res.ok){
   // Never expose upstream names, raw documents, URLs, or diagnostic internals.
-  const code=res.status===429?"rate_limited":res.status>=500?"sandbox_unavailable":"sandbox_request_rejected";
-  throw new SandboxError(code,res.status>=500?"The sandbox is temporarily unavailable. Retry with the same Idempotency-Key.":"The sandbox rejected this request. Check required business details, verification status, currency and account fields.",res.status>=400&&res.status<500?res.status:502);
+  const code=res.status===403?"sandbox_capability_unavailable":res.status===429?"rate_limited":res.status>=500?"sandbox_unavailable":"sandbox_request_rejected";
+  throw new SandboxError(code,res.status===403?"This customer or currency is not enabled in the sandbox. Contact BorderPay with the request ID.":res.status>=500?"The sandbox is temporarily unavailable. Retry with the same Idempotency-Key.":"The sandbox rejected this request. Check required business details, verification status, currency and account fields.",res.status>=400&&res.status<500?res.status:502);
  }
  if(!data||typeof data!=="object")throw new SandboxError("sandbox_unavailable","Sandbox response could not be confirmed.",502);
  return data;

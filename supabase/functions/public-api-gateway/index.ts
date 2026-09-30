@@ -644,7 +644,7 @@ Deno.serve(async (req) => {
     }
 
     const sandbox = sandboxRouteEnabled(ctx.defaultMode,ctx.tenantMetadata,routeKey);
-    const replayRouteKey = ctx.defaultMode === "sandbox" ? `sandbox ${routeKey}` : routeKey;
+    const replayRouteKey = sandbox ? `sandbox ${routeKey}` : routeKey;
     const releaseGate = sandbox ? {allowed:true} : evaluateApiRuntimeReleaseGate(
       ctx.defaultMode,
       routeKey,
