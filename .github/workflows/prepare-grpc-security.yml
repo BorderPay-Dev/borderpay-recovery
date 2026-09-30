@@ -1,5 +1,7 @@
 name: Prepare gRPC security lock
 on:
+  push:
+    branches: [fix/provider-business-onboarding-boundary]
   workflow_dispatch:
 permissions:
   contents: write
