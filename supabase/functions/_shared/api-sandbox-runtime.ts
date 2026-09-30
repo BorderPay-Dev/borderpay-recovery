@@ -40,6 +40,7 @@ export async function sandboxRequest(db:any,method:string,path:string,body:unkno
  const c=await db.rpc("api_sandbox_credential");
  if(c.error||typeof c.data!=="string"||!c.data.startsWith("sk-test"))throw new SandboxError("sandbox_unavailable","Sandbox credentials are unavailable.",503);
  const res=await fetcher(ORIGIN+path,{method,redirect:"error",headers:{"Api-Key":c.data,"Content-Type":"application/json",...(method!=="GET"?{"Idempotency-Key":key}:{})},...(method!=="GET"?{body:JSON.stringify(body??{})}:{}),signal:AbortSignal.timeout(20000)});
+ if(res.status===204 && method==="DELETE")return {};
  const data=await res.json().catch(()=>null);
  if(!res.ok){
   // Never expose upstream names, raw documents, URLs, or diagnostic internals.
@@ -89,7 +90,7 @@ export async function handleSandboxApi(db:any,route:string,body:Obj,ctx:{tenantI
   for(const field of ["street_line_1","city","postal_code","country"])required(address?.[field],`registered_address.${field}`);
   if(!/^[A-Z]{3}$/.test(address.country))throw new SandboxError("invalid_request","Use an ISO alpha-3 registered country.");
   const name=required(body.business_legal_name||body.business_name,"business_legal_name");
-  const data=await sandboxRequest(db,"POST","/v0/customers",{type:"business",business_legal_name:name,business_name:name,first_name:name,email,business_type:body.business_type||"llc",address:{...address,state:address.subdivision},registered_address:address,physical_address:body.physical_address||address,signed_agreement_id:"00000000-0000-4000-8000-000000000001"},await sha256Hex(`sandbox-customer:${tid}:${auth.resource_id}`),fetcher);
+  const data=await sandboxRequest(db,"POST","/v0/customers",{type:"business",business_legal_name:name,business_name:name,first_name:name,email,business_type:body.business_type||"llc",address:{...address,state:address.subdivision},registered_address:address,physical_address:body.physical_address||address,signed_agreement_id:[auth.resource_id.slice(0,8),auth.resource_id.slice(8,12),"4"+auth.resource_id.slice(13,16),"8"+auth.resource_id.slice(17,20),auth.resource_id.slice(20,32)].join("-")},await sha256Hex(`sandbox-customer:${tid}:${auth.resource_id}`),fetcher);
   const cid=id(data.id,"customer_id");await save("customer",cid,cid,{name,country:address.country});
   await save("authorization",auth.resource_id,null,{...auth.metadata,customer_id:cid});
   return ok({customer_id:cid,account_type:"business",verification_status:data.status||data.kyc_status},201);
