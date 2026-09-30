@@ -5,6 +5,19 @@
   "installCommand": "npm install",
   "headers": [
     {
+      "source": "/partner/authorize",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
       "source": "/",
       "headers": [
         {
@@ -103,7 +116,8 @@
     "deploymentEnabled": {
       "fix/business-only-partner-api": false,
       "fix/velocity-email-branding": false,
-      "fix/nattypay-sandbox": false
+      "fix/nattypay-sandbox": false,
+      "fix/partner-customer-authorization": false
     }
   }
 }
