@@ -5,6 +5,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 kyc_ui = (ROOT / "components/kyc/KYCVerification.tsx").read_text()
 kyc = (ROOT / "supabase/functions/bridge-kyc-link/index.ts").read_text()
+retired = (ROOT / "supabase/functions/_shared/retired-individual-onboarding.ts").read_text()
 kyb = (ROOT / "supabase/functions/bridge-kyb-link/index.ts").read_text()
 guard = (ROOT / "supabase/functions/_shared/bridge-verification-url.ts").read_text()
 receipt = (ROOT / "utils/transactions/receipt.ts").read_text()
@@ -27,11 +28,11 @@ checks = {
     "Persona is never sent to the ToS iframe": "openHostedVerificationUrl(r.data.link_url" not in kyc_ui,
     "client always requests public HTTPS callback": "https://app.borderpayafrica.com/?screen=kyc" in kyc_ui,
     "KYB request rejects native callbacks": "verificationRedirectUrl(customerOrigin, body.redirect_url)" in kyb,
-    "KYC request rejects native callbacks": "verificationRedirectUrl(customerOrigin, body.redirect_url)" in kyc,
+    "consumer endpoint is retired": "Deno.serve(retiredIndividualOnboarding)" in kyc,
     "KYB response rewrites stale callbacks": "verifiedHostedLink(customerOrigin, link.link_url)" in kyb,
-    "KYC response rewrites stale callbacks": "verifiedHostedLink(customerOrigin, links.kyc_link_url)" in kyc,
+    "consumer endpoint rejects without issuing any URL": "individual_onboarding_disabled" in retired and "status:403" in retired.replace(" ", ""),
     "KYB persists normalized URL": "bridge_kyb_link_url: clientLinkUrl" in kyb,
-    "KYC persists normalized URL": "bridge_kyc_link_url: clientLinkUrl" in kyc,
+    "consumer endpoint cannot call provider or write a profile": all(token not in kyc + retired for token in ("fetch(", "createClient", "user_metadata")),
     "native schemes are rejected centrally": "Native origins such as capacitor://localhost are intentionally rejected" in guard,
     "legacy callback parameter is removed": 'target.searchParams.delete("redirect_uri")' in guard,
     "customer receipt label is provider-neutral": "BorderPay transaction ID" in receipt and "Bridge transaction ID" not in receipt_component,

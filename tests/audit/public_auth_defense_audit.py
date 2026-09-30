@@ -52,12 +52,13 @@ checks = {
         for marker in ("payload.iss", "audiences.includes", "allowedAppIds.has")
     ),
     "native App Check uses production attestation": "debugToken" not in app_check_client and "isTokenAutoRefreshEnabled: true" in app_check_client,
-    "legacy native fallback is explicit and expires": (
-        "LEGACY_NATIVE_SIGNUP_FALLBACK_ENABLED" in signup
-        and "LEGACY_NATIVE_SIGNUP_FALLBACK_UNTIL" in signup
-        and 'origin === "capacitor://localhost"' in signup
-        and 'origin === "https://localhost"' in signup
-        and "legacy_native_signup_attestation_fallback" in signup
+    "native header fallback is removed and attestation is mandatory": (
+        "LEGACY_NATIVE_SIGNUP_FALLBACK_ENABLED" not in signup
+        and "legacyNativeSignupEligible" not in signup
+        and "legacy_native_signup_attestation_fallback" not in signup
+        and "captchaIsRequired" not in signup
+        and "const captchaCheck = appCheckValid" in signup
+        and "if (!captchaCheck.ok)" in signup
     ),
     "native App Check plugin is release-pinned": '"@capacitor-firebase/app-check": "8.5.1"' in package,
     "iOS App Check uses the Capacitor SPM bridge": "'@capacitor-firebase/app-check': { symlink: true }" in capacitor,
