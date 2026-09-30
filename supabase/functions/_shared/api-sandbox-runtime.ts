@@ -39,7 +39,7 @@ export async function sandboxRequest(db:any,method:string,path:string,body:unkno
  if(!/^\/v0\/[a-zA-Z0-9_/?=&.-]+$/.test(path)||path.includes(".."))throw new SandboxError("invalid_request","Invalid sandbox resource path.");
  const c=await db.rpc("api_sandbox_credential");
  if(c.error||typeof c.data!=="string"||!c.data.startsWith("sk-test"))throw new SandboxError("sandbox_unavailable","Sandbox credentials are unavailable.",503);
- const res=await fetcher(ORIGIN+path,{method,redirect:"error",headers:{"Api-Key":c.data,"Content-Type":"application/json",...(method!=="GET"?{"Idempotency-Key":key}:{})},...(method!=="GET"?{body:JSON.stringify(body??{})}:{}),signal:AbortSignal.timeout(20000)});
+ const res=await fetcher(ORIGIN+path,{method,redirect:"error",headers:{"Api-Key":c.data,"Content-Type":"application/json",...(["POST","PUT","PATCH"].includes(method)?{"Idempotency-Key":key}:{})},...(method!=="GET"?{body:JSON.stringify(body??{})}:{}),signal:AbortSignal.timeout(20000)});
  if(res.status===204 && method==="DELETE")return {};
  const data=await res.json().catch(()=>null);
  if(!res.ok){

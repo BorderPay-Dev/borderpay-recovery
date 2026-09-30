@@ -61,3 +61,10 @@ Deno.test("sandbox business creation has unique stable agreement, all requested 
 Deno.test("empty successful external-account deletion is accepted",async()=>{
  assertEquals(await sandboxRequest({rpc:()=>({data:"sk-test-fixture"})},"DELETE","/v0/customers/test/external_accounts/test",null,"id",async()=>new Response(null,{status:204})),{});
 });
+
+Deno.test("DELETE keeps idempotency at BorderPay and omits unsupported upstream header",async()=>{
+ let seen=false;
+ await sandboxRequest({rpc:()=>({data:"sk-test-fixture"})},"DELETE","/v0/customers/test/external_accounts/test",{},"partner-retry-key",async(_url,options)=>{
+  seen=true;assertEquals(options?.method,"DELETE");assertEquals(new Headers(options?.headers).has("Idempotency-Key"),false);return new Response('{"id":"test","active":false}');
+ });assertEquals(seen,true);
+});
