@@ -62,9 +62,11 @@ checks = {
     "native App Check plugin is release-pinned": '"@capacitor-firebase/app-check": "8.5.1"' in package,
     "iOS App Check uses the Capacitor SPM bridge": "'@capacitor-firebase/app-check': { symlink: true }" in capacitor,
     "emergency signup kill switch precedes parsing": signup.find("SIGNUP_ENABLED") < signup.find("readBoundedJson<SignupBody>(req)"),
-    "direct signup remains business-only": (
+    "direct and partner signup remain business-only": (
         "business_signup_only" in signup
-        and 'normalizedAccountType !== "business" && !onboardingToken' in signup
+        and 'if (!isBusinessAccount(normalizedAccountType)) {' in signup
+        and signup.find('if (!isBusinessAccount(normalizedAccountType)) {') < signup.find('if (managedWhiteLabel) {')
+        and signup.find('if (!isBusinessAccount(normalizedAccountType)) {') < signup.find('if (onboardingToken) {')
     ),
     "signed partner onboarding remains supported": (
         "verifyOnboardingToken(" in signup

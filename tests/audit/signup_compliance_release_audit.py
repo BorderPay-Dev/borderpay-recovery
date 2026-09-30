@@ -15,7 +15,10 @@ assert "const totalSteps = steps.length;" in signup
 assert "Create Business Account" in signup
 assert "accountType: getCustomerBrand()?.allowed_account_types[0] || 'business'" in signup
 assert "{getCustomerBrand() && <label" in signup  # account-type selector is partner-only
-assert '!onboardingToken && !managedWhiteLabel' in auth_signup
+# Business-only now covers signed API and managed white-label signup too.
+assert 'if (!isBusinessAccount(normalizedAccountType)) {' in auth_signup
+assert auth_signup.index('if (!isBusinessAccount(normalizedAccountType)) {') < auth_signup.index('if (managedWhiteLabel) {')
+assert auth_signup.index('if (!isBusinessAccount(normalizedAccountType)) {') < auth_signup.index('if (onboardingToken) {')
 assert "I'm signing up as" not in signup
 assert "> Individual" not in signup
 assert "Country of Incorporation" in signup
