@@ -54,7 +54,6 @@ EDGE_FUNCTIONS  = ROOT / "supabase/functions"
 # Edge functions that MUST consult the shared policy.
 REQUIRED_IMPORTERS = {
     "bridge-customer",
-    "bridge-kyc-link",
     "bridge-kyb-link",
     "bridge-wallet",
     "bridge-virtual-account",
@@ -277,8 +276,23 @@ def assert_iso3_normalization_and_va_gates() -> list[str]:
     return findings
 
 
+def assert_retired_consumer_route() -> list[str]:
+    # No country-policy import is required for a route which cannot call a
+    # provider at all. Require retirement explicitly; do not silently exempt it.
+    src = (EDGE_FUNCTIONS / "bridge-kyc-link/index.ts").read_text()
+    handler = (EDGE_FUNCTIONS / "_shared/retired-individual-onboarding.ts").read_text()
+    if ("Deno.serve(retiredIndividualOnboarding)" not in src
+            or "retired-individual-onboarding.ts" not in src
+            or "individual_onboarding_disabled" not in handler
+            or "status:403" not in handler.replace(" ", "")
+            or "fetch(" in src or "fetch(" in handler
+            or "createClient" in src or "createClient" in handler):
+        return ["consumer route must remain provider-free and reject onboarding with 403"]
+    return []
+
+
 def main() -> int:
-    failures: list[str] = []
+    failures: list[str] = assert_retired_consumer_route()
 
     f1 = assert_no_inline_country_sets()
     if f1:
