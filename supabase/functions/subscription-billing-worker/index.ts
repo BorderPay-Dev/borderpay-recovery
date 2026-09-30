@@ -1,3 +1,4 @@
+import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
 import { prepareInvoiceEmail, confirmedEmailDelivery } from "../_shared/subscription-email-policy.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -259,7 +260,10 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
 
   let completed = 0;
   let failed = 0;
+  const partnerActions = await partnerMemberships(db, (data ?? []).map((a: any) => String(a.user_id)));
   for (const action of (data ?? []) as AccessAction[]) {
+    if (partnerActions.has(action.user_id)) continue; // Never retail-restrict or reactivate a partner account.
+
     const claimedAt = new Date().toISOString();
     const { data: claimed } = await db.from("subscription_provider_access_actions")
       .update({ status: "processing", last_attempt_at: claimedAt, attempt_count: action.attempt_count + 1, updated_at: claimedAt })
@@ -316,7 +320,13 @@ async function sendEmails() {
     .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(30);
   if (error) throw error;
   let sent = 0; let failed = 0;
+  const partnerJobs = await partnerMemberships(db, (data ?? []).map((j: any) => String(j.user_id)));
   for (const job of data ?? []) {
+    if (partnerJobs.has(String(job.user_id))) {
+      await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:partner_managed"}).eq("id",job.id);
+      continue;
+    }
+
     let props = job.props;
     if (job.template.endsWith(".subscription_external_invoice")) {
       const { data: invoice, error: invoiceError } = await db.from("subscription_external_invoices")

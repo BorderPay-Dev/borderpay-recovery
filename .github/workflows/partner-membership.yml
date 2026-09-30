@@ -1,0 +1,65 @@
+name: Partner membership acceptance
+on:
+  push:
+    branches: [fix/partner-customer-membership]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: acceptance
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config tests/partner-customer-policy.test.ts tests/maintenance-invoice-email.test.ts
+      - run: deno check --no-config supabase/functions/send-email/index.ts supabase/functions/admin-email-ops/index.ts supabase/functions/subscription-billing-worker/index.ts
+      - name: Isolated database billing and membership tests
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: acceptance
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/partner-service-bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20260930210000_partner_customer_service_policy.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/partner-service-acceptance.sql
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Deploy only reviewed membership-aware email and billing functions
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.PARTNER_MEMBERSHIP_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'CHECK'
+          import json,os,urllib.request
+          h={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']}
+          u='https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/'
+          versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(urllib.request.Request(u+'functions',headers=h)))}
+          expected=json.load(open('docs/internal/partner-membership-release-baseline.json'))
+          for name,version in expected.items():
+              assert versions[name]==version, name+' changed since audit'
+          CHECK
+          supabase functions deploy send-email --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy admin-email-ops --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy subscription-billing-worker --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
