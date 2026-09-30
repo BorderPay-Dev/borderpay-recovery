@@ -1,3 +1,5 @@
+import { businessOnboardingDenial } from "../_shared/business-onboarding-guard.ts";
+import { kybPortalHandoff, newBusinessKybEligible, newBusinessKybEnabled } from "../_shared/kyb-portal-handoff.ts";
 import { customerAppOrigin } from "../_shared/white-label-config.ts";
 // bridge-kyb-link v5 — embedded /v0/kyc_links flow for business accounts.
 //
@@ -221,9 +223,6 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") {
     return json({ success: false, error: "POST only" }, 405);
   }
-  if (!bridgeOnboardingEnabled()) {
-    return json(bridgeOnboardingPausedBody(), 503);
-  }
 
   const auth = req.headers.get("Authorization") || "";
   const token = auth.replace(/^Bearer\s+/i, "").trim();
@@ -246,6 +245,26 @@ Deno.serve(async (req: Request) => {
     }, 409);
   }
 
+  // Only new, unrestricted business profiles use BorderPay intake. No client-selected user ID.
+  const {data: intakeProfile, error: intakeProfileError} = await supa.from("user_profiles")
+    .select("id, email, account_type, account_status, account_frozen_at, country, bridge_customer_id, bridge_account_status").eq("id", user.id).maybeSingle();
+  if (intakeProfileError) return json({success:false,code:"profile_unavailable",error:"Account details are temporarily unavailable. Please try again."},503);
+  const { data: biz, error: businessError } = await supa.from("business_profiles")
+    .select("company_name, registration_number, bridge_customer_id, bridge_kyb_status, bridge_kyb_link_id, bridge_kyb_link_url")
+    .eq("user_id", user.id).maybeSingle();
+  if (businessError) return json({success:false,code:"profile_unavailable",error:"Account details are temporarily unavailable. Please try again."},503);
+  const denial = businessOnboardingDenial(user, intakeProfile, biz);
+  if (denial) return json({success:false,code:denial.code,error:denial.error},denial.status);
+  const profile = intakeProfile!;
+  const newBusinessEnabled = !intakeProfileError && newBusinessKybEligible(intakeProfile)
+    && await newBusinessKybEnabled(supa);
+  const portal = await kybPortalHandoff(user, token, fetch, newBusinessEnabled);
+  if (portal) return json(portal, portal.success ? 200 : 503);
+
+  if (!bridgeOnboardingEnabled()) {
+    return json(bridgeOnboardingPausedBody(), 503);
+  }
+
   let body: { redirect_url?: string; endorsements?: string[]; phase?: "terms" | "kyb" } = {};
   try {
     body = await req.json();
@@ -256,21 +275,6 @@ Deno.serve(async (req: Request) => {
   const redirectUrl = verificationRedirectUrl(customerOrigin, body.redirect_url);
   const phase = body.phase === "terms" || body.phase === "kyb" ? body.phase : null;
 
-  const { data: profile } = await supa
-    .from("user_profiles")
-    .select("id, email, account_type, country, bridge_customer_id, bridge_account_status")
-    .eq("id", user.id)
-    .maybeSingle();
-  if (!profile) {
-    return json({ success: false, error: "user_profiles row missing" }, 404);
-  }
-  if (profile.account_type !== "business") {
-    return json({
-      success: false,
-      error: "KYB is only for business accounts. Use bridge-kyc-link.",
-      code: "wrong_account_type",
-    }, 403);
-  }
   if (isBridgeBlocked(profile.country)) {
     return json(bridgeCountryBlockResponse(profile.country!), 403);
   }
@@ -282,25 +286,8 @@ Deno.serve(async (req: Request) => {
     }, 400);
   }
 
-  // business_profiles uses bridge_kyb_link_* (KYB-prefixed) columns;
-  // the bridge_kyc_link_* columns live on user_profiles for the
-  // individual KYC flow and do not exist on this table.
-  // Round-7 fix: previous version read/wrote bridge_kyc_link_* against
-  // business_profiles, which 400s on PostgREST and never persisted the
-  // link.
-  const { data: biz } = await supa
-    .from("business_profiles")
-    .select(
-      "company_name, registration_number, bridge_customer_id, bridge_kyb_status, bridge_kyb_link_id, bridge_kyb_link_url",
-    )
-    .eq("user_id", user.id)
-    .maybeSingle();
-  if (!biz?.company_name) {
-    return json({
-      success: false,
-      error: "business_profiles missing company_name",
-    }, 404);
-  }
+  // The verified, same-user business profile was checked before any handoff.
+  if (!biz) return json({success:false,code:"business_profile_required",error:"Please complete your company details."},400);
 
   if (isVerifiedStatus(biz.bridge_kyb_status)) {
     return json({
