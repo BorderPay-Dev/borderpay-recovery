@@ -29,7 +29,6 @@ import {
   type OnboardingTokenClaims,
 } from "../_shared/onboarding-policy.ts";
 import {
-  captchaIsRequired,
   extractPublicClientIp,
   readBoundedJson,
 } from "../_shared/public-request-security.ts";
@@ -61,25 +60,6 @@ const RECAPTCHA_ALLOWED_HOSTNAMES = new Set(
     .filter(Boolean),
 );
 const SIGNUP_CAPTCHA_ACTION = "SIGNUP";
-const LEGACY_NATIVE_SIGNUP_FALLBACK_ENABLED =
-  (Deno.env.get("LEGACY_NATIVE_SIGNUP_FALLBACK_ENABLED") || "").trim().toLowerCase() === "true";
-const LEGACY_NATIVE_SIGNUP_FALLBACK_UNTIL = Date.parse(
-  Deno.env.get("LEGACY_NATIVE_SIGNUP_FALLBACK_UNTIL") || "1970-01-01T00:00:00Z",
-);
-
-function legacyNativeSignupEligible(req: Request): boolean {
-  if (!LEGACY_NATIVE_SIGNUP_FALLBACK_ENABLED || !Number.isFinite(LEGACY_NATIVE_SIGNUP_FALLBACK_UNTIL)) {
-    return false;
-  }
-  if (Date.now() >= LEGACY_NATIVE_SIGNUP_FALLBACK_UNTIL) return false;
-
-  const origin = (req.headers.get("origin") || "").trim().toLowerCase();
-  const ua = (req.headers.get("user-agent") || "").toLowerCase();
-  const iosShell = origin === "capacitor://localhost" && /iphone|ipad|ipod/.test(ua);
-  const androidShell = origin === "https://localhost" && /android/.test(ua) && /\bwv\b|; wv\)/.test(ua);
-  return iosShell || androidShell;
-}
-
 // This is an origin-side pressure valve, not the primary abuse control. Edge
 // isolates may be recycled at any time, so the database RPC remains the
 // authoritative cross-instance limiter. Keeping a small, bounded cache here
@@ -164,9 +144,7 @@ async function verifySignupCaptcha(
   );
   if (enterpriseConfigured) {
     if (!token) {
-      return captchaIsRequired()
-        ? { ok: false, code: "captcha_required", error: "CAPTCHA token is required." }
-        : { ok: true };
+      return { ok: false, code: "captcha_required", error: "Please complete the security check and try again." };
     }
     try {
       const endpoint = `https://recaptchaenterprise.googleapis.com/v1/projects/${encodeURIComponent(RECAPTCHA_ENTERPRISE_PROJECT_ID)}/assessments`;
@@ -217,10 +195,7 @@ async function verifySignupCaptcha(
   }
 
   if (!SIGNUP_CAPTCHA_SECRET) {
-    if (captchaIsRequired()) {
-      return { ok: false, code: "captcha_not_configured", error: "Signup verification is temporarily unavailable." };
-    }
-    return { ok: true };
+    return { ok: false, code: "captcha_not_configured", error: "Signup verification is temporarily unavailable.", status: 503 };
   }
   if (!token) {
     return { ok: false, code: "captcha_required", error: "CAPTCHA token is required." };
@@ -322,7 +297,7 @@ Deno.serve(async (req: Request) => {
         return json({
           success: false,
           code: "business_email_required",
-          error: "Use your company email address (for example, name@company.com). Personal, disposable, and test email domains are not accepted for Business accounts.",
+          error: "Use your company email address (for example, name@company.com). Free email services (except inbox.eu), disposable addresses, and email aliases are not accepted.",
         }, 400);
       }
     }
@@ -373,21 +348,13 @@ Deno.serve(async (req: Request) => {
       return json({ success: false, code: "app_check_required", error: "App verification is required." }, 403);
     }
 
-    // Browser CAPTCHA or native App Check precedes all database work.
-    // Compatibility is intentionally narrow and time-bounded: already-
-    // released native builds predate App Check token forwarding. They remain
-    // protected by the in-memory and durable database rate limits, business-
-    // email policy, and mandatory email verification. Browser requests never
-    // use this path, and invalid supplied tokens are never bypassed.
-    const legacyNativeFallback = !appCheckToken && !captchaToken && legacyNativeSignupEligible(req);
-    if (legacyNativeFallback) {
-      console.warn(JSON.stringify({ tag: "legacy_native_signup_attestation_fallback" }));
-    }
+    // Headers and user-agent strings are spoofable, not native attestation.
+    // Every signup requires verified App Check or a valid CAPTCHA token.
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    const captchaCheck = appCheckValid || legacyNativeFallback
+    const captchaCheck = appCheckValid
       ? { ok: true } as const
       : await verifySignupCaptcha(captchaToken, requestIp, req.headers.get("origin") || "", supabaseAdmin);
     if (!captchaCheck.ok) {

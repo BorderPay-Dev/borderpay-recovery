@@ -1,0 +1,45 @@
+name: Signup boundary checks
+on:
+  push:
+    branches: [fix/signup-auth-boundary]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --allow-read tests/signup-boundary.test.ts tests/signup-captcha-config.test.ts
+      - run: deno check --no-config supabase/functions/auth-signup/index.ts
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Deploy only signup boundary
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SIGNUP_BOUNDARY_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'CHECK'
+          import json,os,urllib.request
+          root='https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/'
+          def get(path):
+            req=urllib.request.Request(root+path,headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+            return json.load(urllib.request.urlopen(req))
+          versions={f['slug']:f['version'] for f in get('functions')}
+          assert versions['auth-signup']==452,'Signup changed since audit'
+          assert get('config/auth')['disable_signup'] is True,'Raw Auth signup must stay disabled'
+          CHECK
+          supabase functions deploy auth-signup --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
