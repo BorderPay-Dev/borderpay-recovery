@@ -1,22 +1,60 @@
 # Production customer authorization and event contract
 
-Status: September 30, 2026. Sandbox success does not complete production acceptance.
+Updated September 30, 2026. Production activation requires an approved partner, enabled production access and a registered exact HTTPS callback URL. Sandbox success alone is not go-live approval.
 
 ## Customer access token
 
-`X-BorderPay-Customer-Authorization: Bearer <customer access token>` currently requires the authenticated business customer's BorderPay session. It is **not** the partner API key, onboarding_token, a user ID or an operator session. The customer must belong to the same tenant as the partner key.
+The partner API key authenticates your backend. The separate `X-BorderPay-Customer-Authorization: Bearer <access_token>` authorizes one business customer. Never collect the customer's BorderPay password or ask them to copy a browser token.
 
-The hosted BorderPay application obtains this session when the customer signs in, after the applicable authentication checks. However, the current partner v1 release does **not** implement a secure authorization-code callback/exchange that transfers delegated customer authorization to the partner server after hosted onboarding. A browser session at BorderPay is not automatically available to the partner's site.
+1. Register your exact HTTPS callback URL with BorderPay. Wildcards are not supported.
+2. Generate a cryptographically random `state` and PKCE verifier (43–128 characters); calculate the base64url SHA-256 challenge without padding. Keep verifier and state on your server, bound to the initiating customer session.
+3. Call `POST /v1/customer-authorizations` using your production API key:
 
-**This is a production integration blocker.** Do not ask customers to copy browser tokens, collect their BorderPay password, expose partner keys in the browser or use an administrator session. The secure delegated handoff, approved callback URL, consent, token expiry/refresh/revocation and tenant binding must be implemented and accepted before go-live. No production token-exchange URL is published because one is not currently available.
+```json
+{
+  "external_user_id": "your-customer-reference",
+  "redirect_uri": "https://partner.example.com/borderpay/callback",
+  "state": "unique-random-state-at-least-16-characters",
+  "code_challenge_method": "S256",
+  "code_challenge": "base64url-sha256-of-your-pkce-verifier",
+  "scopes": ["customers:read", "wallets:read", "transfers:read"]
+}
+```
+
+4. Redirect the customer to `data.authorization_url`. The customer signs in to BorderPay, completes applicable authentication and explicitly approves the named partner's permissions. Their business must already belong to your tenant with the same `external_user_id`; this flow cannot claim an unrelated business.
+5. Your registered callback receives `code` and `state`, or `error=access_denied` and `state`. Validate state against the initiating customer session before exchanging the code.
+6. From your backend, call `POST /v1/customer-authorizations/exchange` with the **same API key** and JSON `{ "code":"...", "code_verifier":"...", "redirect_uri":"https://partner.example.com/borderpay/callback" }`.
+7. Read `data.access_token`, `token_type`, `expires_in`, `expires_at`, `scope` and `external_user_id`. Pass the token in `X-BorderPay-Customer-Authorization` alongside your partner API key for customer calls.
+
+Authorization links expire after 30 minutes. Codes are single-use and expire after two minutes, or earlier if the authorization/session expires. Access tokens last at most 15 minutes and never outlive the customer's signed-in session. Tokens are bound to the initiating tenant, API key, customer and consented scopes. They do not bypass account restrictions or payment PIN/SCA requirements.
+
+No refresh token is issued. Repeat hosted authorization when access expires. Revoke access with `POST /v1/customer-authorizations/revoke` and JSON `{ "token":"..." }`. Revocation returns success without disclosing whether a token belonging to another client exists. Revoking a key, suspending a tenant or removing permissions also blocks access.
+
+Authorization creation/exchange/revocation use `onboarding:write`. Request only customer scopes your key already has; `*` and webhook administration are not delegable. Exchange is intentionally single-use: if a successful exchange response is lost, begin a new authorization. Do not put codes or tokens into application logs, analytics or webhooks.
+
+These endpoints are production-only. Sandbox continues to use its isolated synthetic customers without live customer sessions.
 
 ## New customer ID and partner reference
 
-Hosted signup stores `external_user_id` in the tenant membership and records internal signup audit events. The internal `signup_completed` audit record is **not** an outbound partner webhook.
+Subscribe to **`customer.linked`** (or all events). Once hosted onboarding has both a tenant membership and an assigned customer ID, BorderPay queues a signed event:
 
-The current partner event projector only emits customer lifecycle notifications once the customer resource has been registered to the tenant. These use `customer.created`, `customer.updated` or `customer.updated.status_transitioned`, with `data.resource.id` for the customer resource ID and `data.status` when present. It does not currently include `external_user_id` and does not guarantee an automatic onboarding-completion notification.
+```json
+{
+  "id": "event-uuid",
+  "type": "customer.linked",
+  "occurred_at": "2026-09-30T12:00:00Z",
+  "data": {
+    "customer_id": "customer-uuid",
+    "external_user_id": "your-customer-reference",
+    "account_type": "business",
+    "status": "linked"
+  }
+}
+```
 
-A guaranteed onboarding-completion event containing both the customer ID and the partner's external reference remains required before production integration is complete. Do not build a correlation workflow around an event that is not yet implemented.
+Persist the association idempotently. This event means the customer is linked to your tenant; **it is not KYB approval, completed verification, or permission to activate financial services**. Signup alone may not yet have an assigned customer ID. Events wait until both IDs are present and consistent. The outbox normally runs every minute and retries delivery through the webhook queue. Monitor delivery failures and reconcile current status before enabling products.
+
+Existing lifecycle events remain available after resource registration. Their payload uses `data.resource.id` and `data.status`; they are not substitutes for the correlation event. No login or delegated tokens are included in any webhook.
 
 ## External-account deletion
 

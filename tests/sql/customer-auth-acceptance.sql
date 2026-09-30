@@ -25,6 +25,11 @@ do $$begin
  begin perform api_customer_auth_exchange('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('b',64),'https://evil.example/callback','challenge',repeat('c',64));raise exception 'wrong redirect accepted';exception when invalid_parameter_value then null;end;
  begin perform api_customer_auth_exchange('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('b',64),'https://partner.example.com/callback','wrong',repeat('c',64));raise exception 'wrong PKCE accepted';exception when invalid_parameter_value then null;end;
 end $$;
+update api_customer_authorizations set code_expires_at=now()-interval '1 second';
+do $$begin
+ begin perform api_customer_auth_exchange('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('b',64),'https://partner.example.com/callback','challenge',repeat('c',64));raise exception 'expired code accepted';exception when invalid_parameter_value then null;end;
+end $$;
+update api_customer_authorizations set code_expires_at=now()+interval '2 minutes';
 select api_customer_auth_exchange('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('b',64),'https://partner.example.com/callback','challenge',repeat('c',64));
 do $$begin
  begin perform api_customer_auth_exchange('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('b',64),'https://partner.example.com/callback','challenge',repeat('d',64));raise exception 'code replay accepted';exception when invalid_parameter_value then null;end;
@@ -33,6 +38,12 @@ select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000
 select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000002','20000000-0000-0000-0000-000000000001',repeat('c',64),'customers:read') is null,'cross tenant denied');
 select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000002',repeat('c',64),'customers:read') is null,'cross key denied');
 select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('c',64),'payouts:write') is null,'unconsented scope denied');
+update api_customer_grants set expires_at=now()-interval '1 second';
+select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('c',64),'customers:read') is null,'expired grant denied');
+update api_customer_grants set expires_at=now()+interval '15 minutes';
+update api_keys set scopes=array['onboarding:write'];
+select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('c',64),'customers:read') is null,'reduced key scope denied');
+update api_keys set scopes=array['onboarding:write','customers:read'];
 update api_keys set is_active=false;
 select pg_temp.check_true(api_customer_auth_resolve('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001',repeat('c',64),'customers:read') is null,'revoked API key denied');
 update api_keys set is_active=true;update api_tenants set is_active=false;
