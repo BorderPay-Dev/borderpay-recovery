@@ -1,5 +1,6 @@
 import {
   actionMessage,
+  reminderKey,
   remindBusiness,
   reminderStage,
   safeLink,
@@ -84,6 +85,7 @@ Deno.test("live-status checks, recent-email suppression, dry-run and link dispat
     user: { email: profile.email, email_confirmed_at: "2026-09-25" },
   };
   const db = {
+    rpc: async () => ({data:[],error:null}),
     auth: { admin: { getUserById: async () => ({ data: auth }) } },
     from: (table: string) => {
       let singleton = false, shared = false, recentQuery = false;
@@ -145,9 +147,10 @@ Deno.test("live-status checks, recent-email suppression, dry-run and link dispat
     sent++;
     assert(payload.to === profile.email, "wrong recipient");
     assert(
-      payload.props.verification_url.includes("token=synthetic"),
+      payload.sensitive_props.verification_url.includes("token=synthetic"),
       "missing provider link",
     );
+    assert(!payload.props.verification_url,"verification link persisted in public props");
     assert(payload.idempotency_key.includes(id), "missing deduplication");
     return { ok: true, body: { success: true, data: { status: "sent" } } };
   };
@@ -198,4 +201,13 @@ Deno.test("live-status checks, recent-email suppression, dry-run and link dispat
   accepted = false;
   await remindBusiness(db, bridge, send, id, true);
   assert(lastPath.endsWith("tos_acceptance_link"), "terms skipped");
+});
+
+Deno.test("daily reminder idempotency and partner suppression",async()=>{
+ const user="11111111-1111-4111-8111-111111111111";
+ assert(reminderKey(user,new Date("2026-09-30T01:00:00Z"))===reminderKey(user,new Date("2026-09-30T23:00:00Z")),"same day duplicated");
+ assert(reminderKey(user,new Date("2026-09-30T01:00:00Z"))!==reminderKey(user,new Date("2026-10-01T01:00:00Z")),"next day cannot remind");
+ const forbidden=()=>{throw new Error("partner must not reach provider or email");};
+ const result=await remindBusiness({rpc:async()=>({data:[{user_id:user}],error:null})},forbidden,forbidden,user,false);
+ assert(result.reason==="partner_managed","partner customer included");
 });

@@ -1,3 +1,4 @@
+import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
 import { providerLinkReason, restrictionReason } from "./policy.ts";
 import { isBridgeBlocked } from "../_shared/providers/bridge-country-policy.ts";
 const ACTIONABLE = new Set([
@@ -9,6 +10,9 @@ const ACTIONABLE = new Set([
   "awaiting_rfi",
   "awaiting_questionnaire",
 ]);
+export function reminderKey(userId: string, now = new Date()): string {
+  return `business-kyb-resume:${now.toISOString().slice(0,10)}:${userId}`;
+}
 export function reminderStage(customer: any): string | null {
   const status = String(customer.status || "").toLowerCase();
   if (!ACTIONABLE.has(status)) return null;
@@ -61,6 +65,8 @@ export async function remindBusiness(
     status: "skipped",
     reason,
   });
+  const memberships = await partnerMemberships(db, [userId]);
+  if (memberships.has(userId)) return skipped("partner_managed");
   const { data: p, error: pe } = await db.from("user_profiles").select("*").eq(
     "id",
     userId,
@@ -119,7 +125,7 @@ export async function remindBusiness(
   if (identity) return skipped(identity);
   const stage = reminderStage(customer);
   if (!stage) return skipped("no_customer_action_required");
-  const key = `business-kyb-resume-20260925:${userId}:${stage}`;
+  const key = reminderKey(userId);
   const { data: sent, error: se } = await db.from("email_log").select("status")
     .eq("idempotency_key", key).maybeSingle();
   if (se) return skipped("email_history_unavailable");
@@ -167,21 +173,22 @@ export async function remindBusiness(
     to: p.email,
     user_id: userId,
     idempotency_key: key,
+    sensitive_props: { verification_url: url },
     props: {
       full_name: p.full_name,
       company_name: b.company_name,
-      verification_url: url,
-      action_message: actionMessage(stage, terms),
+      action_message: `${actionMessage(stage, terms)} You can also sign in to BorderPay and select Continue verification.`,
     },
   });
+  const delivered = response.ok && response.body?.success === true && response.body?.data?.status === "sent";
   return {
     user_id: userId,
-    status: response.ok && response.body?.success
+    status: delivered
       ? "email_requested"
       : "email_failed",
     stage,
     terms_first: terms,
     email_status: response.body?.data?.status ||
-      (response.ok && response.body?.success ? "sent" : "failed"),
+      "unconfirmed",
   };
 }
