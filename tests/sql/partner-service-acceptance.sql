@@ -43,3 +43,21 @@ begin
  assert (select count(*)=1 from public.subscriptions), 'test added a subscription';
 end $$;
 select 'Partner membership, billing, email lookup and access checks passed' as result;
+create trigger partner_service_test_period_fee before insert or update on public.subscriptions
+for each row execute function public.apply_subscription_period_fee();
+do $$
+declare blocked boolean:=false;
+begin
+ begin
+   insert into public.subscriptions(id,user_id,status,next_billing_date,account_type)
+   values('40000000-0000-4000-8000-000000000009','20000000-0000-4000-8000-000000000001','active',current_date,'business');
+ exception when sqlstate 'P0001' then blocked:=true;
+ end;
+ assert blocked, 'ad-hoc direct subscription creation must reject partner customers';
+ insert into public.subscriptions(id,user_id,status,next_billing_date,account_type)
+ values('40000000-0000-4000-8000-000000000002','20000000-0000-4000-8000-000000000002','active',current_date,'business');
+ assert (select monthly_fee=29.99 from public.subscriptions where id='40000000-0000-4000-8000-000000000002'), 'direct monthly fee changed';
+ -- Cancelling an old subscription must not break the maintenance sync worker.
+ update public.subscriptions set status='cancelled' where id='40000000-0000-4000-8000-000000000001';
+ assert (select status='cancelled' from public.subscriptions where id='40000000-0000-4000-8000-000000000001');
+end $$;
