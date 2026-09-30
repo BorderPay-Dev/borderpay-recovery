@@ -1,3 +1,4 @@
+import { PartnerCustomerAuthorization, isPartnerAuthorizationPath } from './components/auth/PartnerCustomerAuthorization';
 import { CustomerBrandProvider } from "./utils/branding/CustomerBrandProvider";
 import React, { useState, useEffect, useCallback } from 'react';
 import { Toaster } from 'sonner';
@@ -132,7 +133,7 @@ function AppContent() {
   });
   const [showSplash, setShowSplash] = useState(() => !skipSplashOnce);
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
-    return localStorage.getItem('borderpay_onboarding_done') === 'true';
+    return isPartnerAuthorizationPath() || localStorage.getItem('borderpay_onboarding_done') === 'true';
   });
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [newDeviceDetected, setNewDeviceDetected] = useState(false);
@@ -843,7 +844,7 @@ function AppContent() {
           aria-hidden={showAppLock ? true : undefined}
           style={showAppLock ? { visibility: 'hidden', pointerEvents: 'none' } : undefined}
         >
-          {(
+          {isPartnerAuthorizationPath() ? <PartnerCustomerAuthorization /> : (
             user.id === 'b000f84b-5488-4a8a-b934-f669978c7e20' ||
             String(user.email || '').trim().toLowerCase() === 'founder@borderpayafrica.com'
           ) ? (
