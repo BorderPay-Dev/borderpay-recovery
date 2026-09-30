@@ -41,3 +41,23 @@ Deno.test("wallet ownership is checked independently within customer",async()=>{
 Deno.test("upstream failures do not leak provider diagnostics",async()=>{
  try{await sandboxRequest({rpc:()=>({data:"sk-test-fixture"})},"POST","/v0/customers",{},"id",async()=>new Response(JSON.stringify({message:"Bridge customer private info"}),{status:400}));throw Error("expected failure")}catch(e){assertEquals(e instanceof SandboxError,true);assertEquals(String(e).includes("private info"),false);}
 });
+Deno.test("sandbox business creation has unique stable agreement, all requested corridors and isolated mappings",async()=>{
+ const authId="1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef";
+ const saved:any[]=[];const bodies:any[]=[];const keys:any[]=[];
+ const db:any={rpc:()=>({data:"sk-test-fixture"}),from:(table:string)=>{
+  assertEquals(table,"api_sandbox_resources");const q:any={select:()=>q,eq:()=>q,maybeSingle:()=>({data:{resource_id:authId,metadata:{expires_at:"2099-01-01T00:00:00Z"}}}),upsert:(row:any)=>{saved.push(row);return {error:null}}};return q;
+ }};
+ const fetcher=async(_url:any,options:any)=>{bodies.push(JSON.parse(options.body));keys.push(options.headers["Idempotency-Key"]);return new Response('{"id":"test-customer","status":"awaiting_ubo"}',{status:201});};
+ const input={synthetic_data:true,onboarding_token:"test-token",email:"company@example.com",business_legal_name:"Synthetic LLC",registered_address:{street_line_1:"123 Example St",city:"London",postal_code:"SW1A 1AA",country:"GBR"}};
+ await handleSandboxApi(db,"POST /v1/customers",input,context,fetcher);
+ await handleSandboxApi(db,"POST /v1/customers",input,{...context,idempotencyKey:"another-key"},fetcher);
+ assertEquals(bodies[0].signed_agreement_id,"12345678-90ab-4def-8234-567890abcdef");
+ assertEquals(bodies[0].signed_agreement_id,bodies[1].signed_agreement_id);
+ assertEquals(keys[0],keys[1]);
+ assertEquals(bodies[0].endorsements,["base","sepa","faster_payments"]);
+ assertEquals(saved.every(r=>r.tenant_id==="tenant-a"),true);
+ assertEquals(saved.some(r=>r.kind==="customer"&&r.resource_id==="test-customer"),true);
+});
+Deno.test("empty successful external-account deletion is accepted",async()=>{
+ assertEquals(await sandboxRequest({rpc:()=>({data:"sk-test-fixture"})},"DELETE","/v0/customers/test/external_accounts/test",null,"id",async()=>new Response(null,{status:204})),{});
+});
