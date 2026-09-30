@@ -1,3 +1,4 @@
+import { validateLiveBusinessEmail } from "../_shared/live-business-email.ts";
 import { isBusinessAccount, BUSINESS_ONLY_MESSAGE } from "../_shared/business-only.ts";
 import { prepareWhiteLabelSignup } from "../_shared/white-label-onboarding.ts";
 import { loadPublishedWhiteLabel } from "../_shared/white-label-config.ts";
@@ -487,6 +488,19 @@ Deno.serve(async (req: Request) => {
         code: "country_not_supported",
         error: "BorderPay is not available in your country yet.",
       }, 403);
+    }
+
+    // Paid validation follows cheap checks, attestation, rate limits and tenant
+    // validation; it precedes token consumption and any account/provider creation.
+    const emailValidation = await validateLiveBusinessEmail(email, {
+      getApiKey: async () => {
+        const { data, error } = await supabaseAdmin.rpc("get_signup_email_validator_key");
+        if (error || typeof data !== "string") return null;
+        return data;
+      },
+    });
+    if (!emailValidation.allowed) {
+      return json({ success: false, code: emailValidation.code, error: emailValidation.error }, emailValidation.status);
     }
 
     // Reserve the partner authorization atomically only after abuse and CAPTCHA
