@@ -1,0 +1,44 @@
+name: Partner sandbox isolation
+on:
+  push:
+    branches: [fix/nattypay-sandbox]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --allow-env --allow-read --allow-net tests/api-sandbox-isolation.test.ts tests/api-customer-runtime.test.ts tests/business-partner-policy.test.ts
+      - run: deno check --no-config supabase/functions/public-api-gateway/index.ts
+      - run: npm --prefix docs/api/sdk/typescript install --no-audit --no-fund && npm --prefix docs/api/sdk/typescript run build && node docs/api/sdk/typescript/test/webhook.conformance.mjs
+      - run: python3 scripts/ci/build_public_business_docs.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sandbox-partner-docs
+          path: dist-partner-docs/
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy only partner gateway
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SANDBOX_GATEWAY_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
+          assert versions['public-api-gateway']==270, 'Gateway changed since audit'
+          PYBASE
+          supabase functions deploy public-api-gateway --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api

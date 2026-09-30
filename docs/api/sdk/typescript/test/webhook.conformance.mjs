@@ -35,13 +35,22 @@ async function run() {
   const valid = await verifyBorderPayWebhook({
     rawBody,
     timestamp,
-    signatureHeader: `sha256=${sig}`,
+    signatureHeader: `v1=${sig}`,
     signingSecret,
     nowUnixSeconds: now,
     toleranceSeconds: 300,
   });
   assert(valid.valid === true, 'valid signature should pass');
 
+  const tampered = await verifyBorderPayWebhook({rawBody:rawBody+' ',timestamp,signatureHeader:`v1=${sig}`,signingSecret,nowUnixSeconds:now});
+  assert(!tampered.valid,'reserialized or changed body must fail');
+  const legacy = await verifyBorderPayWebhook({rawBody,timestamp,signatureHeader:`sha256=${sig}`,signingSecret,nowUnixSeconds:now});
+  assert(legacy.valid,'legacy prefix compatibility');
+  for (const delta of [-301,301]) {
+    const outside=String(now+delta);const signed=await hmacSha256Hex(signingSecret,`${outside}.${rawBody}`);
+    const r=await verifyBorderPayWebhook({rawBody,timestamp:outside,signatureHeader:`v1=${signed}`,signingSecret,nowUnixSeconds:now});
+    assert(!r.valid && r.reason==='timestamp_out_of_window','past and future replay window');
+  }
   const validNoPrefix = await verifyBorderPayWebhook({
     rawBody,
     timestamp,
