@@ -879,7 +879,7 @@ Deno.serve(async (req) => {
     });
 
     const response=gatewayJson(handlerResult.body, handlerResult.status);
-    if(invoiceRoute)response.headers.set("Cache-Control","no-store");
+    if(invoiceRoute || AUTH_ROUTES[routeKey]) { response.headers.set("Cache-Control","no-store"); response.headers.set("Pragma","no-cache"); }
     return response;
   } catch (error) {
     if (error instanceof CustomerApiError || error instanceof CustomerAuthorizationError) { const result=mapBridgeError(error); return gatewayJson(result.body,result.status); }

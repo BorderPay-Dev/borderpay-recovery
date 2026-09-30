@@ -47,7 +47,7 @@ alter table public.api_customer_redirects enable row level security;
 alter table public.api_customer_authorizations enable row level security;
 alter table public.api_customer_grants enable row level security;
 alter table public.api_customer_authorization_audit enable row level security;
-revoke all on public.api_customer_redirects,public.api_customer_authorizations,public.api_customer_grants,public.api_customer_authorization_audit from public,anon,authenticated;
+revoke all on public.api_customer_redirects,public.api_customer_authorizations,public.api_customer_grants,public.api_customer_authorization_audit from public,anon,authenticated,service_role;
 grant select,insert,update on public.api_customer_redirects,public.api_customer_authorizations,public.api_customer_grants to service_role;
 grant select,insert on public.api_customer_authorization_audit to service_role;
 grant usage,select on sequence public.api_customer_authorization_audit_id_seq to service_role;
@@ -148,7 +148,7 @@ create table if not exists public.api_customer_link_outbox (
  last_error_code text, attempts integer not null default 0, next_attempt_at timestamptz not null default now(), created_at timestamptz not null default now()
 );
 alter table public.api_customer_link_outbox enable row level security;
-revoke all on public.api_customer_link_outbox from public,anon,authenticated;
+revoke all on public.api_customer_link_outbox from public,anon,authenticated,service_role;
 grant select,insert,update on public.api_customer_link_outbox to service_role;
 create or replace function public.api_customer_link_mark() returns trigger language plpgsql security definer set search_path=public,pg_temp as $$
 begin
