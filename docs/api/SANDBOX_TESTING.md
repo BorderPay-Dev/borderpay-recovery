@@ -106,3 +106,7 @@ This is the sandbox test envelope. Production event-field coverage must be valid
 
 Synthetic customer creation, test approval, BASE wallet creation, simulated USDC funding, USD virtual account creation, US business external-account creation and ACH payout submission were exercised against the sandbox. Payout submission returned `in_review`, not completed.
 EUR virtual-account creation returned a name/address validation error. GBP virtual-account creation passed after explicitly requesting its sandbox entitlement for a synthetic GB business. EUR must not be represented as tested or ready until successful retesting. Production onboarding and payment authorization remain separate go-live checks.
+
+## Before production
+
+See [production customer authorization and event semantics](PRODUCTION_AUTH_AND_EVENTS.md). A secure customer-token handoff and automatic external-reference correlation still need implementation. Do not assume payouts always end with transfer.completed or transfer.failed.
