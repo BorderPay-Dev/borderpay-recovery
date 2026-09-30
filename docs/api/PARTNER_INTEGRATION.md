@@ -1,6 +1,8 @@
+> **Production blocker:** the hosted customer-token handoff and a guaranteed customer-ID/external-user-ID completion event are not implemented. See [production authorization and events](PRODUCTION_AUTH_AND_EVENTS.md). Sandbox acceptance does not resolve these gaps.
+
 # Partner customer API integration
 
-The API gateway routes customer operations through BorderPay's existing financial backend. Use a partner API key on your server and an authenticated **end-customer** Supabase session in `X-BorderPay-Customer-Authorization: Bearer <access_token>`. The session must belong to an immutable `api_tenant_end_users` membership for that partner. An operator's session cannot substitute for customer consent. Never embed partner API keys in a web/mobile application.
+The API gateway routes customer operations through BorderPay's existing financial backend. Use a partner API key on your server and an authenticated **end-customer** BorderPay session in `X-BorderPay-Customer-Authorization: Bearer <access_token>`. The session must belong to an immutable `api_tenant_end_users` membership for that partner. An operator's session cannot substitute for customer consent. Never embed partner API keys in a web/mobile application.
 
 Gateway URL: `https://api.borderpayafrica.com`.
 Send the logical route in `x-borderpay-route`, the environment in `x-borderpay-mode`, and a JSON `method` field when using POST transport. Direct GET paths with query parameters are also accepted. Create/update/delete operations require a stable `Idempotency-Key` (8–64 printable non-space characters for payments). Retry uncertain payment responses with the same key and unchanged financial payload. Authentication credentials and SCA authorization IDs do not change that payment identity. Failed authorization responses are not cached as successful payment results.
@@ -12,7 +14,7 @@ BorderPay accepts business customers only, through both API and white-label onbo
 1. After operator product/commercial approval, create an API credential with the required scopes and configure the partner egress IP allowlist.
 2. Create a one-time `/v1/onboarding-authorizations` token for the partner's external user identifier and business account type (`requested_account_types: ["business"]`). This step uses the partner key without a customer session.
 3. Complete the existing BorderPay hosted signup/authentication flow using that token. It creates immutable tenant/customer membership. Do not create an unrelated Supabase user or pass arbitrary user IDs to claim an account.
-4. The customer authenticates; your server forwards their access token in the separate customer header. `/v1/customers` reads their linked identity. POST `/v1/customers` or `/v1/verification-links` resumes their hosted business verification. Customer identity fields come from the signup/verified profile, not partner-supplied overrides.
+4. The customer authenticates; the gateway expects their access token in the separate customer header. The secure handoff to a partner server is not currently implemented; do not obtain tokens by copying browser storage or collecting passwords. `/v1/customers` reads their linked identity. POST `/v1/customers` or `/v1/verification-links` resumes their hosted business verification. Customer identity fields come from the signup/verified profile, not partner-supplied overrides.
 5. Approved customer provisioning uses the normal regional policy. POST `/v1/wallets` ensures the requested supported wallet and reuses an existing chain wallet. EEA: Base with USDC/EURC. Non-EEA: USDC/Base and USDT/Tron.
 
 ## Routes and scopes
