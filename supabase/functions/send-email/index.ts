@@ -41,7 +41,7 @@ const SUPABASE_SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BREVO_KEY             = Deno.env.get("BREVO_API_KEY") ?? Deno.env.get("BREVO_API_KEYS") ?? "";
 const RESEND_KEY            = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_PROVIDER        = (Deno.env.get("EMAIL_PROVIDER") ?? "").trim().toLowerCase();
-const FROM_EMAIL            = Deno.env.get("BORDERPAY_FROM_EMAIL") ?? "BorderPay Africa <noreply@borderpayafrica.com>";
+const FROM_EMAIL            = Deno.env.get("BORDERPAY_FROM_EMAIL") ?? "BorderPay Velocity <noreply@borderpayafrica.com>";
 const BREVO_FROM_EMAIL      = Deno.env.get("BREVO_FROM_EMAIL") ?? FROM_EMAIL;
 const RESEND_FROM_EMAIL     = Deno.env.get("RESEND_FROM_EMAIL") ?? FROM_EMAIL;
 // Dedicated internal caller token. send-email is invoked server-to-server only
@@ -295,7 +295,7 @@ Deno.serve(async (req: Request) => {
         html: rendered.html,
         text: rendered.text,
         replyTo: whiteLabel?.replyTo || body.reply_to,
-        fromName: whiteLabel?.senderName,
+        fromName: whiteLabel?.senderName || "BorderPay Velocity",
         attachments,
       });
       if (result.ok) {

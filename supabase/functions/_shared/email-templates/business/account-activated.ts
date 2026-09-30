@@ -8,7 +8,7 @@ export interface BusinessAccountActivatedProps {
 
 export function render(p: BusinessAccountActivatedProps): RenderedEmail {
   const company = p.company_name || "your business";
-  const subject = `${company} is live on BorderPay Africa`;
+  const subject = `${company} is live on BorderPay Velocity`;
   const heading = "Your business is live";
   const introText = `Welcome aboard. ${company} is fully activated and ready to move money.`;
   const body = `
@@ -28,12 +28,12 @@ export function render(p: BusinessAccountActivatedProps): RenderedEmail {
     subject,
     html: htmlLayout({
       preview: subject, heading, introText, body,
-      ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl,
+      ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
     text: textLayout({
       heading,
       body: `${company} is fully activated. Wallets, transfers, cards unlocked.\n\n${INVOICE_HUB_NOTE_TEXT}`,
-      ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl,
+      ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
   };
 }

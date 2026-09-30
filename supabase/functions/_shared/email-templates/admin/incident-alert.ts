@@ -17,7 +17,7 @@ export interface IncidentAlertProps {
 export function render(p: IncidentAlertProps): RenderedEmail {
   const severity = String(p.severity || "high").toUpperCase();
   const service = String(p.service || "borderpay").trim();
-  const title = String(p.title || "BorderPay operational alert").trim();
+  const title = String(p.title || "BorderPay Velocity operational alert").trim();
   const occurredAt = String(p.occurred_at || new Date().toISOString());
   const rows = [
     ["Severity", severity],
@@ -50,14 +50,14 @@ export function render(p: IncidentAlertProps): RenderedEmail {
       heading: title,
       introText: "A customer-facing financial account request needs operator review.",
       body: table,
-      ctaText: "Open BorderPay Admin",
+      ctaText: "Open BorderPay Velocity Admin",
       ctaUrl: `${BORDERPAY_BRAND.appUrl}/settings`,
       brandTone: severity === "CRITICAL" ? "danger" : "warning",
     }),
     text: textLayout({
       heading: title,
       body: rows.map(([label, value]) => `${label}: ${value}`).join("\n") + (p.message ? `\n\n${p.message}` : ""),
-      ctaText: "Open BorderPay Admin",
+      ctaText: "Open BorderPay Velocity Admin",
       ctaUrl: `${BORDERPAY_BRAND.appUrl}/settings`,
     }),
   };

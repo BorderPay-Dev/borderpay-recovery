@@ -7,13 +7,13 @@ export interface BusinessRequestAccountReminderProps {
 
 export function render(p: BusinessRequestAccountReminderProps): RenderedEmail {
   const company = String(p.company_name || "your business");
-  const subject = `${company}: request your BorderPay account`;
+  const subject = `${company}: request your BorderPay Velocity account`;
   const heading = "Request your business account";
   const introText = `${company} is verified and ready for account setup.`;
   const bodyText =
-    "You can now request USD, EUR, or GBP accounts from the BorderPay dashboard. Follow the steps below to request only the accounts your business needs.";
+    "You can now request USD, EUR, or GBP accounts from the BorderPay Velocity dashboard. Follow the steps below to request only the accounts your business needs.";
   const steps = [
-    "Go to your BorderPay dashboard.",
+    "Go to your BorderPay Velocity dashboard.",
     "Click Add accounts.",
     "Choose the available USD, EUR, or GBP accounts you want to request.",
     "Submit the request and wait for the account to become active.",

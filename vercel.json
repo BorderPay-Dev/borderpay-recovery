@@ -101,7 +101,8 @@
   ],
   "git": {
     "deploymentEnabled": {
-      "fix/business-only-partner-api": false
+      "fix/business-only-partner-api": false,
+      "fix/velocity-email-branding": false
     }
   }
 }
