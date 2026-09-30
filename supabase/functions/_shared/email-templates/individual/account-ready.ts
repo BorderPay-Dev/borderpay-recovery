@@ -33,7 +33,7 @@ export function render(p: IndividualAccountReadyProps): RenderedEmail {
     : "";
 
   const closing = ok
-    ? "Open BorderPay to view your account details and share them with clients or partners."
+    ? "Open BorderPay Velocity to view your account details and share them with clients or partners."
     : `Please try again from the app, or contact ${BORDERPAY_BRAND.supportEmail} if it persists.`;
 
   const body = ok
@@ -45,15 +45,15 @@ export function render(p: IndividualAccountReadyProps): RenderedEmail {
     subject,
     html: htmlLayout({
       preview: subject, heading, introText, body,
-      ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl,
+      ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl,
       brandTone: ok ? "default" : "danger",
     }),
     text: textLayout({
       heading,
       body: ok
-        ? `Your ${cur}${productLabel} is active and ready to receive payments. Open BorderPay to view your account details.`
+        ? `Your ${cur}${productLabel} is active and ready to receive payments. Open BorderPay Velocity to view your account details.`
         : `Setup failed.\nReason: ${p.reason || "—"}\n${closing}`,
-      ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl,
+      ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
   };
 }

@@ -6,7 +6,7 @@ import { renderExternalInvoice, renderPaymentStatus } from "./subscription/maint
 import { render as mobileAppUpdate } from "./mobile-app-update.ts";
 /**
  * Email template registry — single source of truth for every transactional
- * email BorderPay sends. Each template exports a `render(props)` function
+ * email BorderPay Velocity sends. Each template exports a `render(props)` function
  * returning `{ subject, html, text }`.
  *
  * Add a new template:

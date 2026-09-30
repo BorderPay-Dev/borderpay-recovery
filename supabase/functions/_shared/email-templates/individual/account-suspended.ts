@@ -16,7 +16,7 @@ export function render(props: Props = {}): RenderedEmail {
   const reasonPublic = String(props.reason_public || "Your account is temporarily restricted while we complete a review.").trim();
   const supportUrl = String(props.support_url || "https://app.borderpayafrica.com/settings/support").trim();
   const actionUrl = String(props.action_url || "https://app.borderpayafrica.com").trim();
-  const subject = "BorderPay account temporarily restricted";
+  const subject = "BorderPay Velocity account temporarily restricted";
   const heading = "Your account is temporarily restricted";
   const introText = `Hi ${fullName}, some account actions are paused while we complete a review.`;
   const body = `
@@ -38,7 +38,7 @@ export function render(props: Props = {}): RenderedEmail {
       heading,
       introText,
       body,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: actionUrl,
       brandTone: "warning",
     }),
@@ -48,7 +48,7 @@ export function render(props: Props = {}): RenderedEmail {
         `Hi ${fullName}, some account actions are paused while we complete a review.\n\n` +
         `${reasonPublic}\n\n` +
         "Our team is reviewing your account status and will notify you once resolved.",
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: actionUrl,
       footerNote: `Contact support: ${supportUrl}`,
     }),

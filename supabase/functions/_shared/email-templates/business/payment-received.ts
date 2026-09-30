@@ -29,8 +29,8 @@ export function render(p: BusinessPaymentReceivedProps): RenderedEmail {
   const url = p.kyc_url || BORDERPAY_BRAND.appUrl;
   const subject = "Verify your business";
   const heading = "Verify your business";
-  const introText = `${name} is ready for BorderPay business verification.`;
-  const closing = "Complete business verification to unlock your BorderPay account. Tap the button below to start secure verification.";
+  const introText = `${name} is ready for BorderPay Velocity business verification.`;
+  const closing = "Complete business verification to unlock your BorderPay Velocity account. Tap the button below to start secure verification.";
 
   return {
     subject,

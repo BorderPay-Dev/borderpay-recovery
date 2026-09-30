@@ -1,0 +1,59 @@
+name: Velocity email templates
+on:
+  push:
+    branches: [fix/velocity-email-branding]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  verify:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --allow-env --allow-read --allow-net tests/email-velocity-brand.test.ts tests/invoice-hub-email.test.ts tests/mobile-app-update-email.test.ts tests/partner-decision-email.test.ts tests/banking-transition-email.test.ts tests/business-migration-email.test.ts tests/maintenance-invoice-email.test.ts
+      - run: deno check --no-config supabase/functions/send-email/index.ts supabase/functions/send-kyc-status-email/index.ts
+      - run: deno run --no-config --allow-write tests/email-velocity-brand.test.ts
+      - name: Render mobile and desktop email previews
+        run: |
+          npm install --prefix "$RUNNER_TEMP/email-render" --no-audit --no-fund playwright@1.58.2
+          "$RUNNER_TEMP/email-render/node_modules/.bin/playwright" install --with-deps chromium
+          NODE_PATH="$RUNNER_TEMP/email-render/node_modules" node - <<'JS'
+          const {chromium}=require('playwright'); const fs=require('fs');
+          (async()=>{const browser=await chromium.launch();for(const width of [390,800]){const page=await browser.newPage({viewport:{width,height:900}});for(const file of fs.readdirSync('email-previews').filter(x=>x.endsWith('.html'))){await page.goto('file://'+process.cwd()+'/email-previews/'+file);await page.screenshot({path:'email-previews/'+file.replace('.html','-'+width+'.png'),fullPage:true});if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth))throw new Error('Horizontal overflow: '+file);}await page.close();}await browser.close();})().catch(e=>{console.error(e);process.exit(1)});
+          JS
+      - uses: actions/upload-artifact@v4
+        with:
+          name: velocity-email-previews
+          path: email-previews/
+          retention-days: 7
+  deploy:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Require successful validation of this exact commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run list --workflow velocity-email.yml --commit "$GITHUB_SHA" --event push --json conclusion --jq 'map(select(.conclusion == "success")) | length' > /tmp/validated
+          test "$(cat /tmp/validated)" -gt 0
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy only the two email senders
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.EMAIL_BRAND_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
+          assert versions['send-email']==453 and versions['send-kyc-status-email']==392, 'Production changed since audit'
+          PYBASE
+          supabase functions deploy send-email --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy send-kyc-status-email --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api

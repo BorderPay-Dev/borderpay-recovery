@@ -7,13 +7,13 @@ export interface IndividualRequestAccountReminderProps {
 
 export function render(p: IndividualRequestAccountReminderProps): RenderedEmail {
   const name = firstName(p.full_name);
-  const subject = "Request your BorderPay account";
+  const subject = "Request your BorderPay Velocity account";
   const heading = "Request your account";
   const introText = `Hello ${name}, your verification is complete.`;
   const bodyText =
-    "You can now request your USD, EUR, or GBP account from the BorderPay dashboard. Follow the steps below to request only the accounts you need.";
+    "You can now request your USD, EUR, or GBP account from the BorderPay Velocity dashboard. Follow the steps below to request only the accounts you need.";
   const steps = [
-    "Go to your BorderPay dashboard.",
+    "Go to your BorderPay Velocity dashboard.",
     "Click Add wallet.",
     "Choose the available USD, EUR, or GBP accounts you want to request.",
     "Submit the request and wait for the account to become active.",

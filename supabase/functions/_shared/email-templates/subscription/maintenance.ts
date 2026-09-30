@@ -14,7 +14,7 @@ function amountLabel(p: Record<string, unknown>): string {
   return `${amount.toFixed(2)} ${currency}`;
 }
 function message(heading: string, body: string, ctaText?: string, ctaUrl?: string): RenderedEmail {
-  return { subject: `BorderPay — ${heading}`, html: htmlLayout({ heading, body: body.split('\n\n').map(p => `<p style="line-height:1.6;overflow-wrap:anywhere">${escapeHtml(p).replaceAll('\n', '<br />')}</p>`).join(''), ctaText, ctaUrl }), text: textLayout({ heading, body, ctaText, ctaUrl }) };
+  return { subject: `BorderPay Velocity — ${heading}`, html: htmlLayout({ heading, body: body.split('\n\n').map(p => `<p style="line-height:1.6;overflow-wrap:anywhere">${escapeHtml(p).replaceAll('\n', '<br />')}</p>`).join(''), ctaText, ctaUrl }), text: textLayout({ heading, body, ctaText, ctaUrl }) };
 }
 export function renderExternalInvoice(p: Record<string, unknown>): RenderedEmail {
   const amount = amountLabel(p), billingDate = isoDate(p.billing_period);
@@ -31,7 +31,7 @@ export function renderExternalInvoice(p: Record<string, unknown>): RenderedEmail
     deadline = `\nPayment deadline: ${dateLabel(due)}`;
   }
   const heading = reminder ? 'Maintenance payment reminder' : 'Your maintenance invoice is ready';
-  const body = `Hello ${String(p.customer_name || 'there')},\n\n${reminder ? 'Our records show that this maintenance invoice is still unpaid.' : 'Your account maintenance invoice is available. You may pay it before its billing date.'}\n\nAmount: ${amount}\nBilling date: ${dateLabel(billingDate)}${deadline}\nReference: ${reference}\nPayment link: ${url.href}\n\nPay externally using the secure checkout below. This fee is not deducted from your BorderPay account balance.\n\nPayment is recorded against this invoice after confirmation from the payment provider. If you have already paid, please contact Support before paying again.`;
+  const body = `Hello ${String(p.customer_name || 'there')},\n\n${reminder ? 'Our records show that this maintenance invoice is still unpaid.' : 'Your account maintenance invoice is available. You may pay it before its billing date.'}\n\nAmount: ${amount}\nBilling date: ${dateLabel(billingDate)}${deadline}\nReference: ${reference}\nPayment link: ${url.href}\n\nPay externally using the secure checkout below. This fee is not deducted from your BorderPay Velocity account balance.\n\nPayment is recorded against this invoice after confirmation from the payment provider. If you have already paid, please contact Support before paying again.`;
   return message(heading, body, 'Pay maintenance invoice', url.href);
 }
 export function renderPaymentStatus(p: Record<string, unknown>): RenderedEmail {
