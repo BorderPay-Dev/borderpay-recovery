@@ -1,3 +1,4 @@
+import { businessActivityHtml, BUSINESS_ACTIVITY_TEXT } from "./activity-guidance.ts";
 import { htmlLayout, textLayout, BORDERPAY_BRAND, firstName, RenderedEmail } from "../layout.ts";
 
 /**
@@ -29,14 +30,14 @@ export function render(p: BusinessVerificationReminderProps): RenderedEmail {
       preview: subject,
       heading,
       introText,
-      body: `<p style=\"margin:0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;\">${closing}</p>`,
+      body: `<p style=\"margin:0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;\">${closing}</p>${businessActivityHtml()}`,
       ctaText: "Finish business verification",
       ctaUrl,
       brandTone: "default",
     }),
     text: textLayout({
       heading,
-      body: `${introText}\n\n${closing}`,
+      body: `${introText}\n\n${closing}\n\n${BUSINESS_ACTIVITY_TEXT}`,
       ctaText: "Finish business verification",
       ctaUrl,
     }),

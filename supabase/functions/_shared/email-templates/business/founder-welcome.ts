@@ -1,3 +1,4 @@
+import { businessActivityHtml, BUSINESS_ACTIVITY_TEXT } from "./activity-guidance.ts";
 import { paymentDocumentationHtml, PAYMENT_DOCUMENTATION_TEXT } from "./payment-documentation.ts";
 import { htmlLayout, textLayout, firstName, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
@@ -23,6 +24,7 @@ export function render(p: BusinessFounderWelcomeProps): RenderedEmail {
     <p style="margin:0 0 12px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">
       Over the coming months, you’ll see stronger payouts, better treasury controls, and improved cross-border settlement flows.
     </p>
+    ${businessActivityHtml()}
     ${paymentDocumentationHtml()}
     <p style="margin:0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">
       Warm regards,<br />
@@ -47,7 +49,7 @@ export function render(p: BusinessFounderWelcomeProps): RenderedEmail {
       body:
         `Welcome to BorderPay Velocity for ${company}.\n\n` +
         "BorderPay Velocity helps businesses receive and move money internationally with reliable workflows.\n\n" +
-        "Your feedback directly influences our roadmap.\n\n" + PAYMENT_DOCUMENTATION_TEXT + "\n\n" +
+        "Your feedback directly influences our roadmap.\n\n" + BUSINESS_ACTIVITY_TEXT + "\n\n" + PAYMENT_DOCUMENTATION_TEXT + "\n\n" +
         "Warm regards,\nMark Ikaba\nFounder & CEO, BorderPay Velocity",
       ctaText: "Open BorderPay Velocity",
       ctaUrl: `${BORDERPAY_BRAND.appUrl}/dashboard`,

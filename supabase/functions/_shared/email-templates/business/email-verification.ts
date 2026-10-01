@@ -1,3 +1,4 @@
+import { businessActivityHtml, BUSINESS_ACTIVITY_TEXT } from "./activity-guidance.ts";
 import { PAYMENT_DOCUMENTATION_REQUIREMENT, PAYMENT_DOCUMENTATION_OPTIONS } from "./payment-documentation.ts";
 import { htmlLayout, textLayout, escapeHtml, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
@@ -14,7 +15,8 @@ export function render(p: BusinessEmailVerificationProps): RenderedEmail {
   const subject = `Confirm ${company} on BorderPay Velocity`;
   const heading = "Confirm your business email";
   const introText = `Hi ${p.contact_full_name || company}, thanks for setting up ${company} on BorderPay Velocity. Verify this email to unlock onboarding.`;
-  const body = `
+  const body = `${businessActivityHtml()}
+
     <p style="margin:0 0 12px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">
       Confirm your email to continue business verification. Financial services become available only after the required verification and eligibility checks.
     </p>
@@ -34,6 +36,6 @@ export function render(p: BusinessEmailVerificationProps): RenderedEmail {
   return {
     subject,
     html: htmlLayout({ preview: subject, heading, introText, body, ctaText: "Verify business email", ctaUrl: p.verification_url, footerNote }),
-    text: textLayout({ heading, body: `${company}\n\n${PAYMENT_DOCUMENTATION_REQUIREMENT}\n\n${PAYMENT_DOCUMENTATION_OPTIONS}\n\nClick to verify (expires in ${ttl}h):`, ctaText: "Verify business email", ctaUrl: p.verification_url, footerNote }),
+    text: textLayout({ heading, body: `${company}\n\n${BUSINESS_ACTIVITY_TEXT}\n\n${PAYMENT_DOCUMENTATION_REQUIREMENT}\n\n${PAYMENT_DOCUMENTATION_OPTIONS}\n\nClick to verify (expires in ${ttl}h):`, ctaText: "Verify business email", ctaUrl: p.verification_url, footerNote }),
   };
 }
