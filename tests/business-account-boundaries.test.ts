@@ -15,3 +15,9 @@ Deno.test("missing rail data never fabricates an account or a maximum",()=>{
  assert(result.text.includes('does not mean unlimited or automatically approved transactions'),'unlimited claim not corrected');
  assert(result.html.length<100000,'email risks clipping');
 });
+
+Deno.test("generic consumer rail guidance is not advertised as business usage",()=>{
+ const result=render({company_name:'Synthetic Ltd',virtual_accounts:[{currency:'USD',accepted_payments:'Family payments with the same surname and person-to-person payments'}]});
+ assert(!result.text.toLowerCase().includes('family payments')&&!result.text.toLowerCase().includes('person-to-person'),'generic consumer payments leaked into B2B guidance');
+ assert(result.text.includes('GBP is strictly business-to-business'),'missing GBP sender rule');
+});
