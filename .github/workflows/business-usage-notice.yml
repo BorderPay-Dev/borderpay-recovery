@@ -1,0 +1,42 @@
+name: Business usage notice
+on:
+  push:
+    branches: [fix/business-usage-notice]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config tests/business-usage-notice.test.ts tests/business-welcome-usage.test.ts tests/business-activity-email.test.ts tests/business-account-boundaries.test.ts
+      - run: deno check --no-config supabase/functions/send-email/index.ts supabase/functions/subscription-billing-worker/index.ts
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Deploy usage notice and delivery eligibility check
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.USAGE_NOTICE_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'CHECK'
+          import os,json,urllib.request
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
+          assert versions['send-email']==458 and versions['subscription-billing-worker']==141,'Runtime changed; re-audit required'
+          CHECK
+          supabase functions deploy send-email --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy subscription-billing-worker --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
