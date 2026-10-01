@@ -6,6 +6,8 @@ migration = (ROOT / "supabase/migrations/20260913113000_current_month_business_m
 policy = (ROOT / "supabase/migrations/20260915090000_active_va_maintenance_and_onboarding_lifecycle.sql").read_text()
 worker = (ROOT / "supabase/functions/subscription-billing-worker/index.ts").read_text()
 
+approval_policy = (ROOT / "supabase/migrations/20261001120000_automatic_verified_business_maintenance.sql").read_text()
+
 checks = {
     "current month-end helper exists": "subscription_current_month_end" in migration,
     "month-end input is validated": "Billing period must be the final day" in migration,
@@ -24,16 +26,16 @@ checks = {
     "individual legacy timing preserved": "public.subscription_next_month_end(current_date)" in migration,
     "service-role-only sync": "grant execute on function public.sync_active_va_maintenance_subscriptions" in policy,
     "worker prepares approved businesses": "prepareApprovedBusinessBilling" in worker,
-    "worker calls active-VA sync": 'db.rpc("sync_active_va_maintenance_subscriptions"' in worker,
+    "worker prepares verified businesses independently of VAs": 'db.rpc("prepare_verified_business_maintenance"' in worker and "up.account_type::text='business' or exists" in approval_policy,
     "worker selects business subscriptions": '.eq("account_type", "business")' in worker,
     "all business invoices use external collection": 'route: "flutterwave_invoice"' in worker,
     "invoice queue is database-idempotent": 'db.rpc("queue_external_subscription_invoice"' in worker,
     "country must be authoritative ISO2": '/^[A-Z]{2}$/' in worker,
     "EEA countries remain represented": '"AT", "BE", "BG", "HR", "CY", "CZ"' in worker,
     "billing route is independent from SCA": "Billing routing is intentionally independent from SCA" in worker,
-    "blocked identity fails closed": "maintenance_identity_or_country_unresolved" in worker,
+    "blocked identity fails closed": "country_required" in approval_policy and "not public.maintenance_account_is_billable(p_user_id)" in approval_policy,
     "daily billing synchronizes approved businesses": '["bill_due", "drain"].includes(mode)' in worker,
-    "daily runs do not invoice before month end": "if (!queueBeforeDue && today < billingPeriod)" in worker,
+    "monthly recovery targets latest closed period": "p_period date default (date_trunc('month',current_date)-interval '1 day')::date" in approval_policy,
     "manual preparation is explicit": 'prepareApprovedBusinessBilling(false, true)' in worker,
     "dry-run endpoint exists": 'mode === "prepare_dry_run"' in worker,
     "migration does not auto-run a financial batch": "select public.sync_active_va_maintenance_subscriptions(" not in policy,
