@@ -1,7 +1,7 @@
 begin;
 set local lock_timeout='5s';
 create table if not exists public.maintenance_billing_exemptions(
- user_id uuid primary key references public.user_profiles(id),reason text not null,created_at timestamptz not null default now()
+ user_id uuid primary key references auth.users(id) on delete cascade,reason text not null,created_at timestamptz not null default now()
 );
 alter table public.maintenance_billing_exemptions enable row level security;
 revoke all on public.maintenance_billing_exemptions from public,anon,authenticated;
