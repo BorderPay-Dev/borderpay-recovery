@@ -349,13 +349,22 @@ async function migrationCapacity() {
   ]);
   if (!accountResponse.ok || !statsResponse.ok) throw new Error("Brevo quota check unavailable; campaign remains pending.");
   const account = await accountResponse.json(); const stats = await statsResponse.json();
-  const used = Number(stats.requests);
-  if (!Number.isFinite(used) || used < 0) throw new Error("Brevo usage is unavailable; campaign remains pending.");
+  const providerReported = Number(stats.requests);
+  if (!Number.isFinite(providerReported) || providerReported < 0) throw new Error("Brevo usage is unavailable; campaign remains pending.");
+  // Provider statistics are eventually consistent. Also count our durable
+  // attempts/sends so a stale provider report cannot replenish campaign quota.
+  const dayStart = `${day}T00:00:00.000Z`;
+  const {count: localCount, error: localError} = await supabase.from("email_log")
+    .select("id", {count:"exact", head:true})
+    .or(`created_at.gte.${dayStart},sent_at.gte.${dayStart}`);
+  if (localError || typeof localCount !== "number" || !Number.isFinite(localCount) || localCount < 0)
+    throw new Error("Local email usage cannot be verified; campaign remains pending.");
+  const used = Math.max(providerReported, localCount);
   const plans = (account.plan || []).filter((p: Record<string, unknown>) => ["free", "subscription", "payAsYouGo"].includes(String(p.type)));
   const credits = plans.map((p: Record<string, unknown>) => Number(p.credits)).filter((n: number) => Number.isFinite(n) && n >= 0);
   // Conservative 300/day ceiling and 20-message headroom for security/payment emails.
   const remaining = Math.max(0, Math.min(300 - used, ...(credits.length ? credits : [300])) - 20);
-  return { day, daily_ceiling: 300, used, reserved_for_transactional: 20, remaining: Math.floor(remaining), max_batch: 30 };
+  return { day, daily_ceiling: 300, used, provider_reported_used: providerReported, local_recorded: localCount, reserved_for_transactional: 20, remaining: Math.floor(remaining), max_batch: 30 };
 }
 
 Deno.serve(async (req) => {

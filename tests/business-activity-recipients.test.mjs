@@ -7,7 +7,7 @@ import ts from 'typescript';
 const source = await readFile(new URL('../supabase/functions/admin-email-ops/index.ts', import.meta.url), 'utf8');
 const compiled = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ES2022 } }).outputText;
 
-async function invoke({ types = ['business'], states = ['active'], campaign = 'banking_transition_active', dryRun = true, localStates = [], action = 'send_campaign', used = 0, quotaOk = true, bearer = 'fixture-admin', demo = false, partner = false }) {
+async function invoke({ types = ['business'], states = ['active'], campaign = 'banking_transition_active', dryRun = true, localStates = [], action = 'send_campaign', used = 0, quotaOk = true, bearer = 'fixture-admin', demo = false, partner = false, localUsed = 0, localQuotaError = false }) {
   let handler;
   const sent = [];
   const profiles = states.map((state, index) => ({
@@ -24,11 +24,11 @@ async function invoke({ types = ['business'], states = ['active'], campaign = 'b
   const client = {
     auth: { getUser: async () => ({data:{user:null},error:new Error("unauthorized")}) },
     from(table) {
-      assert.ok(['user_profiles', 'business_profiles'].includes(table));
+      assert.ok(['user_profiles', 'business_profiles', 'email_log'].includes(table));
       const q = {
         select() { return q; },
-        not() { return q; }, order() { return q; }, limit() { return q; }, eq() { return q; },
-        then(resolve) { return Promise.resolve({ data: table === 'user_profiles' ? profiles : businessRows, error: null }).then(resolve); },
+        or() { return q; }, not() { return q; }, order() { return q; }, limit() { return q; }, eq() { return q; },
+        then(resolve) { return Promise.resolve(table === 'email_log' ? {count:localUsed,error:localQuotaError?new Error('unavailable'):null} : { data: table === 'user_profiles' ? profiles : businessRows, error: null }).then(resolve); },
         in(_column, ids) {
           const rows = table === 'user_profiles' ? profiles : businessRows;
           return Promise.resolve({ data: rows.filter(p => ids.includes(p.id || p.user_id)), error: null });
@@ -171,4 +171,13 @@ test('activity notice has deterministic deduplication, batch limit and quota fai
  for(const input of [{states:Array(31).fill('active')},{used:280},{quotaOk:false}]){
   const denied=await invoke({campaign:'business_activity_update',dryRun:false,...input});assert.ok(denied.status>=400);assert.equal(denied.sent.length,0);
  }
+});
+
+test('stale provider statistics cannot bypass locally recorded daily usage',async()=>{
+ for(const input of [{localUsed:280},{localQuotaError:true}]){
+  const result=await invoke({campaign:'business_activity_update',dryRun:false,used:0,...input});
+  assert.ok(result.status>=400);assert.equal(result.sent.length,0);
+ }
+ const remaining=await invoke({campaign:'business_activity_update',states:Array(2).fill('active'),dryRun:false,used:0,localUsed:279});
+ assert.equal(remaining.status,429);assert.equal(remaining.sent.length,0);
 });

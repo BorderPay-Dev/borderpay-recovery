@@ -44,7 +44,6 @@ jobs:
           url='https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions'
           req=urllib.request.Request(url,headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
           versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
-          assert versions['send-email']==455 and versions['admin-email-ops']==294, 'Live source changed; re-audit required'
+          assert versions['send-email']==456 and versions['admin-email-ops']==295, 'Live source changed; re-audit required'
           CHECK
-          supabase functions deploy send-email --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
           supabase functions deploy admin-email-ops --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
