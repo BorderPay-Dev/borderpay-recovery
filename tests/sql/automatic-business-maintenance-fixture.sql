@@ -1,0 +1,15 @@
+create extension if not exists pgcrypto;
+create schema auth;
+create role anon;create role authenticated;create role service_role;
+create table auth.users(id uuid primary key,deleted_at timestamptz);
+create table public.user_profiles(id uuid primary key,email text,full_name text,account_type text,kyc_status text,kyc_verified_at timestamptz default now(),is_demo boolean default false,is_admin boolean default false,is_partner boolean default false,account_status text default 'active',bridge_account_status text default 'active',country text default 'FR');
+create table public.business_profiles(user_id uuid primary key,bridge_kyb_status text,company_name text);
+create table public.bridge_virtual_accounts(user_id uuid,business_user_id uuid,status text);
+create table public.subscriptions(id uuid primary key default gen_random_uuid(),user_id uuid unique,account_type text default 'business',status text default 'active',metadata jsonb default '{}',next_billing_date date,verified_at timestamptz default now(),last_billed_at timestamptz,monthly_fee numeric default 29.99,payment_status text default 'active',updated_at timestamptz default now());
+create table public.billing_transactions(subscription_id uuid,billing_period date,status text);
+create table public.subscription_external_invoices(id uuid primary key default gen_random_uuid(),subscription_id uuid,user_id uuid,billing_period date,provider text,scope_country text,amount numeric,currency text,provider_reference text unique,metadata jsonb default '{}',status text default 'pending_configuration',paid_at timestamptz,payment_link text,last_error text,updated_at timestamptz,unique(subscription_id,billing_period));
+create table public.subscription_admin_logs(user_id uuid,subscription_id uuid,action text,details jsonb);
+create function public.is_partner_customer(u uuid) returns boolean language sql as $$select coalesce((select is_partner from user_profiles where id=u),false)$$;
+create function public.subscription_current_month_end(d date) returns date language sql as $$select (date_trunc('month',d)+interval '1 month - 1 day')::date$$;
+create function public.subscription_fee_for_period(t text,d date) returns numeric language sql as $$select 29.99::numeric$$;
+create function public.ensure_internal_subscription(u uuid,d date,e boolean) returns public.subscriptions language plpgsql as $$declare r public.subscriptions;begin insert into subscriptions(user_id,next_billing_date) values(u,d) on conflict(user_id) do nothing;select * into r from subscriptions where user_id=u;return r;end$$;
