@@ -9,6 +9,7 @@ export function usageNoticeAudience(profile: any, business: any): "active" | "pa
       && ["active","approved","deposits_restricted"].includes(profile.bridge_account_status)) return "active";
   return null;
 }
+export const USAGE_NOTICE_REVIEW_USER = "b000f84b-5488-4a8a-b934-f669978c7e20";
 export async function resolveUsageNoticeRecipient(db: any, job: any, now = Date.now()) {
   const [profile, business, exemption, auth] = await Promise.all([
     db.from("user_profiles").select("id,email,account_type,account_status,kyc_status,bridge_account_status,is_demo,is_admin").eq("id",job.user_id).maybeSingle(),
@@ -19,8 +20,12 @@ export async function resolveUsageNoticeRecipient(db: any, job: any, now = Date.
   for (const result of [profile,business,exemption,auth]) if (result.error) throw new Error("Usage-notice eligibility lookup failed");
   const user = auth.data?.user;
   const recipient = String(job.recipient || "").trim().toLowerCase();
-  const audience = usageNoticeAudience(profile.data, business.data);
-  if (!audience || exemption.data || !user || user.id !== job.user_id || user.deleted_at || !user.email_confirmed_at
+  // Explicit founder review copy for this authorized campaign only, not a billing exemption change.
+  const reviewCopy = job.user_id === USAGE_NOTICE_REVIEW_USER && job.props?.review_copy === true
+    && job.idempotency_key === `account_usage:20261001:v2:${USAGE_NOTICE_REVIEW_USER}`
+    && recipient === "founder@borderpayafrica.com";
+  const audience = usageNoticeAudience(reviewCopy ? {...profile.data, is_admin:false} : profile.data, business.data);
+  if (!audience || (exemption.data && !reviewCopy) || !user || user.id !== job.user_id || user.deleted_at || !user.email_confirmed_at
     || (user.banned_until && Date.parse(user.banned_until) > now)
     || !recipient || recipient !== String(profile.data?.email || "").trim().toLowerCase()
     || recipient !== String(user.email || "").trim().toLowerCase()) return null;

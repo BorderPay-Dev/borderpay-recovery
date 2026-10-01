@@ -1,5 +1,5 @@
 import { TEMPLATES } from "../supabase/functions/_shared/email-templates/index.ts";
-import { resolveUsageNoticeRecipient, usageNoticeAudience } from "../supabase/functions/_shared/business-usage-recipient.ts";
+import { resolveUsageNoticeRecipient, usageNoticeAudience, USAGE_NOTICE_REVIEW_USER } from "../supabase/functions/_shared/business-usage-recipient.ts";
 function assert(v: unknown, m: string) { if(!v) throw Error(m); }
 const profile = {id:'user',email:'business@example.test',account_type:'business',account_status:'active',kyc_status:'verified',bridge_account_status:'active',is_demo:false,is_admin:false};
 const business = {company_name:'Example <script>bad()</script>',bridge_kyb_status:'approved'};
@@ -28,4 +28,13 @@ Deno.test('recipient recheck refreshes status and company at dispatch',async()=>
  assert(await resolveUsageNoticeRecipient(db(profile,business,{...auth,email_confirmed_at:null}),job)===null,'unconfirmed included');
  assert(await resolveUsageNoticeRecipient(db(profile,business,auth,{user_id:'user'}),job)===null,'team included');
  let threw=false;try{await resolveUsageNoticeRecipient(db(profile,business,auth,null,{message:'failed'}),job);}catch{threw=true;}assert(threw,'lookup failed open');
+});
+
+Deno.test('founder copy is scoped to this campaign and preserves all ordinary exemptions', async()=>{
+ const id=USAGE_NOTICE_REVIEW_USER, email='founder@borderpayafrica.com';
+ const p={...profile,id,email,is_admin:true},a={...auth,id,email};
+ const j={user_id:id,recipient:email,props:{review_copy:true},idempotency_key:`account_usage:20261001:v2:${id}`};
+ assert(await resolveUsageNoticeRecipient(db(p,business,a,{user_id:id}),j)!==null,'authorized founder copy excluded');
+ assert(await resolveUsageNoticeRecipient(db(p,business,a,{user_id:id}),{...j,idempotency_key:'unrelated'})===null,'review exemption leaked');
+ assert(await resolveUsageNoticeRecipient(db(p,business,a,{user_id:id}),{...j,props:{}})===null,'regular campaign includes founder');
 });
