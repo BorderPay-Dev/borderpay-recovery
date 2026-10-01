@@ -23,6 +23,7 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE, {
 });
 
 type BroadcastCampaign =
+  | "business_activity_update"
   | "business_migration_notice"
   | "banking_transition_active"
   | "banking_transition_restricted"
@@ -166,7 +167,7 @@ function deriveVerificationStatus(input: {
 
 type TransitionStatus = "active" | "frozen" | "paused" | "suspended" | "rejected" | "offboarded";
 function isTransitionCampaign(campaign: unknown): boolean {
-  return campaign === "business_migration_notice" || campaign === "banking_transition_active" || campaign === "banking_transition_restricted";
+  return campaign === "business_activity_update" || campaign === "business_migration_notice" || campaign === "banking_transition_active" || campaign === "banking_transition_restricted";
 }
 function transitionStatus(profile: Record<string, unknown>, business?: Record<string, unknown>): TransitionStatus | null {
   if (String(profile.account_type || "").toLowerCase() !== "business") return null;
@@ -186,7 +187,7 @@ function transitionStatus(profile: Record<string, unknown>, business?: Record<st
   return verified === "active" && normalizeVerificationStatus(profile.bridge_account_status) === "active" ? "active" : null;
 }
 function transitionEligible(campaign: unknown, profile: Record<string, unknown>, business?: Record<string, unknown>): boolean {
-  if (campaign === "business_migration_notice") return migrationNoticeEligible(profile);
+  if (campaign === "business_migration_notice" || campaign === "business_activity_update") return migrationNoticeEligible(profile);
   const status = transitionStatus(profile, business);
   return campaign === "banking_transition_active" ? status === "active"
     : campaign === "banking_transition_restricted" && status !== null && status !== "active";
@@ -370,7 +371,7 @@ Deno.serve(async (req) => {
   }
   const migrationRunner = serviceCaller && (
     runnerBody.action === "migration_capacity" ||
-    (["list_recipients", "send_campaign"].includes(String(runnerBody.action)) && runnerBody.campaign === "business_migration_notice")
+    (["list_recipients", "send_campaign"].includes(String(runnerBody.action)) && ["business_migration_notice", "business_activity_update"].includes(String(runnerBody.campaign)))
   );
   let authorized = migrationRunner;
 
@@ -537,6 +538,7 @@ Deno.serve(async (req) => {
   if (action === "send_campaign") {
     const campaign = String(body.campaign || "").trim() as BroadcastCampaign;
     const supportedCampaigns = new Set<BroadcastCampaign>([
+      "business_activity_update",
       "business_migration_notice",
       "banking_transition_active",
       "banking_transition_restricted",
@@ -690,8 +692,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (campaign === "business_migration_notice") {
-      if (activeProfiles.length > 30) return json({success:false,error:"Migration notices must be sent in batches of at most 30."},400);
+    if (campaign === "business_migration_notice" || campaign === "business_activity_update") {
+      if (activeProfiles.length > 30) return json({success:false,error:"Business service notices must be sent in batches of at most 30."},400);
       try {
         const capacity = await migrationCapacity();
         if (activeProfiles.length > capacity.remaining) return json({success:false,error:"Brevo daily allowance reserved. Leave remaining recipients pending.",data:capacity},429);
@@ -735,7 +737,9 @@ Deno.serve(async (req) => {
           template,
           to: email,
           user_id: userId,
-          idempotency_key: campaign === "business_migration_notice"
+          idempotency_key: campaign === "business_activity_update"
+            ? `admin_email_ops:business_activity_update:20261001:v1:${userId}`
+            : campaign === "business_migration_notice"
             ? `admin_email_ops:business_migration_notice:20260928:v1:${userId}`
             : isEeaScaCampaign
             ? `admin_email_ops:${campaign}:v1:${userId}`

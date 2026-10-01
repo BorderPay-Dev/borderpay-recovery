@@ -1,3 +1,4 @@
+import { businessActivityHtml, BUSINESS_ACTIVITY_TEXT } from "./activity-guidance.ts";
 import { paymentDocumentationHtml, PAYMENT_DOCUMENTATION_TEXT } from "./payment-documentation.ts";
 import { BORDERPAY_BRAND, escapeHtml, htmlLayout, textLayout, type RenderedEmail } from "../layout.ts";
 
@@ -45,7 +46,7 @@ export function render(p: BusinessOnboardingLifecycleProps): RenderedEmail {
   const company = String(p.company_name || "Your business");
   const body = `
     <p style="margin:0 0 16px;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">Hello ${escapeHtml(company)},</p>
-    <p style="margin:0;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">${escapeHtml(copy.message)}</p>${stage === "day_1" ? paymentDocumentationHtml() : ""}`;
+    <p style="margin:0;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">${escapeHtml(copy.message)}</p>${stage === "day_1" ? businessActivityHtml() + paymentDocumentationHtml() : ""}`;
 
   return {
     subject: copy.subject,
@@ -59,7 +60,7 @@ export function render(p: BusinessOnboardingLifecycleProps): RenderedEmail {
     }),
     text: textLayout({
       heading: copy.heading,
-      body: `Hello ${company},\n\n${copy.message}${stage === "day_1" ? "\n\n" + PAYMENT_DOCUMENTATION_TEXT : ""}`,
+      body: `Hello ${company},\n\n${copy.message}${stage === "day_1" ? "\n\n" + BUSINESS_ACTIVITY_TEXT + "\n\n" + PAYMENT_DOCUMENTATION_TEXT : ""}`,
       ctaText: copy.action,
       ctaUrl: stage === "day_30" ? "mailto:support@borderpayafrica.com" : `${BORDERPAY_BRAND.appUrl}/?screen=kyc`,
     }),
