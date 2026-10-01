@@ -20,4 +20,6 @@ Deno.test("generic consumer rail guidance is not advertised as business usage",(
  const result=render({company_name:'Synthetic Ltd',virtual_accounts:[{currency:'USD',accepted_payments:'Family payments with the same surname and person-to-person payments'}]});
  assert(!result.text.toLowerCase().includes('family payments')&&!result.text.toLowerCase().includes('person-to-person'),'generic consumer payments leaked into B2B guidance');
  assert(result.text.includes('GBP is strictly business-to-business'),'missing GBP sender rule');
+ assert(result.html.includes('strictly below US$4,000 per payment')&&result.text.includes('strictly below US$4,000 per payment'),'missing individual USD sender limit');
+ assert(result.text.includes('Do not split a larger payment to bypass this limit'),'USD limit can be misread as permission to split payments');
 });
