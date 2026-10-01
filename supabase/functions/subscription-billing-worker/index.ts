@@ -1,3 +1,4 @@
+import { resolveUsageNoticeRecipient } from "../_shared/business-usage-recipient.ts";
 import { maintenanceEmailCapacity } from "../_shared/maintenance-email-capacity.ts";
 import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
 import { prepareInvoiceEmail, confirmedEmailDelivery } from "../_shared/subscription-email-policy.ts";
@@ -277,6 +278,14 @@ async function sendEmails() {
     }
 
     let props = job.props;
+    if (job.template === "business.business_activity_update" && job.props?.usage_notice === true) {
+      props = await resolveUsageNoticeRecipient(db, job);
+      if (!props) {
+        const { error: suppressError } = await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:usage_notice_recipient_ineligible"}).eq("id",job.id);
+        if (suppressError) throw suppressError;
+        continue;
+      }
+    }
     if (job.template.endsWith(".subscription_external_invoice")) {
       const { data: invoice, error: invoiceError } = await db.from("subscription_external_invoices")
         .select("id,user_id,subscription_id,amount,currency,billing_period,status,paid_at,payment_link,provider_reference")

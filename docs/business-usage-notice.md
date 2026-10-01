@@ -1,0 +1,11 @@
+# Active and paused merchant account-usage notice
+
+User-authorized October 1 service notice uses the existing business.business_activity_update template with usage_notice=true. Original campaign rendering stays unchanged. Shared welcome guidance distinguishes source of funds from volumes, explains declared US$15,000/month versus US$20,000/week and EEA versus UK market mismatches, requires truthful forecasts and supporting evidence. The notice states the USD individual commercial receipt rule (strictly below US$4,000), GBP B2B-only rule, and prohibits payment splitting. It does not retrospectively impose onboarding volume minima or claim an automatic bank threshold.
+
+Paused recipients receive a conditional reference to their existing compliance review, instructions to respond through that case, and no permission to resume payments. It does not promise approval or unfreezing. Current account state and company name are fetched immediately before dispatch. Individually offboarded, suspended, banned, unconfirmed, team, demo and partner-managed users are excluded. A provider-paused business with an otherwise frozen local account can receive informational review guidance; frozen accounts unrelated to provider pause are excluded. Auth/profile/recipient email identity must match. Database lookup errors fail closed.
+
+Reuse the durable subscription_email_jobs service-email queue; no billing state is changed by queueing. Existing transport partner suppression, idempotency, daily quota/reserve guard and maximum batch of 30 remain. A new deterministic account_usage:20261001:v2 key prevents duplicate queueing and delivery. Worker-side eligibility is rechecked even if delivery waits for quota. No balances, verification answers, payment limits, transactions, statuses or bank services are modified. No mobile or web deployment required.
+
+Validation: ten renderer/policy tests; sender and worker type checks; reviewed deployed baseline send-email 458 / subscription-billing-worker 141. Synthetic test data only.
+
+The user additionally authorized founder@borderpayafrica.com as a review recipient. A single campaign-key-and-user-ID-bound exception allows that copy without changing maintenance exemptions or ordinary campaign exclusions. It obeys the same quota.
