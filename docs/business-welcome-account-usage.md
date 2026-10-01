@@ -1,0 +1,7 @@
+# Business welcome and account usage
+
+Welcome, business activation and approved KYB messages explain the relationship between verification answers and subsequent payments. Merchants review their recorded profile, distinguish transaction volume from source of funds, disclose cross-border markets and ask compliance for a secure update when activity changes. The US$15,000-monthly versus US$20,000-in-a-week example describes a material mismatch that may prompt review, not a guaranteed automated payment threshold. Merchants who cannot remember submitted answers are directed to confirm them with compliance; the email does not invent customer-specific declarations.
+
+Shared pre-verification guidance also appears in confirmation and onboarding reminder emails. Approved-account guidance avoids reimposing signup criteria and does not imply that KYB approval unlocks every product. Unsupported legacy card/product entitlement promises were removed from the activation and approved-KYB variants. Rejected decisions retain their existing review instructions.
+
+Existing template identifiers, verification URLs, invoice/contract requirements, sender transport and delivery triggers are preserved. USD individual commercial incoming payments remain strictly below US$4,000; the account-limit template and GBP B2B rule from the previous release are unchanged. Only the email renderer is deployed; no customer verification answers, bank limits, balances or transaction states are edited. No broadcast is sent by this template change.

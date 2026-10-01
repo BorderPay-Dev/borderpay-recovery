@@ -1,3 +1,4 @@
+import { businessAccountUsageHtml, BUSINESS_ACCOUNT_USAGE_TEXT } from "./activity-guidance.ts";
 import {invoiceHubNoteHtml,INVOICE_HUB_NOTE_TEXT} from "./invoice-contract-hub.ts";
 import { htmlLayout, textLayout, escapeHtml, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
@@ -18,7 +19,7 @@ export function render(p: BusinessKybDecisionProps): RenderedEmail {
 
   const heading = approved ? "KYB approved" : "We need a bit more information";
   const introText = approved
-    ? `Great news — ${company} is verified and your business account is fully active. Wallets, transfers, and cards are unlocked.`
+    ? `${company} has passed business verification. Open your dashboard to see the products available for your account.`
     : `Compliance reviewed your KYB submission for ${company} and couldn't fully verify it. Our team needs to review the account before any next step is opened.`;
 
   const reasonBlock = !approved && p.reason
@@ -31,8 +32,8 @@ export function render(p: BusinessKybDecisionProps): RenderedEmail {
 
   const body = approved
     ? `<p style="margin:0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">
-         You can now create wallets, send and receive funds, and issue corporate cards under ${escapeHtml(company)}.
-       </p>${invoiceHubNoteHtml()}`
+         Before making or receiving payments, review the business profile submitted for ${escapeHtml(company)} and the account rules shown in your dashboard.
+       </p>${businessAccountUsageHtml()}${invoiceHubNoteHtml()}`
     : `${reasonBlock}
        ${nextSteps ? `<p style="margin:14px 0 0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">${escapeHtml(nextSteps)}</p>` : ""}`;
 
@@ -48,7 +49,7 @@ export function render(p: BusinessKybDecisionProps): RenderedEmail {
     text: textLayout({
       heading,
       body: approved
-        ? `${company} verified. Account fully active.\n\n${INVOICE_HUB_NOTE_TEXT}`
+        ? `${company} has passed business verification. Open your dashboard to see the products available for your account.\n\n${BUSINESS_ACCOUNT_USAGE_TEXT}\n\n${INVOICE_HUB_NOTE_TEXT}`
         : `${company} needs more KYB info.\nReviewer notes: ${p.reason || "—"}\nNext steps: ${nextSteps}`,
       ctaText, ctaUrl,
     }),
