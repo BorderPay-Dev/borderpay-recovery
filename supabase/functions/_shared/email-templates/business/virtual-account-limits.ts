@@ -1,3 +1,4 @@
+import { accountProfileGuidanceHtml, accountProfileGuidanceText } from "./account-profile-guidance.ts";
 import { htmlLayout, textLayout, BORDERPAY_BRAND, escapeHtml, RenderedEmail } from "../layout.ts";
 
 export interface BusinessVirtualAccountLimitsProps {
@@ -17,8 +18,8 @@ export interface BusinessVirtualAccountLimitsProps {
 export function render(p: BusinessVirtualAccountLimitsProps): RenderedEmail {
   const company = String(p.company_name || "your business");
   const accounts = Array.isArray(p.virtual_accounts) ? p.virtual_accounts : [];
-  const subject = `${company}: active global account limits`;
-  const heading = "Active business global account limits";
+  const subject = `${company}: account limits and business-profile requirements`;
+  const heading = "Account limits and business-profile requirements";
   const introText = `${company} can use the active BorderPay Velocity global receive accounts below for supported business payments.`;
   const ctaUrl = String(p.action_url || `${BORDERPAY_BRAND.appUrl}/dashboard`);
   const accountRows = accounts.length > 0
@@ -44,6 +45,7 @@ export function render(p: BusinessVirtualAccountLimitsProps): RenderedEmail {
     `;
 
   const body = `
+    ${accountProfileGuidanceHtml()}
     <p style="margin:0 0 14px;color:#111111;font-size:14px;line-height:1.65;text-align:left;">
       USD, EUR, and GBP accounts are receive rails for approved business payments into BorderPay Velocity. They are not card balances, and they are not spendable wallets by themselves.
     </p>
@@ -83,6 +85,7 @@ export function render(p: BusinessVirtualAccountLimitsProps): RenderedEmail {
     : "No active global receive account details were included for this message.";
   const textBody = [
     introText,
+    accountProfileGuidanceText(),
     "USD, EUR, and GBP accounts are receive rails for approved business payments into BorderPay Velocity. They are not card balances, and they are not spendable wallets by themselves.",
     accountText,
     "Supported receive usage:\nUSD ACH: own-account business payments, business/client payments, payroll, family payments with the same surname, and eligible person-to-person payments under $4,000. Person-to-person payments from New York or Texas are not supported.\nEUR SEPA: own-account business payments and business/client payments are supported. If an individual wants to send EUR by SEPA, contact BorderPay Velocity before they pay so we can review the route and help avoid a preventable refund. Payments over EUR 1,000,000 may use SEPA Credit and can take 1 business day.\nGBP Faster Payments: own-account business payments and business/client payments are supported. Incoming payments from individuals are not supported. Payments over GBP 1,000,000 may use BACS and can take 3 business days.",

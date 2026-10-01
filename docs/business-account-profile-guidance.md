@@ -1,0 +1,7 @@
+# Business account limits and verified profile guidance
+
+The existing business.virtual_account_limits campaign now includes clear requirements to maintain accurate source-of-funds information, expected incoming/outgoing monthly and annual volumes, payment sizes/frequency, business activities and cross-border markets. Merchants request a secure profile update before material changes and prepare underlying evidence. The US$15,000 monthly / one-week example describes a possible profile mismatch, not an invented deterministic bank hold rule.
+
+US$100,000+ is appropriate only when supported by a realistic forecast; uncertainty is not a reason to inflate declarations. No published standard rail maximum is not unlimited account permission. Website and verification descriptions must reflect real activities. The guidance does not promise to eliminate banking reviews, release held funds, change provider parameters or add technical transfer restrictions.
+
+The existing business campaign/template identifier is retained for the admin broadcast selector. All registered renderers, customer links and supplied account limits remain unchanged except the business template's subject, heading and additional guidance. No campaign is sent by this change. Only send-email is targeted for deployment; no Vercel or mobile build is required. Tests cover safe rendering, missing account data, preserved supplied limits and truthful risk guidance.
