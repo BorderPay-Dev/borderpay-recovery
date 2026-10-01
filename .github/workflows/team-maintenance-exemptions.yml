@@ -1,0 +1,28 @@
+name: Team maintenance exemptions
+on:
+  push:
+    branches: [fix/team-maintenance-exemptions]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic-test-only
+          POSTGRES_DB: billing_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - name: Verify maintenance exclusions and paid history
+        env:
+          PGPASSWORD: synthetic-test-only
+        run: |
+          for file in tests/sql/automatic-business-maintenance-fixture.sql supabase/migrations/20261001120000_automatic_verified_business_maintenance.sql tests/sql/automatic-business-maintenance-acceptance.sql tests/sql/team-maintenance-fixture.sql supabase/migrations/20261001173000_team_maintenance_exemptions.sql tests/sql/team-maintenance-acceptance.sql; do
+            psql -h localhost -U postgres -d billing_test -v ON_ERROR_STOP=1 -f "$file"
+          done
