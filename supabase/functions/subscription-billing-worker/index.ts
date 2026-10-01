@@ -1,3 +1,4 @@
+import { maintenanceEmailCapacity } from "../_shared/maintenance-email-capacity.ts";
 import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
 import { prepareInvoiceEmail, confirmedEmailDelivery } from "../_shared/subscription-email-policy.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -54,64 +55,10 @@ function currentMonthEnd(): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
 }
 
-async function prepareApprovedBusinessBilling(dryRun = false, queueBeforeDue = false) {
-  const billingPeriod = currentMonthEnd();
-  const { data: sync, error: syncError } = await db.rpc("sync_active_va_maintenance_subscriptions", {
-    p_billing_period: billingPeriod,
-    p_dry_run: dryRun,
-  });
-  if (syncError) throw syncError;
-
-  const { data, error } = await db.from("subscriptions")
-    .select("id,user_id,next_billing_date")
-    .eq("account_type", "business")
-    .eq("status", "active")
-    .is("restricted_at", null)
-    .lte("next_billing_date", billingPeriod)
-    .limit(1000);
-  if (error) throw error;
-
-  const scopedRows = await mapWithConcurrency(data ?? [], 3, async (row) => ({
-    row,
-    scope: await resolveBillingCountry(row.user_id),
-  }));
-  const eligible = scopedRows.filter(({ scope }) => Boolean(scope.country));
-  const blocked = scopedRows.filter(({ scope }) => !scope.country)
-    .map(({ row }) => ({ id: row.id, user_id: row.user_id, reason: "maintenance_identity_or_country_unresolved" }));
-
-  if (dryRun) {
-    return { billing_period: billingPeriod, sync, eligible: eligible.length, blocked, queued: 0, results: [] };
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  if (!queueBeforeDue && today < billingPeriod) {
-    return {
-      billing_period: billingPeriod,
-      sync,
-      eligible: eligible.length,
-      blocked,
-      queued: 0,
-      results: [],
-      invoice_creation_scheduled_for: billingPeriod,
-    };
-  }
-
-  const results = [];
-  for (const { row, scope } of eligible) {
-    const { data: result, error: invoiceError } = await db.rpc("queue_external_subscription_invoice", {
-      p_subscription_id: row.id,
-      p_billing_date: billingPeriod,
-      p_scope_country: scope.country,
-      p_provider: "flutterwave",
-    });
-    results.push({
-      id: row.id,
-      route: "flutterwave_invoice",
-      eea: scope.eea,
-      result,
-      error: invoiceError?.message ?? null,
-    });
-  }
-  return { billing_period: billingPeriod, sync, eligible: eligible.length, blocked, queued: results.filter((r) => !r.error).length, results };
+async function prepareApprovedBusinessBilling(dryRun = false, _queueBeforeDue = false) {
+  const {data,error}=await db.rpc("prepare_verified_business_maintenance",{p_dry_run:dryRun});
+  if(error)throw error;
+  return data;
 }
 
 async function runBusinessOnboardingLifecycle(dryRun = false) {
@@ -316,8 +263,10 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
 }
 
 async function sendEmails() {
+  const capacity=await maintenanceEmailCapacity(db);
+  if(capacity<=0)return {sent:0,deferred:true,reason:"daily_email_allowance_reserved"};
   const { data, error } = await db.from("subscription_email_jobs").select("*")
-    .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(30);
+    .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(Math.min(30,capacity));
   if (error) throw error;
   let sent = 0; let failed = 0;
   const partnerJobs = await partnerMemberships(db, (data ?? []).map((j: any) => String(j.user_id)));
@@ -461,7 +410,7 @@ Deno.serve(async (req) => {
   try {
     const { mode = "drain" } = await req.json().catch(() => ({}));
     const out: Record<string, unknown> = {};
-    if (mode === "prepare") {
+    if (["prepare", "references", "emails"].includes(mode)) {
       out.business_maintenance = await prepareApprovedBusinessBilling(false, true);
     }
     if (["bill_due", "drain"].includes(mode)) {
@@ -476,6 +425,7 @@ Deno.serve(async (req) => {
     if (["bill_due", "drain", "onboarding"].includes(mode)) {
       out.onboarding = await runBusinessOnboardingLifecycle(false);
     }
+    if (["references", "emails"].includes(mode)) out.external_invoices = await drainExternalInvoices();
     if (["bill_due", "drain"].includes(mode)) {
       out.billing = await billDue();
       out.external_invoices = await drainExternalInvoices();
