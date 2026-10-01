@@ -3,7 +3,7 @@ export const BUSINESS_ACTIVITY_NOTICE = {
   "preview": "Keep your business profile aligned with your actual payment activity.",
   "heading": "Keep your business payment profile up to date",
   "intro": "Your verification profile should accurately describe how your business receives and sends money. If your volumes or customer markets have changed, contact us for a secure update link.",
-  "continuity": "BorderPay Velocity's business onboarding standard is expected volume of US$100,000 or more monthly and at least US$1 million annually (or currency equivalent). Give an honest forecast; do not select an inflated range to meet this standard. If your genuine forecast is lower, contact compliance for guidance. This notice does not change your account permissions.",
+  "continuity": "BorderPay Velocity's business onboarding standard is expected volume of US$100,000 or more monthly and US$1 million–US$9.99 million annually (or currency equivalent). Give an honest forecast; do not select an inflated range to meet this standard. If your genuine forecast falls outside this range, contact compliance for guidance. This notice does not change your account permissions.",
   "items": [
     {
       "title": "Check the monthly volume you declared",
