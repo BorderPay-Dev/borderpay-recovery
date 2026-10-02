@@ -33,6 +33,7 @@ jobs:
         run: |
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/paused-business-review/fixture.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261003010000_paused_business_review_workspace.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261003020000_review_after_secure_link.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/paused-business-review/assertions.sql
       - uses: actions/setup-node@v4
         with:

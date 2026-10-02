@@ -3,6 +3,12 @@ if has_function_privilege('authenticated','public.paused_business_review_access(
 end $$;
 select set_config('request.jwt.claims','{"role":"service_role"}',false);
 do $$begin
+ if public.paused_business_review_access('00000000-0000-4000-8000-000000000001') then raise exception 'invitation_alone_started_review';end if;
+ insert into kyb.reverification_invites(user_id,created_at,consumed_at) values('00000000-0000-4000-8000-000000000001',now()-interval '1 day',now()-interval '1 day');
+ if public.paused_business_review_access('00000000-0000-4000-8000-000000000001') then raise exception 'prior_campaign_link_started_review';end if;
+ insert into kyb.reverification_invites(user_id) values('00000000-0000-4000-8000-000000000001');
+ if public.paused_business_review_access('00000000-0000-4000-8000-000000000001') then raise exception 'unopened_link_started_review';end if;
+ update kyb.reverification_invites set consumed_at=now() where user_id='00000000-0000-4000-8000-000000000001' and consumed_at is null;
  if not public.paused_business_review_access('00000000-0000-4000-8000-000000000001') then raise exception 'authorized_business_missing';end if;
  if public.paused_business_review_access('00000000-0000-4000-8000-000000000002') then raise exception 'uninvited_business_allowed';end if;
 end $$;
@@ -33,3 +39,9 @@ do $$declare reason text;begin
  if exists(select 1 from public.user_profiles where account_status<>'frozen' or bridge_account_status<>'paused' or account_frozen_at is null) then raise exception 'financial_status_changed';end if;
 end $$;
 select 'Read-only balance, grants, tenant isolation, SCA, individual/fraud/revocation exclusions and preserved financial holds passed' result;
+
+update kyb.reverification_authorizations set revoked_at=null;
+update kyb.reverification_invites set consumed_at=null;
+do $$begin
+ if public.paused_account_wallet_summary()->>'mode'<>'locked' then raise exception 'wallet_view_before_link_used';end if;
+end $$;

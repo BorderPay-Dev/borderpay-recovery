@@ -5,7 +5,8 @@ create table auth.users(id uuid primary key,email text,email_confirmed_at timest
 create table public.user_profiles(id uuid primary key,email text,account_type text,account_status text,bridge_account_status text,bridge_customer_id text,account_frozen_at timestamptz,account_frozen_reason text,is_admin boolean,is_demo boolean);
 create table public.wallets(id uuid primary key,user_id uuid,currency text,balance numeric,updated_at timestamptz);
 create table public.bridge_virtual_accounts(user_id uuid,business_user_id uuid,currency text,account_number text);
-create table kyb.reverification_authorizations(user_id uuid primary key,email text,eligibility text,revoked_at timestamptz);
+create table kyb.reverification_authorizations(user_id uuid primary key,email text,eligibility text,revoked_at timestamptz,approved_at timestamptz default now());
+create table kyb.reverification_invites(user_id uuid,created_at timestamptz default now(),consumed_at timestamptz);
 create function public.is_partner_customer(uuid) returns boolean language sql as $$select false$$;
 create function public.can_read_bridge_financial_data(uuid) returns boolean language sql as $$select coalesce(current_setting('test.sca',true),'true')<>'false'$$;
 create function public.can_read_borderpay_usdt(uuid) returns boolean language sql as $$select false$$;
@@ -40,6 +41,6 @@ end $$;
 
 insert into public.user_profiles values('00000000-0000-4000-8000-000000000001','merchant@example.test','business','frozen','paused','synthetic-provider',now(),'Bridge account paused',false,false),('00000000-0000-4000-8000-000000000002','other@example.test','business','frozen','paused','synthetic-other',now(),'Bridge account paused',false,false);
 insert into auth.users select id,email,now(),null,null from public.user_profiles;
-insert into kyb.reverification_authorizations select id,email,'provider_paused',null from public.user_profiles where id='00000000-0000-4000-8000-000000000001';
+insert into kyb.reverification_authorizations(user_id,email,eligibility,revoked_at) select id,email,'provider_paused',null from public.user_profiles where id='00000000-0000-4000-8000-000000000001';
 insert into public.wallets values('10000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000001','USDC',123.45,now()),('10000000-0000-4000-8000-000000000002','00000000-0000-4000-8000-000000000002','USDC',999,now()),('10000000-0000-4000-8000-000000000003','00000000-0000-4000-8000-000000000001','USDT',555,now());
 insert into public.bridge_virtual_accounts values('00000000-0000-4000-8000-000000000001',null,'EUR','private-account-number'),('00000000-0000-4000-8000-000000000002',null,'USD','other-account');
