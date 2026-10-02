@@ -1,3 +1,6 @@
+import {pausedBusinessReviewProjection} from '../_shared/paused-business-review.ts';
+import {newBusinessKybEligible,newBusinessKybEnabled} from "../_shared/kyb-portal-handoff.ts";
+import {kybPortalStatus} from "../_shared/kyb-portal-status.ts";
 // get-user-profile — provider-neutral; email_confirmed
 // derived from auth.users.email_confirmed_at.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -109,6 +112,19 @@ Deno.serve(async (req) => {
         ? "not_started"
         : (profile?.bridge_account_status || null);
 
+    let reviewOnly = false;
+    if (accountType === 'business' && localAccountStatus === 'frozen' && providerAccountStatus === 'paused') {
+      const access = await supabase.rpc('paused_business_review_access', {p_user: user.id});
+      // Database/network failure retains the existing full-screen restriction.
+      reviewOnly = !access.error && access.data === true;
+    }
+
+    let portalStatus: string | null = null;
+    if (accountType === "business" && !profile?.bridge_customer_id && !accountAccessRestricted) {
+      try { portalStatus = await kybPortalStatus(user, token, fetch, newBusinessKybEligible(profile) && await newBusinessKybEnabled(supabase)); }
+      catch { return new Response(JSON.stringify({success:false,error:"Verification status is temporarily unavailable. Please try again."}),{status:503,headers:{...corsHeaders,"Content-Type":"application/json"}}); }
+    }
+
     return new Response(JSON.stringify({
       success: true,
       data: {
@@ -137,7 +153,9 @@ Deno.serve(async (req) => {
           account_frozen_at: profile?.account_frozen_at || null,
           account_frozen_reason: profile?.account_frozen_reason || null,
           account_access_restricted: accountAccessRestricted,
-          bridge_kyb_status:   clientBusinessKybStatus,
+          bridge_kyb_status:   portalStatus || clientBusinessKybStatus,
+          verification_status: portalStatus,
+          verification_source: portalStatus ? "borderpay" : null,
           bridge_provider_kyb_status: bridgeKybStatus,
           address:             profile?.address || null,
           city:                profile?.city || null,
@@ -152,6 +170,7 @@ Deno.serve(async (req) => {
           last_sign_in_at:     user.last_sign_in_at || null,
           created_at:          profile?.created_at || userData?.created_at,
           updated_at:          profile?.updated_at || userData?.updated_at,
+          ...pausedBusinessReviewProjection(reviewOnly),
         },
       },
     }), {
