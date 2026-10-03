@@ -12,9 +12,11 @@ Deno.test("webhook verifies original bytes and rejects altered bytes or bad sign
   assert(!await verifyYellowCardSignature(new Uint8Array(), "not-base64", config.secret));
 });
 Deno.test("production credentials never permit mutations", async () => {
-  const client = new YellowCardFullProductClient({ ...config, environment: "production", sandboxWrites: true }, () => { throw new Error("Network must not be reached"); });
+  let called = false;
+  const client = new YellowCardFullProductClient({ ...config, environment: "production", sandboxWrites: true }, () => { called = true; throw new Error("Network must not be reached"); });
   await rejects(() => client.createSandboxVault("Synthetic merchant"));
   await rejects(() => client.createSandboxSubWallet({ name: "Synthetic", currency: "EUR", sequenceId: "fixture-1", createVirtualAccount: true }));
+  assert(!called);
 });
 Deno.test("sandbox mutation also needs explicit enablement", async () => {
   let called = false;

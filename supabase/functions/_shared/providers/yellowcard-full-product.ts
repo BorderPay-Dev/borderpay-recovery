@@ -21,7 +21,7 @@ export async function verifyYellowCardSignature(raw: Uint8Array, signature: stri
   if (raw.byteLength > 1_048_576 || !/^[A-Za-z0-9+/]{43}=$/.test(signature) || !secret) return false;
   try {
     const bytes = Uint8Array.from(atob(signature), (c) => c.charCodeAt(0));
-    return await crypto.subtle.verify("HMAC", await key(secret), bytes, raw);
+    return await crypto.subtle.verify("HMAC", await key(secret), bytes, new Uint8Array(raw));
   } catch { return false; }
 }
 export class YellowCardRequestError extends Error {
@@ -109,7 +109,7 @@ export function requireYellowCardBinding(binding: YellowCardResourceBinding | nu
  * Webhooks are reconcile triggers, NEVER balance-credit instructions.
  */
 export async function yellowCardEventFingerprint(environment: YellowCardEnvironment, raw: Uint8Array) {
-  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", raw));
+  const hash = new Uint8Array(await crypto.subtle.digest("SHA-256", new Uint8Array(raw)));
   return `${environment}:${Array.from(hash, (b) => b.toString(16).padStart(2, "0")).join("")}`;
 }
 export function normalizeYellowCardVirtualAccountStatus(status: unknown): "pending" | "active" | "frozen" | "closed" | "unknown" {
