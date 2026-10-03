@@ -1,3 +1,5 @@
+import {invoiceShareContext,oneLine} from "../_shared/predeposit-share.ts";
+import {validateSharePair,mergeBuyerDocuments} from "../_shared/predeposit-share-package.ts";
 import {agreementType, assertTemplateType, requireConsumerTerms} from "../_shared/predeposit-agreement.ts";
 import { loadPdfStyleAssets } from "../_shared/predeposit-pdf-assets.ts";
 declare const EdgeRuntime: {waitUntil(promise:Promise<unknown>):void};
@@ -144,6 +146,19 @@ Deno.serve(async req=>{
 
   if(action==="list_document_checks"){
    return reply({success:true,data:checked(await db.from("predeposit_document_checks").select("id,created_at,status,result").eq("owner_user_id",owner).order("created_at",{ascending:false}).limit(50))});
+  }
+  if(action==="share_document_check"){
+   const row=checked<any>(await db.from("predeposit_document_checks").select("*").eq("id",uuid(body.check_id)).eq("owner_user_id",owner).single());
+   const assets=checked<any[]>(await db.from("predeposit_assets").select("*").eq("owner_user_id",owner).in("id",[row.invoice_asset_id,row.contract_asset_id]));
+   const invoice=assets.find(a=>a.id===row.invoice_asset_id),contract=assets.find(a=>a.id===row.contract_asset_id);
+   validateSharePair(owner,row,invoice,contract);
+   const bytes=await mergeBuyerDocuments(await loadAssetBytes(db,invoice),await loadAssetBytes(db,contract),contract.mime_type);
+   const digest=await sha256(bytes),path=owner+"/invoice-copies/document-checks/"+row.id+"/"+digest+".pdf";
+   checked(await db.storage.from(BUCKET).upload(path,bytes,{contentType:"application/pdf",upsert:true}));
+   const signed=checked<any>(await db.storage.from(BUCKET).createSignedUrl(path,60,{download:"Invoice-and-contract.pdf"}));
+   const fields=row.result?.fields?.invoice,contacts=row.result?.buyer_contact||{};
+   const share={buyer_name:oneLine(fields?.buyer?.value),buyer_email:contacts.buyer_email||"",buyer_phone_number:contacts.buyer_phone_number||"",merchant_name:oneLine(row.merchant_name),invoice_number:"",currency:fields?.currency?.value||"",total:fields?.total?.value||"",contact_source:contacts.contact_source||"missing"};
+   return reply({success:true,data:{url:signed.signedUrl,sha256:digest,expires_in:60,filename:"Invoice-and-contract.pdf",share,notice:row.status==="matched"?"":"Your document check found issues or could not finish. Review the findings and PDF before sharing."}});
   }
   if(action==="review_documents"){
    if(policy.config?.hub_enabled!==true)return reply({success:false,error:"Document review is not available yet"},503);
@@ -302,7 +317,7 @@ Deno.serve(async req=>{
    checked(await db.storage.from(BUCKET).upload(path,bytes,{contentType:"application/pdf",upsert:false}));
    if(invoiceId)checked(await db.from("predeposit_access_log").insert({invoice_id:invoiceId,actor_user_id:owner,action:"invoice_copy_exported",metadata:{sha256:digest,revision,bank_details_included:!!bank,mode:policy.mode}}));
    const signed=checked<any>(await db.storage.from(BUCKET).createSignedUrl(path,60,{download:invoiceNumber.replace(/[^A-Za-z0-9_-]/g,"_")+".pdf"}));
-   return reply({success:true,data:{url:signed.signedUrl,expires_in:60,sha256:digest,bank_details_included:!!bank,notice:bankNotice}});
+   return reply({success:true,data:{url:signed.signedUrl,expires_in:60,sha256:digest,filename:invoiceNumber.replace(/[^A-Za-z0-9_-]/g,"_")+".pdf",share:invoiceShareContext({...payload,merchant},invoiceNumber),bank_details_included:!!bank,notice:bankNotice}});
   }
   if(action==="download"){
    const row=await ownInvoice(uuid(body.invoice_id),owner);if(row.status!=="approved")return reply({success:false,error:"Invoice approval is required before bank details can be shared"},409);

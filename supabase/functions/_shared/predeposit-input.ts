@@ -1,11 +1,12 @@
 import { z } from "npm:zod@3.25.76";
 const text=(max=2000)=>z.string().trim().max(max);
+import {emailAddress,internationalPhone} from "./predeposit-share.ts";
 const type=z.enum(["company","sole_proprietor","individual","government"]);
 export const draftSchema=z.object({
  agreement_type:z.enum(["b2b","d2c","b2c"]).default("b2b"),
  consumer_terms:z.object({delivery:text(4000),cancellations_returns:text(6000),support_contact:text(1000),additional_charges:text(2000)}).default({delivery:"",cancellations_returns:"",support_contact:"",additional_charges:""}),
  currency:z.enum(["USD","EUR","GBP"]),receiving_account_id:text(200),
- buyer:z.object({legal_name:text(300),type,address:text(1200),country:text(2),tax_id:text(100)}),
+ buyer:z.object({legal_name:text(300),type,address:text(1200),country:text(2),tax_id:text(100),email:text(254).refine(v=>!v||!!emailAddress(v)).optional(),phone_number:text(30).refine(v=>!v||!!internationalPhone(v)).optional()}),
  remitter:z.object({legal_name:text(300),type,relationship:text()}),
  category:z.enum(["digital_services","physical_goods"]),
  order_source:z.enum(["direct_b2b","direct_consumer","ecommerce","crm"]),order_platform:text(200),order_reference:text(200),
@@ -18,7 +19,7 @@ export const draftSchema=z.object({
 });
 export function parseDraft(value:unknown){
  const result=draftSchema.safeParse(value);if(result.success)return result.data;
- const labels:Record<string,string>={currency:"invoice currency",receiving_account_id:"receiving account",buyer:"buyer details",remitter:"sender details",legal_name:"legal name",address:"billing address",country:"country (2-letter code)",tax_id:"tax / registration ID",type:"entity type",relationship:"commercial relationship",category:"goods or services category",order_source:"order source",order_platform:"platform name",order_reference:"order reference",tracking_numbers:"tracking numbers",description:"description",quantity:"quantity (whole number greater than zero)",unit_amount_minor:"unit price (greater than zero)",deliverable_reference:"delivery reference",source_of_funds:"source of funds",fund_utilization:"use of funds",discovery_channel:"buyer discovery channel",cross_border_justification:"international sourcing reason",commercial_end_use:"commercial end use",contract_path:"contract workflow",agreement_version:"agreement template",signature_consent:"signature authorization",document_ids:"supporting documents",expected_count:"number of payments",commercial_reason:"installment reason"};
+ const labels:Record<string,string>={currency:"invoice currency",receiving_account_id:"receiving account",buyer:"buyer details",remitter:"sender details",legal_name:"legal name",address:"billing address",country:"country (2-letter code)",tax_id:"tax / registration ID",email:"buyer email",phone_number:"buyer phone with country code",type:"entity type",relationship:"commercial relationship",category:"goods or services category",order_source:"order source",order_platform:"platform name",order_reference:"order reference",tracking_numbers:"tracking numbers",description:"description",quantity:"quantity (whole number greater than zero)",unit_amount_minor:"unit price (greater than zero)",deliverable_reference:"delivery reference",source_of_funds:"source of funds",fund_utilization:"use of funds",discovery_channel:"buyer discovery channel",cross_border_justification:"international sourcing reason",commercial_end_use:"commercial end use",contract_path:"contract workflow",agreement_version:"agreement template",signature_consent:"signature authorization",document_ids:"supporting documents",expected_count:"number of payments",commercial_reason:"installment reason"};
  const fields=[...new Set(result.error.issues.map(issue=>{
   const path=issue.path;
   if(path[0]==="items")return typeof path[1]==="number"?"item "+(path[1]+1)+" "+(labels[String(path[2])]||"details"):"at least one invoice item";

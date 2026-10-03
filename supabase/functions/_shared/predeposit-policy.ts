@@ -26,7 +26,7 @@ export type Invoice = {
  agreement_type?: AgreementType; consumer_terms?: ConsumerTerms;
  id: string; revision: number; currency: "USD" | "EUR" | "GBP"; receiving_account_id: string;
  merchant: { legal_name: string; incorporation_country: string };
- buyer: { legal_name: string; type: "company" | "sole_proprietor" | "individual" | "government"; address: string; country: string; tax_id: string };
+ buyer: { legal_name: string; type: "company" | "sole_proprietor" | "individual" | "government"; address: string; country: string; tax_id: string; email?: string; phone_number?: string };
  remitter: { legal_name: string; type: "company" | "sole_proprietor" | "individual" | "government"; relationship: string };
  category: "digital_services" | "physical_goods";
  order_source: "direct_b2b" | "direct_consumer" | "ecommerce" | "crm";

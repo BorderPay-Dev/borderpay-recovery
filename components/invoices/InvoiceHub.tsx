@@ -8,8 +8,9 @@ import {useThemeClasses} from '../../utils/i18n/ThemeLanguageContext';
 import {FloatingBackButton} from '../common/FloatingBackButton';
 import './InvoiceHub.css';
 import DocumentComparison from './DocumentComparison';
+import InvoiceShare from './InvoiceShare';
 
-const empty=()=>({agreement_type:'b2b',consumer_terms:{delivery:'',cancellations_returns:'',support_contact:'',additional_charges:''},currency:'USD',receiving_account_id:'',buyer:{legal_name:'',type:'company',address:'',country:'',tax_id:''},
+const empty=()=>({agreement_type:'b2b',consumer_terms:{delivery:'',cancellations_returns:'',support_contact:'',additional_charges:''},currency:'USD',receiving_account_id:'',buyer:{legal_name:'',type:'company',address:'',country:'',tax_id:'',email:'',phone_number:''},
  remitter:{legal_name:'',type:'company',relationship:''},category:'digital_services',order_source:'direct_b2b',order_platform:'',order_reference:'',tracking_numbers:[],
  items:[{description:'',quantity:1,unit_amount_minor:0,deliverable_reference:''}],source_of_funds:'',fund_utilization:'',discovery_channel:'',cross_border_justification:'',commercial_end_use:'',
  contract_path:'generated',agreement_version:'',signature_consent:false,document_ids:[],instalments:{expected_count:1,commercial_reason:''}});
@@ -175,6 +176,7 @@ export default function InvoiceHub({onBack}:{onBack:()=>void}){
  {data.account_warning&&<p className="ih-notice">{data.account_warning}</p>}<p className="ih-muted">{data.payment_review_required!==true?'Available active account details are included in the invoice. You can also create an invoice without bank details. Document checks are optional.':'Bank details remain locked until this invoice is approved.'}</p>{form.currency==='GBP'&&<p className="ih-notice">GBP is strictly B2B. The payment must come from the named corporate buyer.</p>}
  </section><section className="ih-card"><h2>Buyer & expected sender</h2><div className="ih-grid">
  <Field label="Buyer's legal name" value={form.buyer.legal_name} onChange={(v:string)=>nested('buyer','legal_name',v)} required/>
+ <Field label="Buyer email (optional)" type="email" value={form.buyer.email||''} onChange={(v:string)=>nested('buyer','email',v)}/><Field label="Buyer WhatsApp number (optional)" type="tel" value={form.buyer.phone_number||''} onChange={(v:string)=>nested('buyer','phone_number',v)} help="Include the country code, for example +44. Used to prepare sharing drafts."/>
  <Select label="Buyer type" value={form.buyer.type} onChange={(v:string)=>nested('buyer','type',v)} options={types}/>
  <Field label="Billing address" value={form.buyer.address} onChange={(v:string)=>nested('buyer','address',v)} required/>
  <Field label="Buyer country (2-letter code)" value={form.buyer.country} onChange={(v:string)=>nested('buyer','country',v.toUpperCase().slice(0,2))} help="For example GB, FR or US" required/>
@@ -211,6 +213,7 @@ export default function InvoiceHub({onBack}:{onBack:()=>void}){
  </section>}
  <fieldset disabled={data.enabled!==true} className="ih-actions ih-sticky" style={{border:0,padding:0,margin:0,minWidth:0}}><button type="button" onClick={()=>run(async()=>{await save();await refresh();setNotice('Draft saved.');})}>Save draft</button>
  <button type="button" onClick={()=>run(async()=>{validateInvoice();const d=await save();await download('download_invoice',{draft_id:d.id,version:d.version});await refresh();})}><Download size={18}/> Download invoice</button>
+ <InvoiceShare disabled={busy||data.enabled!==true} prepare={async()=>{validateInvoice();const d=await save();return call('download_invoice',{draft_id:d.id,version:d.version});}}/>
  <button className="ih-primary" type="button" onClick={()=>run(async()=>{validateInvoice(true);const d=await save();const invoice=await call('submit',{draft_id:d.id,version:d.version});setSelected(invoice);await refresh();setNotice('Documents submitted for checking. Your existing account access is unchanged.');})}><FileText size={18}/>{busy?'Please wait…':'Check invoice & documents'}</button></fieldset>
  </>}
  </fieldset>
@@ -222,6 +225,7 @@ export default function InvoiceHub({onBack}:{onBack:()=>void}){
  {(selected.reasons||[]).length>0&&<ul>{selected.reasons.map((r:string)=><li key={r}>{reasonText[r]||r.replace(/_/g,' ')}</li>)}</ul>}
  {(selected.findings||[]).map((f:any,n:number)=><p key={n}>{f.explanation}</p>)}
  <button type="button" disabled={busy} onClick={()=>run(()=>download('download_invoice'))}><Download size={18}/> Download invoice</button>
+ <InvoiceShare disabled={busy} prepare={()=>call('download_invoice',{invoice_id:selected.id})}/>
  {selected.status==='approved'?<><p><CheckCircle2 size={18}/> Approved for this invoice revision.</p><button type="button" className="ih-primary" disabled={busy} onClick={()=>run(()=>download())}><Download size={18}/> Download invoice & payment details</button></>:<p className="ih-muted">{data.payment_review_required===false?'You can download your invoice with account details while addressing the document checks shown above.':'Payment details are locked. Correct the draft and submit a new revision when requested.'}</p>}
  </div>}</section></>}
  </main>;
