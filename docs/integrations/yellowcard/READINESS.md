@@ -39,3 +39,7 @@ Before calling this production-ready, run synthetic sandbox KYB/entitlement chec
 After BorderPay compliance approval and explicit cutover authorization: deploy behind disabled per-product/per-merchant flags, validate read-only shadow results, pilot authorized merchants, reconcile balances and statements, then migrate in batches. Preserve Bridge routing for existing resources until each migration is reconciled. Never bulk replace provider IDs or move funds on deployment.
 
 Reference entry point: https://docs.yellowcard.engineering/llms.txt
+
+## Production read-only diagnostic
+
+`yellowcard-full-readiness` is a service-credential-only endpoint that uses the existing YC production credentials for six fixed GET requests. It returns endpoint availability/status only, never account numbers, balances, identities or keys. It does not activate any product or create any sandbox environment. A successful read is not evidence of write entitlement or a complete migration test. Current Bridge onboarding is confirmed disabled and new-business intake is enabled in BorderPay; existing rejected/paused KYB invitations retain their own authorization and financial restrictions.
