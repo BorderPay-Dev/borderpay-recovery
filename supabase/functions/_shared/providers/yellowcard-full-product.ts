@@ -1,6 +1,8 @@
+import { YC_OPERATIONS, type YCOperation } from "./yellowcard-operation-catalog.ts";
+import { validateSchema } from "./yellowcard-validation.ts";
 /** Server-only full-product foundation. Deliberately not wired to live routes.
  * Official contracts and rollout dependencies: docs/integrations/yellowcard/.
- * Production mutation is prohibited in this version, regardless of credentials.
+ * Mutations require an explicit server-side per-operation release grant; disabled by default.
  */
 export type YellowCardEnvironment = "sandbox" | "production";
 const hosts = { sandbox: "https://sandbox.api.yellowcard.io", production: "https://api.yellowcard.io" };
@@ -25,7 +27,7 @@ export async function verifyYellowCardSignature(raw: Uint8Array, signature: stri
   } catch { return false; }
 }
 export class YellowCardRequestError extends Error {
-  constructor(public readonly status: number | null, public readonly outcomeUnknown: boolean) {
+  constructor(public readonly status: number | null, public readonly outcomeUnknown: boolean, public readonly providerCode: string | null = null) {
     super(outcomeUnknown ? "Provider outcome unknown; reconcile before retrying" : "Provider request rejected");
   }
 }
@@ -39,6 +41,10 @@ export interface FullProductConfig {
   secret: string;
   /** Explicit sandbox fixture harness only; never enable with customer identity data. */
   sandboxWrites?: boolean;
+  /** Only trusted deployment configuration; never accept these grants in an HTTP body. */
+  release?: { operations: readonly YCOperation[]; approvalReference: string; confirmations: readonly string[] };
+  /** Currency entitlements verified with YC, not a list inferred from payment corridors. */
+  fiatCurrencies?: readonly string[];
   /** Existing server-configured production egress relay. Never accepted from an HTTP caller. */
   relay?: { url: string; token: string };
 }
@@ -50,10 +56,11 @@ export class YellowCardFullProductClient {
       if (config.environment !== "production" || u.protocol !== "https:" || u.username || u.password || u.hash || !config.relay.token) throw new Error("Invalid provider relay configuration");
     }
   }
-  private async request(method: "GET" | "POST", path: string, payload?: unknown, query?: Record<string, string>) {
+  private async request(method: "GET" | "POST" | "PUT" | "DELETE", path: string, payload?: unknown, query?: Record<string, string>, grant?: { operation: YCOperation; readOnly: boolean }) {
     if (!path.startsWith("/business/") || /[?#\\]/.test(path) || path.includes("..")) throw new Error("Invalid provider path");
-    const mutation = method !== "GET";
-    if (mutation && (this.config.environment !== "sandbox" || !this.config.sandboxWrites)) throw new Error("Full-product writes are disabled");
+    const mutation = method !== "GET" && !grant?.readOnly;
+    const released = grant && this.config.release?.approvalReference?.trim() && this.config.release.operations.includes(grant.operation);
+    if (mutation && !(this.config.environment === "sandbox" && this.config.sandboxWrites) && !released) throw new Error("Full-product writes are disabled");
     const url = new URL(path, hosts[this.config.environment]);
     for (const [k, v] of Object.entries(query ?? {})) url.searchParams.set(k, v);
     const body = payload === undefined ? undefined : JSON.stringify(payload);
@@ -73,11 +80,36 @@ export class YellowCardFullProductClient {
     } catch { throw new YellowCardRequestError(null, mutation); }
     // Do not leak provider bodies, request payloads, signatures or credentials to logs/UI.
     if (!response.ok) {
-      await response.body?.cancel();
-      throw new YellowCardRequestError(response.status, mutation && (response.status >= 500 || response.status === 408));
+      let providerCode: string | null = null;
+      try {
+        const raw = await response.text();
+        if (raw.length <= 65536) {
+          const code = JSON.parse(raw)?.code;
+          if (typeof code === "string" && /^[A-Za-z][A-Za-z0-9_]{0,63}$/.test(code)) providerCode = code;
+        }
+      } catch { /* Never expose raw response text. */ }
+      throw new YellowCardRequestError(response.status, mutation && (response.status >= 500 || response.status === 408 || providerCode === "POSSIBLE_DUPLICATE"), providerCode);
     }
     try { return await response.json() as unknown; }
     catch { throw new YellowCardRequestError(response.status, mutation); }
+  }
+  /** Fixed public-contract catalog; no caller-supplied hosts or paths. This is a server-only adapter. */
+  operation(operation: YCOperation, input: { body?: unknown; params?: Record<string,string>; query?: Record<string,string> } = {}) {
+    const contract = YC_OPERATIONS[operation];
+    if (!contract) throw new Error("Unsupported provider operation");
+    const confirmation = "confirmation" in contract ? contract.confirmation : null;
+    if (confirmation && !this.config.release?.confirmations.includes(confirmation)) throw new Error("Provider contract confirmation required");
+    let schema: unknown = contract.body;
+    if (operation === "createSubWallet" && this.config.fiatCurrencies?.length) {
+      schema = { ...contract.body, properties: { ...YC_OPERATIONS.createSubWallet.body.properties, currency: { type: "string", enum: this.config.fiatCurrencies } } };
+    }
+    if (Object.keys(schema as object).length) validateSchema(input.body, schema as Parameters<typeof validateSchema>[1]);
+    for (const p of contract.parameters) {
+      const v = p.in === "path" ? input.params?.[p.name] : input.query?.[p.name];
+      if (p.required && v === undefined) throw new Error("Missing provider request parameter");
+    }
+    const path = contract.path.replace(/\{([^}]+)\}/g, (_m, name) => segment(input.params?.[name] ?? ""));
+    return this.request(contract.method, path, input.body, input.query, { operation, readOnly: contract.effect === "read" });
   }
   cryptoConfiguration() { return this.request("GET", "/business/vaults/config"); }
   bankOnboardings() { return this.request("GET", "/business/virtual-bank/onboarding"); }
