@@ -45,6 +45,7 @@ export interface FullProductConfig {
   release?: { operations: readonly YCOperation[]; approvalReference: string; confirmations: readonly string[] };
   /** Currency entitlements verified with YC, not a list inferred from payment corridors. */
   fiatCurrencies?: readonly string[];
+  cryptoTokens?: readonly string[];
   /** Existing server-configured production egress relay. Never accepted from an HTTP caller. */
   relay?: { url: string; token: string };
 }
@@ -99,6 +100,10 @@ export class YellowCardFullProductClient {
     if (!contract) throw new Error("Unsupported provider operation");
     const confirmation = "confirmation" in contract ? contract.confirmation : null;
     if (confirmation && !this.config.release?.confirmations.includes(confirmation)) throw new Error("Provider contract confirmation required");
+    if (operation === 'createSend' || operation === 'generateAddress') {
+      const token=(input.body as {token?:unknown})?.token;
+      if(typeof token!=='string'||!this.config.cryptoTokens?.includes(token)||!/^(USDC|USDT|EURC)_/.test(token)||/_(XLM|XRP|TON|BTC)$/.test(token)) throw new Error('Custody asset/network not enabled');
+    }
     let schema: unknown = contract.body;
     if (operation === "createSubWallet" && this.config.fiatCurrencies?.length) {
       schema = { ...contract.body, properties: { ...YC_OPERATIONS.createSubWallet.body.properties, currency: { type: "string", enum: this.config.fiatCurrencies } } };

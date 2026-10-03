@@ -3,7 +3,7 @@
 begin;
 create table public.yc_runtime_settings (
   environment text primary key check(environment in ('production','sandbox')),
-  settings jsonb not null default '{"enabled":false,"writes_enabled":false,"approval_reference":"","confirmed_contracts":[],"enabled_operations":[],"fiat_currencies":[],"webhook_keys":{},"encryption_keys":{},"encryption_key_id":"","corporate_mapping_approved":false}'::jsonb
+  settings jsonb not null default '{"enabled":false,"writes_enabled":false,"approval_reference":"","confirmed_contracts":[],"enabled_operations":[],"fiat_currencies":[],"crypto_tokens":[],"webhook_keys":{},"encryption_keys":{},"encryption_key_id":"","corporate_mapping_approved":false}'::jsonb
 );
 insert into public.yc_runtime_settings(environment) values('production'),('sandbox');
 create or replace function public.yc_runtime_configuration(p_environment text)

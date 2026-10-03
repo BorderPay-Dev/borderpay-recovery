@@ -50,12 +50,12 @@ const context={merchantId:'merchant-a',environment:'production' as const,actorId
 function intent():PaymentIntent {return {operation:'createSend',sequenceId:'sequence-001',sourceResourceId:'source',sourceAsset:'USDC_BASE',reserveAmount:'101',body:{vaultId:'vault-a',endUserId:'merchant-a',sequenceId:'sequence-001',token:'USDC_BASE',amount:100,destination:{type:'EXTERNAL',address:'synthetic'},countryCode:'GB',travelRuleData:{name:'Synthetic recipient'}}};}
 const authorization={verifyAndConsume:async()=>({reference:'authorization',expiresAt:new Date(Date.now()+60000).toISOString()})};
 Deno.test('authorized custody execution submits once despite concurrent duplicate execution',async()=>{
- let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret',release:{operations:['createSend'],approvalReference:'SYNTHETIC',confirmations:[]}},async()=>{calls++;return Response.json({id:'yc-tx',status:'created'});});
+ let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret',cryptoTokens:['USDC_BASE'],release:{operations:['createSend'],approvalReference:'SYNTHETIC',confirmations:[]}},async()=>{calls++;return Response.json({id:'yc-tx',status:'created'});});
  const store=memoryStore(),engine=new YellowCardPaymentEngine(client,store,cipher,authorization),op=await engine.prepare(context,intent(),{});
  const results=await Promise.all([engine.execute(context,op),engine.execute(context,op)]);assert(calls===1);assert(results.some(x=>x.state==='submitted'));assert(store.finishes.includes('submitted'));
 });
 Deno.test('timeout never causes a second financial write and retains unknown outcome',async()=>{
- let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret',release:{operations:['createSend'],approvalReference:'SYNTHETIC',confirmations:[]}},()=>{calls++;throw new Error('timeout');});
+ let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret',cryptoTokens:['USDC_BASE'],release:{operations:['createSend'],approvalReference:'SYNTHETIC',confirmations:[]}},()=>{calls++;throw new Error('timeout');});
  const store=memoryStore(),engine=new YellowCardPaymentEngine(client,store,cipher,authorization),op=await engine.prepare(context,intent(),{});
  assert((await engine.execute(context,op)).state==='outcome_unknown');await engine.execute(context,op);assert(calls===1&&store.finishes[0]==='outcome_unknown');
 });

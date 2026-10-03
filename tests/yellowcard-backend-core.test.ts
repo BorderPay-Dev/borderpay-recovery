@@ -43,8 +43,8 @@ Deno.test('custody cannot use shared USD treasury or omit travel-rule evidence',
 Deno.test('GBP bank sends require sort code and guide-specific wallet binding',async()=>{
  const destination:Record<string,unknown>=Object.fromEntries(['accountNumber','accountName','networkId','bankName','bankAddress','bankCity','bankPostalCode','bankCountry','city','postalCode','state','country','address'].map(k=>[k,'synthetic']));
  Object.assign(destination,{accountType:'bank',bankAccountType:'checking',outboundTransactionType:'FASTER_PAYMENTS',memo:'Invoice 123'});
- const input={walletId:'wallet-gbp',sequenceId:'seq',channelId:'channel',amountUsd:'100',currency:'GBP',reason:'services',destination};
- await rejects(()=>virtualAccountPayment(business,input));destination.sortCode='12-34-56';const p=virtualAccountPayment(business,input);assert(p.walletId==='wallet-gbp'&&!('customerType'in p));
+ const input={walletId:'wallet-gbp',sequenceId:'seq',channelId:'channel',amountUsd:'100',currency:'GBP',reason:'services',destinationKind:'business' as const,destination};
+ await rejects(()=>virtualAccountPayment(business,input));destination.sortCode='12-34-56';const p=virtualAccountPayment(business,input);assert(p.walletId==='wallet-gbp'&&!('customerType'in p));await rejects(()=>virtualAccountPayment(business,{...input,destinationKind:'individual'}));
 });
 Deno.test('RFQ and refunds keep acceptance separate from financial settlement',async()=>{
  assert(financialState('rfq','RFQ_ACCEPTED')==='processing');assert(financialState('receive','refund_processing')==='refund_pending');assert(financialState('custody','complete')==='completed');

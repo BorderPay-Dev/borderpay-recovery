@@ -15,7 +15,8 @@ export function businessPayment(b:BusinessIdentity,input:{direction:'send'|'rece
   return {sequenceId:nonempty(input.sequenceId,'sequenceId'),channelId:nonempty(input.channelId,'channelId'),localAmount:amount,currency:input.currency,country:input.country,reason:nonempty(input.reason,'reason'),customerUID:b.merchantId,customerType:'institution',forceAccept:false,
     ...(input.direction==='send' ? {sender:institutionalParty(b),destination:input.counterparty} : {recipient:institutionalParty(b),source:input.counterparty})};
 }
-export function virtualAccountPayment(b:BusinessIdentity,input:{walletId:string;sequenceId:string;channelId:string;amountUsd:string;currency:string;reason:string;destination:Record<string,unknown>}) {
+export function virtualAccountPayment(b:BusinessIdentity,input:{walletId:string;sequenceId:string;channelId:string;amountUsd:string;currency:string;reason:string;destinationKind?:'business'|'individual';destination:Record<string,unknown>}) {
+  if(input.currency==='GBP'&&input.destinationKind!=='business')throw new YCValidationError('destination','gbp_business_recipient_required');
   const d=input.destination;const rail=String(d.outboundTransactionType);
   const rails:Record<string,string[]>={USD:['ACH','WIRE','SWIFT'],EUR:['SEPA','SWIFT'],GBP:['FASTER_PAYMENTS','SWIFT']};
   if(!rails[input.currency]?.includes(rail)) throw new YCValidationError('payment_rail');

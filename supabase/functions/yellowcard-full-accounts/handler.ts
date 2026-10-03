@@ -9,7 +9,7 @@ export function accountsHandler(deps:{environment:YellowCardEnvironment;authenti
       const body=JSON.parse(new TextDecoder().decode(await boundedBody(req,4096)));
       const merchant=body.merchantId??user;
       if(typeof merchant!=='string'||!await deps.authorize(user,merchant))return Response.json({error:'Account access denied'},{status:403});
-      const balances=await deps.balances(merchant),rates=await deps.rates();
+      const [balances,rates]=await Promise.all([deps.balances(merchant),deps.rates()]);
       const total=usdPortfolio(merchant,deps.environment,balances,rates);
       // Public DTO contains neither provider names nor partner-wide identifiers.
       return Response.json({accounts:balances.filter(b=>b.kind!=='virtual_account').map(b=>({id:b.resourceId,currency:b.asset,availableBalance:b.available,pendingBalance:b.held,spendable:b.active&&Date.now()-Date.parse(b.observedAt)<=60000,updatedAt:b.observedAt})),totalBalance:total},{headers:{'Cache-Control':'no-store'}});

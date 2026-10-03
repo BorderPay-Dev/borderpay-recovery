@@ -16,15 +16,17 @@ Deno.serve(async(req:Request)=>{
       balances:async(merchant)=>{
         const bindings=await r.store.request(`yc_resources?merchant_id=eq.${encodeURIComponent(merchant)}&environment=eq.${environment}&select=id,merchant_id,environment,provider_resource_id,resource_kind,status`) as BoundResource[];
         const list:Balance[]=[];
-        // Bounded merchant resource count prevents a request from becoming an unbounded fan-out.
         if(bindings.length>100)throw new Error('Use paginated resource synchronization');
-        for(const b of bindings) {
-          if(b.resource_kind==='virtual_account')continue;
-          const data=await r.client.operation(b.resource_kind==='vault'?'getVault':'getSubWalletById',{params:b.resource_kind==='vault'?{vaultId:b.provider_resource_id}:{id:b.provider_resource_id}});
-          const balances=resourceBalances(b,data);
-          for(const balance of balances) await r.store.request('yc_balances?on_conflict=resource_id,asset','POST',{resource_id:b.id,merchant_id:merchant,environment,asset:balance.asset,available:balance.available,held:balance.held,observed_at:balance.observedAt,provider_reference:b.provider_resource_id},'resolution=merge-duplicates,return=minimal');
-          list.push(...balances);
+        // Bounded concurrency avoids serial waits across currency accounts.
+        for(let offset=0;offset<bindings.length;offset+=4) {
+          const group=await Promise.all(bindings.slice(offset,offset+4).map(async(b)=>{
+            if(b.resource_kind==='virtual_account')return [] as Balance[];
+            const data=await r.client.operation(b.resource_kind==='vault'?'getVault':'getSubWalletById',{params:b.resource_kind==='vault'?{vaultId:b.provider_resource_id}:{id:b.provider_resource_id}});
+            return resourceBalances(b,data);
+          }));
+          list.push(...group.flat());
         }
+        if(list.length)await r.store.request('yc_balances?on_conflict=resource_id,asset','POST',list.map(balance=>({resource_id:balance.resourceId,merchant_id:merchant,environment,asset:balance.asset,available:balance.available,held:balance.held,observed_at:balance.observedAt,provider_reference:bindings.find(b=>b.id===balance.resourceId)!.provider_resource_id})),'resolution=merge-duplicates,return=minimal');
         return list;
       },
       rates:async()=>{
