@@ -1,16 +1,20 @@
+> **Production blocker:** the hosted customer-token handoff and a guaranteed customer-ID/external-user-ID completion event are not implemented. See [production authorization and events](PRODUCTION_AUTH_AND_EVENTS.md). Sandbox acceptance does not resolve these gaps.
+
 # Partner customer API integration
 
-The API gateway routes customer operations through BorderPay's existing financial backend. Use a partner API key on your server and an authenticated **end-customer** Supabase session in `X-BorderPay-Customer-Authorization: Bearer <access_token>`. The session must belong to an immutable `api_tenant_end_users` membership for that partner. An operator's session cannot substitute for customer consent. Never embed partner API keys in a web/mobile application.
+The API gateway routes customer operations through BorderPay's existing financial backend. Use a partner API key on your server and an authenticated **end-customer** BorderPay session in `X-BorderPay-Customer-Authorization: Bearer <access_token>`. The session must belong to an immutable `api_tenant_end_users` membership for that partner. An operator's session cannot substitute for customer consent. Never embed partner API keys in a web/mobile application.
 
-Gateway URL: `https://orwrcpwsffjlvzuraxjc.supabase.co/functions/v1/public-api-gateway`.
+Gateway URL: `https://api.borderpayafrica.com`.
 Send the logical route in `x-borderpay-route`, the environment in `x-borderpay-mode`, and a JSON `method` field when using POST transport. Direct GET paths with query parameters are also accepted. Create/update/delete operations require a stable `Idempotency-Key` (8–64 printable non-space characters for payments). Retry uncertain payment responses with the same key and unchanged financial payload. Authentication credentials and SCA authorization IDs do not change that payment identity. Failed authorization responses are not cached as successful payment results.
+
+BorderPay accepts business customers only, through both API and white-label onboarding. Directors, owners and control persons are verified within business KYB; they are not personal-account customers.
 
 ## Onboarding and ownership
 
 1. After operator product/commercial approval, create an API credential with the required scopes and configure the partner egress IP allowlist.
-2. Create a one-time `/v1/onboarding-authorizations` token for the partner's external user identifier and approved account type. This step uses the partner key without a customer session.
+2. Create a one-time `/v1/onboarding-authorizations` token for the partner's external user identifier and business account type (`requested_account_types: ["business"]`). This step uses the partner key without a customer session.
 3. Complete the existing BorderPay hosted signup/authentication flow using that token. It creates immutable tenant/customer membership. Do not create an unrelated Supabase user or pass arbitrary user IDs to claim an account.
-4. The customer authenticates; your server forwards their access token in the separate customer header. `/v1/customers` reads their linked identity. POST `/v1/customers` or `/v1/verification-links` resumes their hosted KYC/KYB and ToS. Customer identity fields come from the signup/verified profile, not partner-supplied overrides.
+4. The customer authenticates; the gateway expects their access token in the separate customer header. The secure handoff to a partner server is not currently implemented; do not obtain tokens by copying browser storage or collecting passwords. `/v1/customers` reads their linked identity. POST `/v1/customers` or `/v1/verification-links` resumes their hosted business verification. Customer identity fields come from the signup/verified profile, not partner-supplied overrides.
 5. Approved customer provisioning uses the normal regional policy. POST `/v1/wallets` ensures the requested supported wallet and reuses an existing chain wallet. EEA: Base with USDC/EURC. Non-EEA: USDC/Base and USDT/Tron.
 
 ## Routes and scopes
@@ -38,22 +42,22 @@ Save the external wallet first, then use its ID and address:
 
 ```json
 {
-  "source": {"payment_rail":"bridge_wallet","currency":"EURC","amount":"150.00","bridge_wallet_id":"CUSTOMER_BASE_WALLET"},
+  "source": {"payment_rail":"borderpay_wallet","currency":"EURC","amount":"150.00","wallet_id":"CUSTOMER_BASE_WALLET"},
   "destination": {"payment_rail":"base","currency":"EURC","external_wallet_id":"SAVED_WALLET_ID","address":"SAVED_ADDRESS"}
 }
 ```
 
-For EEA, send that exact object as `request` to `/v1/payment-authorizations`, with the customer's PIN and current TOTP and the intended payment's Idempotency-Key. Then POST it to `/v1/transfers` with returned `sca_authorization_id` and the **same** Idempotency-Key. Amount, asset, wallet, destination and tenant are bound by the canonical core payload hash. Authorization expires and is single-use. Do not synthesize `sca_used`; Bridge initiation evidence comes from the core transfer endpoint only after successful factor verification.
+For EEA, send that exact object as `request` to `/v1/payment-authorizations`, with the customer's PIN and current TOTP and the intended payment's Idempotency-Key. Then POST it to `/v1/transfers` with returned `sca_authorization_id` and the **same** Idempotency-Key. Amount, asset, wallet, destination and tenant are bound by the canonical core payload hash. Authorization expires and is single-use. Do not synthesize `sca_used`; Payment initiation evidence comes from the core transfer endpoint only after successful factor verification.
 
 For non-EEA API payouts, include `transaction_pin` in the payment request. TOTP is not required. Existing first-party/white-label customer-app biometric choices remain unchanged; this server API does not accept an unverified `biometric:true` flag.
 
-Fiat payouts use a saved `external_account_id`, the matching bank payment rail/currency, and USDC or USDT funding as supported by the core. Other-customer custodial destinations must already be registered to this same partner; arbitrary Bridge wallet IDs are rejected.
+Fiat payouts use a saved `external_account_id`, the matching bank payment rail/currency, and USDC or USDT funding as supported by the core. Other-customer custodial destinations must already be registered to this same partner; arbitrary wallet IDs are rejected.
 
 An approved USD stablecoin transfer cap is required on the tenant. EURC uses the separately approved `api_tenants.metadata.max_single_transfer_eur` decimal-string cap, never an unconverted comparison to USD. Only operators should configure approved caps.
 
 ## Environments and release controls
 
-Provider environment, actual Bridge URL and tenant mode must agree for customer routes, including reads and onboarding. A sandbox header does not switch credentials. This deployment's production provider must not serve sandbox customer operations. Use an independently configured sandbox backend/provider credential before enabling sandbox writes. Health/webhook configuration alone is not a financial sandbox.
+Provider environment, configured service endpoint and tenant mode must agree for customer routes, including reads and onboarding. A sandbox header does not switch credentials. This deployment's production provider must not serve sandbox customer operations. Use an independently configured sandbox backend/provider credential before enabling sandbox writes. Health/webhook configuration alone is not a financial sandbox.
 
 Production APIs remain gated by product approval, tenant activation, beta allowlist, configured provider/money-movement controls and transfer limits. White-label publication is separately controlled by a verified domain and approved release. Do not bypass either workflow to test.
 

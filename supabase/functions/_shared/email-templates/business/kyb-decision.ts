@@ -13,7 +13,7 @@ export function render(p: BusinessKybDecisionProps): RenderedEmail {
   const approved = p.decision === "approved";
 
   const subject = approved
-    ? `${company} has been verified on BorderPay`
+    ? `${company} has been verified on BorderPay Velocity`
     : `Action required — ${company} needs more KYB info`;
 
   const heading = approved ? "KYB approved" : "We need a bit more information";
@@ -36,7 +36,7 @@ export function render(p: BusinessKybDecisionProps): RenderedEmail {
     : `${reasonBlock}
        ${nextSteps ? `<p style="margin:14px 0 0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">${escapeHtml(nextSteps)}</p>` : ""}`;
 
-  const ctaText = approved ? "Open BorderPay" : "Contact support";
+  const ctaText = approved ? "Open BorderPay Velocity" : "Contact support";
   const ctaUrl  = approved ? BORDERPAY_BRAND.appUrl : `mailto:${BORDERPAY_BRAND.supportEmail}`;
 
   return {
