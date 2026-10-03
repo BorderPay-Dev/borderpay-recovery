@@ -12,7 +12,7 @@ export function internationalPhone(value:unknown):string {
 export function invoiceShareContext(payload:any,invoiceNumber:string):BuyerShareContext {
  const total=(payload?.items||[]).reduce((n:number,i:any)=>n+i.quantity*i.unit_amount_minor,0);
  const email=emailAddress(payload?.buyer?.email),phone=internationalPhone(payload?.buyer?.phone_number);
- return {buyer_name:oneLine(payload?.buyer?.legal_name),buyer_email:email,buyer_phone_number:phone,merchant_name:oneLine(payload?.merchant?.legal_name),invoice_number:oneLine(invoiceNumber,80),currency:['USD','EUR','GBP'].includes(payload?.currency)?payload.currency:'',total:Number.isSafeInteger(total)&&total>0?(total/100).toFixed(2):'',contact_source:email||phone?'saved':'missing'};
+ return {buyer_name:oneLine(payload?.buyer?.legal_name),buyer_email:email,buyer_phone_number:phone,merchant_name:oneLine(payload?.merchant?.legal_name),invoice_number:oneLine(invoiceNumber,80),currency:['USD','EUR','GBP'].includes(payload?.currency)?payload.currency:'',total:Number.isSafeInteger(total)&&total>0?String(Math.floor(total/100))+'.'+String(total%100).padStart(2,'0'):'',contact_source:email||phone?'saved':'missing'};
 }
 export function suggestedBuyerMessage(c:BuyerShareContext):{subject:string;text:string} {
  const reference=oneLine(c.invoice_number,80),seller=oneLine(c.merchant_name),buyer=oneLine(c.buyer_name);

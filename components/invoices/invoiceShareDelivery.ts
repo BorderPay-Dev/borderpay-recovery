@@ -34,12 +34,13 @@ export function releasePreparedInvoice(prepared:PreparedInvoice){
  // The target app may read after its compose window opens. Do not revoke early.
  if(prepared.cachePath)setTimeout(()=>{void Filesystem.deleteFile({path:prepared.cachePath!,directory:Directory.Cache}).catch(()=>{});},3600000);
 }
-export function canShareInvoice(prepared:PreparedInvoice){return !!prepared.nativeUri||!!(navigator.canShare&&navigator.canShare({files:[prepared.file]}));}
+export function canShareInvoice(prepared:PreparedInvoice){try{return !!prepared.nativeUri||!!(navigator.canShare&&navigator.canShare({files:[prepared.file]}));}catch{return false;}}
 export async function shareInvoice(prepared:PreparedInvoice,subject:string,text:string){
  if(prepared.nativeUri){await Share.share({title:subject,text,files:[prepared.nativeUri],dialogTitle:'Share to Buyer'});return;}
  if(!canShareInvoice(prepared))throw Error('File sharing is not supported by this browser. Download the PDF and use a message draft below.');
  await navigator.share({title:subject,text,files:[prepared.file]});
 }
-export function downloadPreparedInvoice(prepared:PreparedInvoice){
+export async function downloadPreparedInvoice(prepared:PreparedInvoice){
+ if(prepared.nativeUri){await Share.share({files:[prepared.nativeUri],title:prepared.file.name,dialogTitle:"Save PDF"});return;}
  const url=URL.createObjectURL(prepared.file),a=document.createElement('a');a.href=url;a.download=prepared.file.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),60000);
 }

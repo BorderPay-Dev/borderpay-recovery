@@ -38,7 +38,7 @@ function ShareDialog({prepare,onClose}:{prepare:()=>Promise<SharePackage>;onClos
    <div className="ih-actions">
     {canShareInvoice(file)&&<button type="button" className="ih-primary" disabled={busy||!text.trim()} onClick={()=>void run(async()=>{await shareInvoice(file,subject,text);if(alive.current)setNotice('Sharing closed. Check the receiving app to confirm whether your message was sent.');})}><Share2 size={18}/> Choose app & share PDF</button>}
     <button type="button" disabled={busy} onClick={()=>void run(async()=>{await navigator.clipboard.writeText(text);if(alive.current)setNotice('Message copied. Paste it into your buyer’s conversation.');})}>Copy message</button>
-    <button type="button" disabled={busy} onClick={()=>downloadPreparedInvoice(file)}>Download PDF</button>
+    <button type="button" disabled={busy} onClick={()=>void run(()=>downloadPreparedInvoice(file))}>Download PDF</button>
    </div>
    <p className="ih-muted">Choose WhatsApp, Mail or Gmail in your device’s share menu. Some apps accept the PDF but omit the message; use Copy message if needed. BorderPay does not send it automatically.</p>
    <details><summary>Open a message draft instead</summary><p className="ih-muted">These drafts prefill the recipient and text only. Attach the downloaded PDF before sending.</p><div className="ih-actions">

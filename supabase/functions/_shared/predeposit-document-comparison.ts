@@ -59,7 +59,7 @@ export function compareDocumentFields(invoice:Extracted,contract:Extracted,merch
  return findings;
 }
 export async function reviewDocumentPair(invoiceOcr:ReadDocument,contractOcr:ReadDocument,merchant:string,config:AzureConfig,fetcher:typeof fetch=fetch){
- const binding={invoice_sha256:invoiceOcr.document_sha256,contract_sha256:contractOcr.document_sha256,merchant_name:merchant,prompt_version:DOCUMENT_CHECK_VERSION};
+ const binding={invoice_sha256:invoiceOcr.document_sha256,contract_sha256:contractOcr.document_sha256,merchant_name:merchant,prompt_version:DOCUMENT_CHECK_VERSION,contact_extraction_version:"buyer-contacts-1"};
  const audit={...binding,input_sha256:await sha256(canonicalJson(binding)),authenticity_verified:false,model:config.deployment};
  const unavailable=()=>({...audit,status:"unavailable",findings:[{code:"review_unavailable",explanation:"The documents could not be reviewed reliably. Please try again or upload clearer, complete PDFs."}]});
  try{

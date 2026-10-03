@@ -22,7 +22,7 @@ Deno.test('contextual message uses the same invoice snapshot and never includes 
  const d=suggestedBuyerMessage(c);assert.match(d.text,/Dear Buyer Ltd/);assert.match(d.text,/GBP 250.00/);assert.match(d.subject,/INV-100/);assert.doesNotMatch(JSON.stringify(d),/PRIVATE|https:|approved|paid/i);
  assert.equal(c.contact_source,'saved');
 });
-Deno.test('uploaded sharing stays owner and hash bound, and rejects pending or rejected evidence',()=>{
+Deno.test('uploaded sharing stays owner and hash bound, and rejects unfinished checks or rejected evidence',()=>{
  const i={id:'i',owner_user_id:'a',kind:'merchant_invoice',mime_type:'application/pdf',sha256:'ih',scan_status:'clean'},c={id:'c',owner_user_id:'a',kind:'executed_contract',mime_type:'application/pdf',sha256:'ch',scan_status:'clean'},r={owner_user_id:'a',status:'matched',invoice_asset_id:'i',contract_asset_id:'c',invoice_sha256:'ih',contract_sha256:'ch'};
  validateSharePair('a',r,i,c);assert.throws(()=>validateSharePair('b',r,i,c));assert.throws(()=>validateSharePair('a',{...r,status:'reviewing'},i,c));assert.throws(()=>validateSharePair('a',r,{...i,sha256:'changed'},c));assert.throws(()=>validateSharePair('a',r,i,{...c,scan_status:'rejected'}));
 });

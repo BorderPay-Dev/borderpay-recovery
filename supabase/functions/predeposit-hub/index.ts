@@ -149,7 +149,7 @@ Deno.serve(async req=>{
   }
   if(action==="share_document_check"){
    const row=checked<any>(await db.from("predeposit_document_checks").select("*").eq("id",uuid(body.check_id)).eq("owner_user_id",owner).single());
-   const assets=checked<any[]>(await db.from("predeposit_assets").select("*").eq("owner_user_id",owner).in("id",[row.invoice_asset_id,row.contract_asset_id]));
+   const assets=checked<any[]|null>(await db.from("predeposit_assets").select("*").eq("owner_user_id",owner).in("id",[row.invoice_asset_id,row.contract_asset_id]))||[];
    const invoice=assets.find(a=>a.id===row.invoice_asset_id),contract=assets.find(a=>a.id===row.contract_asset_id);
    validateSharePair(owner,row,invoice,contract);
    const bytes=await mergeBuyerDocuments(await loadAssetBytes(db,invoice),await loadAssetBytes(db,contract),contract.mime_type);
