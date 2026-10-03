@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>BorderPay Developer Docs</title>
+    <meta
+      name="description"
+      content="BorderPay developer documentation for API authentication, customers, wallets, virtual accounts, transfers, payouts, African corridors, webhooks, SDKs, and white-label integrations."
+    />
+    <link rel="icon" href="/borderpay-logo.png" />
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="mobile-overlay" data-close-menu></div>
+
+    <header class="topbar">
+      <button class="icon-button menu-button" type="button" data-menu-toggle aria-label="Open documentation menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <a class="brand" href="#overview" aria-label="BorderPay developer documentation home">
+        <img src="/borderpay-logo.png" alt="BorderPay" />
+        <span>Developers</span>
+      </a>
+      <nav class="topnav" aria-label="Primary">
+        <a href="#quickstart">Docs</a>
+        <a href="#reference">API Reference</a>
+        <a href="#api-status">API Status</a>
+        <a href="#corridors">Corridors</a>
+        <a href="#go-live">Go live</a>
+      </nav>
+      <div class="top-actions">
+        <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch color theme">
+          <span class="theme-dot"></span>
+          <span data-theme-label>Dark</span>
+        </button>
+        <a class="console-link" href="https://app.borderpayafrica.com" rel="noreferrer">Dashboard</a>
+      </div>
+    </header>
+
+    <div class="docs-shell">
+      <aside class="sidebar" aria-label="Documentation navigation">
+        <div class="sidebar-head">
+          <a class="brand compact" href="#overview" aria-label="BorderPay developer documentation home">
+            <img src="/borderpay-logo.png" alt="" />
+            <span>Developers</span>
+          </a>
+          <button class="icon-button close-button" type="button" data-close-menu aria-label="Close documentation menu">x</button>
+        </div>
+
+        <label class="search-box" for="docs-search">
+          <span>Search</span>
+          <input id="docs-search" type="search" placeholder="Search endpoints, countries, webhooks..." autocomplete="off" />
+        </label>
+
+        <nav class="side-nav">
+          <a href="#overview">Overview</a>
+          <a href="#quickstart">Quickstart</a>
+          <a href="#authentication">Authentication</a>
+          <a href="#api-status">API Status</a>
+          <a href="#reference">API Reference</a>
+          <a href="#virtual-accounts">Virtual Accounts</a>
+          <a href="#transfers">Transfers & Payouts</a>
+          <a href="#corridors">African Corridors</a>
+          <a href="#restricted-countries">Restricted Countries</a>
+          <a href="#webhooks">Webhooks</a>
+          <a href="#errors">Errors</a>
+          <a href="#sdks-tools">SDKs & Tools</a>
+          <a href="#white-label">White Label</a>
+          <a href="#go-live">Go Live</a>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="status-dot"></span>
+          <p>Private beta API access. Keys are issued after BorderPay approval.</p>
+        </div>
+      </aside>
+
+      <main id="main" class="content">
+        <section id="overview" class="hero doc-section" data-search="overview borderpay api stablecoin cross border payments partners white label private beta">
+          <div class="hero-copy">
+            <p class="eyebrow">BorderPay API Platform</p>
+            <h1>One API for compliant cross-border payments.</h1>
+            <p class="lead">
+              Build customer onboarding, stablecoin wallets, virtual accounts, cross-border transfers, supplier payouts,
+              webhook automation, and signed partner-branded onboarding through BorderPay.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="#quickstart">Start integration</a>
+              <a class="button secondary" href="#reference">View API reference</a>
+            </div>
+          </div>
+
+          <div class="hero-terminal" aria-label="API request example">
+            <div class="terminal-top">
+              <span></span><span></span><span></span>
+              <strong>POST /v1/transfers</strong>
+            </div>
+            <pre><code>{
+  "source": {
+    "payment_rail": "borderpay_wallet",
+    "currency": "USDC",
+    "amount": "2500.00",
+    "wallet_id": "wlt_source_..."
+  },
+  "destination": {
+    "payment_rail": "borderpay_wallet",
+    "currency": "USDC",
+    "wallet_id": "wlt_destination_..."
+  },
+  "idempotency_key": "transfer_INV_2049"
+}</code></pre>
+          </div>
+        </section>
+
+        <section class="surface-grid doc-section" data-search="features private api docs reference support">
+          <article>
+            <span class="metric">01</span>
+            <h2>Private access</h2>
+            <p>Business API keys are not public signup keys. BorderPay issues sandbox and production access after KYB, use-case review, and route approval.</p>
+          </article>
+          <article>
+            <span class="metric">02</span>
+            <h2>Provider-neutral</h2>
+            <p>Your integration calls BorderPay. BorderPay manages the underlying payment partners, compliance status, route selection, and provider fail-closed behavior.</p>
+          </article>
+          <article>
+            <span class="metric">03</span>
+            <h2>Production controls</h2>
+            <p>Every money movement request uses authentication, idempotency, verification gates, country restrictions, and signed webhooks.</p>
+          </article>
+        </section>
+
+        <section id="quickstart" class="doc-section split" data-search="quickstart first request curl node health sandbox api key">
+          <div class="section-copy">
+            <p class="eyebrow">Quickstart</p>
+            <h2>Make the first request</h2><p>BorderPay is business-only. Complete business onboarding and owner verification before financial services. Partners call BorderPay endpoints only.</p>
+            <p>
+              Use a sandbox key issued by BorderPay. Never place API keys in browser code, mobile apps, public repos,
+              screenshots, or support tickets.
+            </p>
+            <ol class="steps">
+              <li>Request a private developer tenant from BorderPay.</li>
+              <li>Request a sandbox key and customer-operation enablement from BorderPay.</li>
+              <li>Send your first authenticated request with a bearer token.</li>
+              <li>Register a webhook endpoint. Use synthetic data; payment tests require an enabled sandbox backend.</li>
+            </ol>
+          </div>
+          <div class="code-panel">
+            <div class="code-tabs" role="tablist" aria-label="Quickstart examples">
+              <button class="tab active" type="button" data-tab="quick-curl">cURL</button>
+              <button class="tab" type="button" data-tab="quick-node">Node</button>
+              <button class="copy" type="button" data-copy-for="quick-curl">Copy</button>
+            </div>
+            <pre id="quick-curl" class="code-sample active"><code>export BORDERPAY_API_KEY="bpk_test_..."
+
+curl https://sandbox.api.borderpayafrica.com/v1/health \
+  -H "Authorization: Bearer $BORDERPAY_API_KEY" \
+  -H "x-borderpay-mode: sandbox"</code></pre>
+            <pre id="quick-node" class="code-sample"><code>const response = await fetch("https://sandbox.api.borderpayafrica.com/v1/health", {
+  headers: {
+    Authorization: `Bearer ${process.env.BORDERPAY_API_KEY}`,
+    "x-borderpay-mode": "sandbox",
+  },
+});
+
+console.log(await response.json());</code></pre>
+          </div>
+        </section>
+
+        <section id="authentication" class="doc-section" data-search="authentication bearer token api key idempotency unauthorized scopes tenant">
+          <div class="section-title">
+            <p class="eyebrow">Authentication</p>
+            <h2>Bearer keys, scopes, and idempotency</h2>
+            <p>Every request is tenant-scoped. Mutating requests must include an idempotency key so retries cannot create duplicate customers, virtual accounts, transfers, or payouts.</p>
+          </div>
+          <div class="table-card">
+            <table>
+              <thead>
+                <tr>
+                  <th>Header</th>
+                  <th>Required</th>
+                  <th>Description</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>Authorization</code></td>
+                  <td>Yes</td>
+                  <td><code>Bearer bpk_test_...</code> or <code>Bearer bpk_live_...</code></td>
+                </tr>
+                <tr>
+                  <td><code>x-borderpay-mode</code></td>
+                  <td>Recommended</td>
+                  <td>Use <code>sandbox</code> or <code>production</code>. Mode mismatches are rejected.</td>
+                </tr>
+                <tr>
+                  <td><code>Idempotency-Key</code></td>
+                  <td>POST/PATCH</td>
+                  <td>Unique key per business operation. Reuse only for safe retries of the same request.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="notice danger">
+            <strong>Unauthorized response</strong>
+            <p><code>{"success":false,"error":{"code":"unauthorized","message":"API key bearer token is required"}}</code></p>
+            <p>This means the request reached the API without a bearer token. It is not a provider failure.</p>
+          </div>
+        </section>
+
+        <section id="api-status" class="doc-section" data-search="api status environments sandbox production domains dns health api borderpayafrica uptime">
+          <div class="section-title">
+            <p class="eyebrow">API Status</p>
+            <h2>Health, sandbox, and production</h2>
+            <p>Use the health endpoint for API availability and mode checks. Provider route availability is returned by the route itself and may differ by tenant, country, currency, and environment.</p>
+          </div>
+          <div class="env-grid">
+            <article class="env-card">
+              <span class="pill">Sandbox</span>
+              <h3>sandbox.api.borderpayafrica.com</h3>
+              <p>Test keys, isolated synthetic businesses, test webhooks and non-live balances. <a href="/artifacts/api/SANDBOX_TESTING.md">Sandbox integration guide and current limitations</a>. <a href="/artifacts/api/PRODUCTION_AUTH_AND_EVENTS.md">Production authorization and event contract</a>.</p>
+            </article>
+            <article class="env-card">
+              <span class="pill live">Production</span>
+              <h3>api.borderpayafrica.com</h3>
+              <p>Live keys only after KYB/KYC, use-case review, route enablement, risk limits, and webhook verification.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="reference" class="doc-section" data-search="api reference endpoints customers onboarding authorizations wallets virtual accounts transfers payouts webhooks rates">
+          <div class="section-title row">
+            <div>
+              <p class="eyebrow">API Reference</p>
+              <h2>Resources and endpoints</h2>
+              <p>Readable reference for developers. Contract files are available in tools, but the primary docs are designed for humans.</p>
+            </div>
+            <a class="button secondary" href="#sdks-tools">Integration tools</a>
+          </div>
+
+          <div class="endpoint-list">
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method get">GET</span><code>/v1/health</code></div>
+              <h3>Health</h3>
+              <p>Check gateway readiness, API mode, tenant status, and rate-limit state.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/customers</code></div>
+              <h3>Business customers</h3>
+              <p>Resume verification for an authenticated business customer. Personal accounts are not accepted through API or white-label onboarding. Directors and UBOs verify within business KYB.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/onboarding-authorizations</code></div>
+              <h3>Onboarding authorizations</h3>
+              <p>Issue a signed, short-lived, single-use onboarding link for an end user allowed by your tenant policy.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/wallets</code></div>
+              <h3>Wallets</h3>
+              <p>Create stablecoin wallets for approved customers and supported chains.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/virtual-accounts</code></div>
+              <h3>Virtual accounts</h3>
+              <p>Create USD, EUR, or GBP account details for eligible customers and route deposits to stablecoin wallets.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/transfers</code></div>
+              <h3>Transfers</h3>
+              <p>Move USDC or USDT between tenant-owned wallets using the same currency.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/payouts</code></div>
+              <h3>Payouts</h3>
+              <p>Pay an approved external account through ACH, wire, SEPA, or Faster Payments where enabled.</p>
+            </article>
+            <article class="endpoint-card">
+              <div class="endpoint-head"><span class="method post">POST</span><code>/v1/webhooks</code></div>
+              <h3>Webhooks</h3>
+              <p>Register webhook endpoints and receive signed event notifications.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="virtual-accounts" class="doc-section split" data-search="virtual accounts usd eur gbp rail deposits usdc usdt">
+          <div class="section-copy">
+            <p class="eyebrow">Virtual Accounts</p>
+            <h2>Fiat account details that settle to stablecoins</h2>
+            <p>
+              BorderPay virtual accounts support USD, EUR, and GBP account details for eligible customers. Fiat deposits into
+              a virtual account are monitored, reviewed when required, and routed to the customer's stablecoin wallet.
+            </p>
+            <div class="rail-list">
+              <span>USD account details</span>
+              <span>EUR SEPA details</span>
+              <span>GBP Faster Payments details</span>
+            </div>
+          </div>
+          <div class="code-panel">
+            <div class="code-tabs">
+              <span>Create virtual account</span>
+              <button class="copy" type="button" data-copy-for="va-create">Copy</button>
+            </div>
+            <pre id="va-create" class="code-sample active"><code>curl https://api.borderpayafrica.com/v1/virtual-accounts \
+  -X POST \
+  -H "Authorization: Bearer $BORDERPAY_API_KEY" \
+  -H "Idempotency-Key: va_2026_07_15_001" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currency": "EUR"
+  }'</code></pre>
+          </div>
+        </section>
+
+        <section id="transfers" class="doc-section split" data-search="transfers payouts suppliers external account ach wire sepa faster payments stablecoin">
+          <div class="section-copy">
+            <p class="eyebrow">Transfers & Payouts</p>
+            <h2>Cross-border supplier payment flow</h2><p>Non-EEA payouts require the customer transaction PIN. EEA business payouts require payment authorization with PIN and TOTP before submission. Keep the same payment and Idempotency-Key.</p>
+            <p>
+              Complete business signup and KYB, authenticate the business customer, collect funds through an eligible virtual account, then use transfers
+              and payouts to convert stablecoins into the recipient rail where the route is enabled.
+            </p>
+            <div class="flow-strip">
+              <span>Customer</span>
+              <span>Virtual account</span>
+              <span>Stablecoin wallet</span>
+              <span>Supplier payout</span>
+            </div>
+          </div>
+          <div class="code-panel">
+            <div class="code-tabs">
+              <span>Create payout</span>
+              <button class="copy" type="button" data-copy-for="payout-create">Copy</button>
+            </div>
+            <pre id="payout-create" class="code-sample active"><code>curl https://api.borderpayafrica.com/v1/payouts \
+  -X POST \
+  -H "Authorization: Bearer $BORDERPAY_API_KEY" \
+  -H "Idempotency-Key: payout_INV_2049" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "source": {
+      "payment_rail": "borderpay_wallet",
+      "currency": "USDC",
+      "amount": "2500.00",
+      "wallet_id": "wlt_..."
+    },
+    "destination": {
+      "payment_rail": "ach",
+      "currency": "USD",
+      "external_account_id": "ext_..."
+    },
+    "idempotency_key": "payout_INV_2049",
+    "transaction_pin": "&lt;customer_transaction_pin&gt;"
+  }'</code></pre>
+          </div>
+        </section>
+
+        <section id="corridors" class="doc-section" data-search="african corridors businesses api v1 usd eur gbp ach wire sepa faster payments local rails unavailable">
+          <div class="section-title">
+            <p class="eyebrow">African Corridors</p>
+            <h2>Public API v1 coverage is route-specific</h2>
+            <p>
+              BorderPay serves African businesses, but the current public payout API exposes approved external accounts
+              only. Country classification elsewhere in BorderPay does not make a local rail available through API v1.
+            </p>
+          </div>
+
+          <div class="coverage-grid">
+            <article class="coverage-card strong">
+              <h3>Current payout currencies</h3>
+              <p>The destination must be an approved external account in one of these currencies.</p>
+              <div class="tag-cloud">
+                <span>USD</span><span>EUR</span><span>GBP</span>
+              </div>
+            </article>
+            <article class="coverage-card">
+              <h3>Current payout rails</h3>
+              <p>The tenant and external account must be approved for the selected rail.</p>
+              <div class="tag-cloud">
+                <span>ACH</span><span>Wire</span><span>SEPA</span><span>Faster Payments</span>
+              </div>
+            </article>
+            <article class="coverage-card">
+              <h3>Local African rails</h3>
+              <p>Local-bank and mobile-money payouts are not exposed by the current public API contract. Do not build against them until they appear in a later version.</p>
+            </article>
+          </div>
+
+          <div class="notice">
+            <strong>Route truth</strong>
+            <p>API keys, tenant approval, an approved transfer cap, owned wallet resources, and an approved destination external account are all required. Availability remains fail-closed.</p>
+          </div>
+        </section>
+
+        <section id="restricted-countries" class="doc-section" data-search="restricted countries sanctions prohibited unavailable supported countries compliance afg blr cod cub pse irn irq lbn lby mmr prk rus som ssd sdn syr ven yem dza bdi chn jpn tun new york">
+          <div class="section-title">
+            <p class="eyebrow">Compliance</p>
+            <h2>Restricted and unavailable jurisdictions</h2>
+            <p>Restrictions can apply to signup, onboarding, deposits, payouts, counterparties, or local rails. Production calls fail closed when a jurisdiction or route is not approved.</p>
+          </div>
+
+          <div class="restriction-grid">
+            <article>
+              <h3>Prohibited jurisdictions</h3>
+              <p>BorderPay API restrictions follow the current compliance source of truth. ISO alpha-3 country codes are used in this list.</p>
+              <div class="tag-cloud compact">
+                <span>AFG</span><span>BLR</span><span>COD</span><span>CUB</span><span>PSE - Gaza Strip</span><span>IRN</span><span>IRQ</span><span>LBN</span><span>LBY</span><span>MMR</span>
+                <span>PRK</span><span>RUS</span><span>SOM</span><span>SSD</span><span>SDN</span><span>SYR</span><span>Ukraine territories</span><span>VEN</span><span>PSE - West Bank</span><span>YEM</span>
+              </div>
+            </article>
+            <article>
+              <h3>Unavailable onboarding jurisdictions</h3>
+              <p>Services are unavailable for businesses registered or operating in Algeria, Burundi, China, Japan, and Tunisia.</p>
+              <div class="tag-cloud compact">
+                <span>DZA</span><span>BDI</span><span>CHN</span><span>JPN</span><span>TUN</span>
+              </div>
+            </article>
+            <article>
+              <h3>Route-specific restrictions</h3>
+              <p>Additional restrictions can apply by tenant, customer, counterparty, country, amount, currency, external account, or payment rail. A listed country is not proof that a specific API operation is enabled.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="webhooks" class="doc-section split" data-search="webhooks signatures transfer cancelled canceled refunded review approved failed under review events email">
+          <div class="section-copy">
+            <p class="eyebrow">Webhooks</p>
+            <h2>Automate every state change</h2>
+            <p>
+              Register signed webhooks before going live. Event types follow the owned resource lifecycle and the
+              <code>data</code> object contains only the projected partner-safe fields available for that event.
+            </p>
+            <div class="event-list">
+              <span>customer.*</span>
+              <span>wallet.*</span>
+              <span>virtual_account.*</span>
+              <span>external_account.*</span>
+              <span>transfer.completed</span>
+              <span>transfer.failed</span>
+            </div>
+          </div>
+          <div class="code-panel">
+            <div class="code-tabs">
+              <span>Verify signature</span>
+              <button class="copy" type="button" data-copy-for="webhook-code">Copy</button>
+            </div>
+            <pre id="webhook-code" class="code-sample active"><code>const payload = await request.text();
+const signature = request.headers.get("x-borderpay-signature");
+const timestamp = request.headers.get("x-borderpay-timestamp");
+
+const result = await verifyBorderPayWebhook({
+  rawBody: payload,
+  signatureHeader: signature ?? "",
+  timestamp: timestamp ?? "",
+  signingSecret: process.env.BORDERPAY_WEBHOOK_SECRET,
+});</code></pre>
+          </div>
+        <p>Signature: <code>v1=HMAC-SHA256-hex(secret, timestamp + "." + rawBody)</code>. Timestamp: Unix seconds. Reject timestamps outside ±300 seconds and deduplicate by event ID. See the <a href="/artifacts/api/SANDBOX_TESTING.md">sandbox guide</a> for explicit test deposit events and external bank accounts.</p></section>
+
+        <section id="errors" class="doc-section" data-search="errors invalid request unauthorized forbidden idempotency replay mismatch rate limited internal error">
+          <div class="section-title">
+            <p class="eyebrow">Errors</p>
+            <h2>Predictable API failures</h2>
+          </div>
+          <div class="error-grid">
+            <article><span>400</span><strong>invalid_request</strong><p>The request body or route-specific fields failed validation.</p></article>
+            <article><span>401</span><strong>unauthorized</strong><p>The bearer API key is missing, invalid, or revoked.</p></article>
+            <article><span>403</span><strong>forbidden</strong><p>The tenant, mode, scope, IP, policy, or release gate does not permit the operation.</p></article>
+            <article><span>409</span><strong>idempotency_replay_mismatch</strong><p>The same idempotency key was reused with a different request payload.</p></article>
+            <article><span>429</span><strong>rate_limited</strong><p>Retry after the current response window resets.</p></article>
+            <article><span>500</span><strong>internal_error</strong><p>The gateway could not complete the operation. Retain the request identifier for support.</p></article>
+          </div>
+        </section>
+
+        <section id="sdks-tools" class="doc-section" data-search="sdk tools postman curl openapi contract cookbook download references">
+          <div class="section-title">
+            <p class="eyebrow">SDKs & Tools</p>
+            <h2>Integration accelerators</h2>
+            <p>These are supporting artifacts, not the primary documentation experience.</p>
+          </div>
+          <div class="tool-grid">
+            <a class="tool-card" href="/artifacts/api/postman/BorderPay_API_v1.postman_collection.json">
+              <strong>Postman Collection</strong>
+              <span>Import requests, environments, and sample payloads.</span>
+            </a>
+            <a class="tool-card" href="/artifacts/api/curl/API_V1_CURL_COOKBOOK.md">
+              <strong>cURL Cookbook</strong>
+              <span>Copyable command recipes for backend teams.</span>
+            </a>
+            <a class="tool-card" href="/artifacts/api/openapi-v1.yaml">
+              <strong>API Contract</strong>
+              <span>Machine-readable contract for code generation.</span>
+            </a>
+          </div>
+        </section>
+
+        <section id="white-label" class="doc-section" data-search="white label tenant logo primary color private signed signup onboarding">
+          <div class="section-title">
+            <p class="eyebrow">White Label</p>
+            <h2>Partner-branded signed onboarding</h2>
+            <p>
+              An authorized white-label tenant can issue a short-lived, single-use signup link. On that signed signup
+              screen, BorderPay renders the operator-approved app name, HTTPS logo, and primary color. Branding does
+              not currently extend to the authenticated BorderPay application.
+            </p>
+          </div>
+          <div class="surface-grid small">
+            <article><h3>Supported branding</h3><p>App name, HTTPS logo URL, and six-digit hexadecimal primary color are validated before signup renders them.</p></article>
+            <article><h3>Private signup</h3><p>Use <code>POST /v1/onboarding-authorizations</code> with <code>onboarding:write</code>; the resulting bearer link is short-lived and single-use.</p></article>
+            <article><h3>Operator controlled</h3><p>Partners cannot self-publish branding. Custom-domain routing and full-application theming are not currently available.</p></article>
+          </div>
+        </section>
+
+        <section id="go-live" class="doc-section" data-search="go live production checklist kyb webhook allowlist limits compliance">
+          <div class="section-title">
+            <p class="eyebrow">Go Live</p>
+            <h2>Production readiness checklist</h2>
+            <p>These are partner-specific approval gates, not claims that your integration has already passed them.</p>
+          </div>
+          <div class="checklist">
+            <label><input type="checkbox" /> Business KYB and use case approved</label>
+            <label><input type="checkbox" /> Production access and required API scopes explicitly issued</label>
+            <label><input type="checkbox" /> Webhook endpoint registered and <code>v1=</code> signature verified</label>
+            <label><input type="checkbox" /> Idempotency implemented on every mutating call</label>
+            <label><input type="checkbox" /> Forbidden, unavailable-route, and rate-limit failures handled</label>
+            <label><input type="checkbox" /> Webhook-driven reconciliation tested against captured sandbox results</label>
+          </div>
+        </section>
+      </main>
+
+      <aside class="right-rail" aria-label="On this page">
+        <div class="rail-card">
+          <p>On this page</p>
+          <a href="#overview">Overview</a>
+          <a href="#reference">API Reference</a>
+          <a href="#api-status">API Status</a>
+          <a href="#corridors">Corridors</a>
+          <a href="#restricted-countries">Restrictions</a>
+          <a href="#webhooks">Webhooks</a>
+        </div>
+      </aside>
+    </div>
+
+    <script src="/app.js" defer></script>
+  </body>
+</html>

@@ -1,0 +1,85 @@
+name: Customer authorization acceptance
+on:
+  push:
+    branches: [fix/partner-customer-authorization]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: acceptance
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --allow-env --allow-read --allow-net tests/api-customer-authorization.test.ts tests/api-customer-runtime.test.ts tests/api-sandbox-isolation.test.ts tests/business-partner-policy.test.ts
+      - run: deno check --no-config supabase/functions/public-api-gateway/index.ts supabase/functions/customer-authorization/index.ts
+      - name: Isolated SQL acceptance (synthetic data only)
+        env:
+          PGHOST: localhost
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: acceptance
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/customer-auth-bootstrap.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20260930180000_partner_customer_authorization.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/customer-auth-acceptance.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - name: Browser sign-in smoke test (no production network)
+        run: |
+          npm install --prefix /tmp/borderpay-browser playwright --no-audit --no-fund
+          /tmp/borderpay-browser/node_modules/.bin/playwright install --with-deps chromium
+          npm run preview -- --host 127.0.0.1 > /tmp/borderpay-preview.log 2>&1 &
+          node tests/browser/customer-authorization.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: customer-authorization-browser
+          path: customer-authorization-signin.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: customer-authorization-web
+          path: dist/
+      - run: python3 scripts/ci/build_public_business_docs.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: customer-authorization-docs
+          path: dist-partner-docs/
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.118.0
+      - name: Deploy customer authorization and gateway only
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.CUSTOMER_AUTH_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          versions={f['slug']:f['version'] for f in json.load(urllib.request.urlopen(req))}
+          assert versions['public-api-gateway']==274,'Gateway changed since audit'
+          PYBASE
+          supabase functions deploy customer-authorization --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy public-api-gateway --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api

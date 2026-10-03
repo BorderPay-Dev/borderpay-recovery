@@ -1,3 +1,5 @@
+import { AUTH_ROUTES, handleCustomerAuthorization, resolveDelegatedCustomer, CustomerAuthorizationError } from '../_shared/api-customer-authorization.ts';
+import { handleSandboxApi, sandboxRouteEnabled, SANDBOX_SCOPES, SandboxError } from "../_shared/api-sandbox-runtime.ts";
 import {redactBankCoordinates,requiresInvoiceInstructions} from "../_shared/predeposit-access.ts";
 import { loadPublishedWhiteLabel } from "../_shared/white-label-config.ts";
 import { CUSTOMER_API_SCOPES, authenticateApiCustomer, handleCustomerApi, CustomerApiError } from "../_shared/api-customer-runtime.ts";
@@ -48,6 +50,8 @@ import {
 
 const ROUTE_SCOPE_MAP: Record<string, string | null> = {
   ...CUSTOMER_API_SCOPES,
+  ...AUTH_ROUTES,
+  ...SANDBOX_SCOPES,
   "GET /v1/health": null,
   "POST /v1/customers": "customers:write",
   "POST /v1/onboarding-authorizations": "onboarding:write",
@@ -64,6 +68,7 @@ type GatewayHandlerResult = {
 };
 
 const IDEMPOTENT_ROUTES = new Set([
+  ...Object.keys(SANDBOX_SCOPES),
   "POST /v1/customers",
   "POST /v1/onboarding-authorizations",
   "POST /v1/wallets",
@@ -168,7 +173,8 @@ async function storeReplay(
 }
 
 function mapBridgeError(e: unknown): GatewayHandlerResult {
-  if (e instanceof CustomerApiError) return { status:e.status, body:{success:false,error:{code:e.code,message:e.message}} };
+  if (e instanceof SandboxError) return {status:e.status,body:{success:false,error:{code:e.code,message:e.message}}};
+  if (e instanceof CustomerApiError || e instanceof CustomerAuthorizationError) return { status:e.status, body:{success:false,error:{code:e.code,message:e.message}} };
   if (e instanceof ApiFinancialAuthorizationError) {
     return { status: e.status, body: { success: false, error: { code: e.code, message: e.message } } };
   }
@@ -205,7 +211,7 @@ function mapBridgeError(e: unknown): GatewayHandlerResult {
         success: false,
         error: {
           code: normalizedCode,
-          message: e.bridge_error || e.message || "Bridge request failed",
+          message: "The financial service could not complete this request. Retry with the same Idempotency-Key or contact BorderPay support.",
         },
       },
     };
@@ -639,7 +645,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    const releaseGate = evaluateApiRuntimeReleaseGate(
+    const sandbox = sandboxRouteEnabled(ctx.defaultMode,ctx.tenantMetadata,routeKey);
+    const replayRouteKey = sandbox ? `sandbox ${routeKey}` : routeKey;
+    const releaseGate = sandbox ? {allowed:true} : evaluateApiRuntimeReleaseGate(
       ctx.defaultMode,
       routeKey,
       readApiReleaseGateEnvironment(),
@@ -695,9 +703,13 @@ Deno.serve(async (req) => {
 
       return gatewayJson(status, 200);
     }
-    const customerSession = CUSTOMER_API_SCOPES[routeKey]
-      ? await authenticateApiCustomer(supa, tenantId, req.headers.get("X-BorderPay-Customer-Authorization") || "") : null;
-    const invoiceRoute = ["GET /v1/virtual-accounts","POST /v1/virtual-accounts"].includes(routeKey);
+    const customerHeader = req.headers.get("X-BorderPay-Customer-Authorization") || "";
+    const customerSession = !sandbox && CUSTOMER_API_SCOPES[routeKey]
+      ? /^Bearer bpcust_/i.test(customerHeader)
+        ? await resolveDelegatedCustomer(supa,tenantId,apiKeyId,customerHeader,CUSTOMER_API_SCOPES[routeKey])
+        : await authenticateApiCustomer(supa,tenantId,customerHeader)
+      : null;
+    const invoiceRoute = !sandbox && ["GET /v1/virtual-accounts","POST /v1/virtual-accounts"].includes(routeKey);
     const invoiceOwner = customerSession?.userId || null;
     const invoiceRequired = invoiceRoute ? await requiresInvoiceInstructions(supa,invoiceOwner) : false;
     const instructionResponse=async(value:any)=>{
@@ -745,7 +757,7 @@ Deno.serve(async (req) => {
         supa,
         tenantId,
         apiKeyId,
-        routeKey,
+        replayRouteKey,
         idempotencyKey,
       );
       if (replay) {
@@ -813,7 +825,11 @@ Deno.serve(async (req) => {
         return body;
       })();
 
-      handlerResult = customerSession
+      handlerResult = AUTH_ROUTES[routeKey]
+        ? await handleCustomerAuthorization(supa,routeKey,body,{tenantId,apiKeyId,scopes:ctx.scopes,defaultMode:ctx.defaultMode})
+        : sandbox
+        ? await handleSandboxApi(supa,routeKey,body,{tenantId,mode:ctx.defaultMode,metadata:ctx.tenantMetadata,idempotencyKey})
+        : customerSession
         ? await handleCustomerApi(supa, routeKey, bodyWithFallbackIdempotency, {tenantId,apiKeyId,idempotencyKey,maxSingleTransferUsd:ctx.maxSingleTransferUsd,maxSingleTransferEur:typeof ctx.tenantMetadata.max_single_transfer_eur === "string" ? ctx.tenantMetadata.max_single_transfer_eur : null}, customerSession)
         : await handleRoute(
         supa,
@@ -836,7 +852,7 @@ Deno.serve(async (req) => {
       await storeReplay(supa, {
         tenantId,
         apiKeyId,
-        routeKey,
+        routeKey: replayRouteKey,
         idempotencyKey,
         requestHash,
         statusCode: handlerResult.status,
@@ -863,10 +879,10 @@ Deno.serve(async (req) => {
     });
 
     const response=gatewayJson(handlerResult.body, handlerResult.status);
-    if(invoiceRoute)response.headers.set("Cache-Control","no-store");
+    if(invoiceRoute || AUTH_ROUTES[routeKey]) { response.headers.set("Cache-Control","no-store"); response.headers.set("Pragma","no-cache"); }
     return response;
   } catch (error) {
-    if (error instanceof CustomerApiError) { const result=mapBridgeError(error); return gatewayJson(result.body,result.status); }
+    if (error instanceof CustomerApiError || error instanceof CustomerAuthorizationError) { const result=mapBridgeError(error); return gatewayJson(result.body,result.status); }
     const msg = error instanceof Error ? error.message : "unknown";
     await logGatewayRequest(supa, {
       tenantId,

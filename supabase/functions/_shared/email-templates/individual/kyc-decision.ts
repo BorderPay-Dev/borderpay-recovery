@@ -15,12 +15,12 @@ export function render(p: IndividualKycDecisionProps): RenderedEmail {
   const approved = p.decision === "approved";
 
   const subject = approved
-    ? "You're verified on BorderPay"
-    : "Your BorderPay verification didn't pass";
+    ? "You're verified on BorderPay Velocity"
+    : "Your BorderPay Velocity verification didn't pass";
 
   const heading = approved ? "Identity verified" : "Verification didn't pass";
   const introText = approved
-    ? `Hi ${name}, your identity is verified and your BorderPay account is active. You can now request supported account and wallet services from your dashboard.`
+    ? `Hi ${name}, your identity is verified and your BorderPay Velocity account is active. You can now request supported account and wallet services from your dashboard.`
     : `Hi ${name}, we couldn't verify your identity this time. Details are below.`;
 
   const reasonBlock = !approved && p.reason
@@ -28,7 +28,7 @@ export function render(p: IndividualKycDecisionProps): RenderedEmail {
     : "";
 
   const closing = approved
-    ? "Open BorderPay to view the services available for your account."
+    ? "Open BorderPay Velocity to view the services available for your account."
     : `If you believe this is a mistake, contact ${BORDERPAY_BRAND.supportEmail}. If additional information is required, our compliance team will send the next secure verification step.`;
 
   const body = approved
@@ -36,7 +36,7 @@ export function render(p: IndividualKycDecisionProps): RenderedEmail {
     : `${reasonBlock}
        <p style="margin:14px 0 0;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">${escapeHtml(closing)}</p>`;
 
-  const ctaText = approved ? "Open BorderPay" : "Contact support";
+  const ctaText = approved ? "Open BorderPay Velocity" : "Contact support";
   const ctaUrl  = approved ? BORDERPAY_BRAND.appUrl
                 : `mailto:${BORDERPAY_BRAND.supportEmail}`;
 
@@ -49,7 +49,7 @@ export function render(p: IndividualKycDecisionProps): RenderedEmail {
     text: textLayout({
       heading,
       body: approved
-        ? "Identity verified. Open BorderPay to view the services available for your account."
+        ? "Identity verified. Open BorderPay Velocity to view the services available for your account."
         : `Verification didn't pass.\nReason: ${p.reason || "—"}\n${closing}`,
       ctaText, ctaUrl,
     }),

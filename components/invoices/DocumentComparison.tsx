@@ -1,4 +1,5 @@
 import React,{useEffect,useRef,useState} from 'react';
+import InvoiceShare from './InvoiceShare';
 import {backendAPI} from '../../utils/api/backendAPI';
 
 export default function DocumentComparison({enabled}:{enabled:boolean}){
@@ -42,6 +43,7 @@ export default function DocumentComparison({enabled}:{enabled:boolean}){
     {['queued','reviewing'].includes(row.status)&&<p className="ih-muted">You can leave this screen and return later. The review continues in the background.</p>}
     {row.result?.fields&&<div className="ih-grid">{(['invoice','contract'] as const).map(kind=><div key={kind}><h4>{kind==='invoice'?'Invoice':'Contract'}</h4><p className="ih-muted">{row.result.fields[kind].seller.value||'Seller unreadable'} → {row.result.fields[kind].buyer.value||'Buyer unreadable'}<br/>{row.result.fields[kind].currency.value||'Currency unclear'} {row.result.fields[kind].total.value||'Amount unclear'}</p></div>)}</div>}
     {(row.result?.findings||[]).length>0&&<ul>{row.result.findings.map((f:any,i:number)=><li key={i} style={{marginTop:12}}>{f.explanation}</li>)}</ul>}
+    {['matched','needs_attention','unavailable'].includes(row.status)&&<InvoiceShare disabled={busy} prepare={()=>call('share_document_check',{check_id:row.id})}/>}
     {['matched','needs_attention','unavailable'].includes(row.status)&&<p className="ih-muted">This is an automated document comparison, not certification of authenticity, signer identity or bank acceptance. Correct your source files and upload a new pair for another review.</p>}
    </article>)}
   </div>

@@ -15,7 +15,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
   const fn          = firstName(p.full_name);
   const isCredit    = p.direction === "credit";
   const headline    = `${isCredit ? "Money in" : "Money out"} — ${fmtMoney(p.amount, p.currency)}`;
-  const subject     = `${isCredit ? "Received" : "Sent"} ${fmtMoney(p.amount, p.currency)} on BorderPay`;
+  const subject     = `${isCredit ? "Received" : "Sent"} ${fmtMoney(p.amount, p.currency)} on BorderPay Velocity`;
   const heading     = headline;
   const occurredAt  = p.occurred_at ? new Date(p.occurred_at).toUTCString() : new Date().toUTCString();
   const accentColor = isCredit ? BORDERPAY_BRAND.success : BORDERPAY_BRAND.warning;
@@ -53,14 +53,14 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
       heading,
       introText: isCredit ? `Hi ${fn}, your wallet just received funds.` : `Hi ${fn}, here's a receipt for your transaction.`,
       body,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl,
       footerNote: "Didn't recognise this transaction? Reply to this email or contact support immediately.",
     }),
     text: textLayout({
       heading,
       body: `${isCredit ? "Received" : "Sent"} ${fmtMoney(p.amount, p.currency)}\nReference: ${p.reference}\n${p.description ? "Description: " + p.description + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}`,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl,
     }),
   };

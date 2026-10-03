@@ -9,13 +9,13 @@ function renderNotice(copy: typeof BANKING_TRANSITION_ACTIVE | typeof BANKING_TR
     + '<ul style="margin:0 0 20px;padding-left:20px;">'
     + copy.items.map(item => '<li style="margin-bottom:12px;"><strong>' + escapeHtml(item.title)
       + ':</strong> ' + escapeHtml(item.text) + '</li>').join('') + '</ul>'
-    + paragraph(copy.closing) + paragraph(copy.support) + paragraph("Thank you,") + paragraph("The BorderPay Team");
+    + paragraph(copy.closing) + paragraph(copy.support) + paragraph("Thank you,") + paragraph("The BorderPay Velocity Team");
   return {
     subject: copy.subject,
     html: htmlLayout({ preview: copy.preview, heading: copy.heading, body, ctaText: copy.cta, ctaUrl: copy.url }),
     text: textLayout({ heading: copy.heading, body: [greeting, copy.intro, statusMessage, copy.continuity,
       ...copy.items.map(item => item.title + ": " + item.text), copy.closing, copy.support,
-      "Thank you, The BorderPay Team"].filter(Boolean).join("\n\n"), ctaText: copy.cta, ctaUrl: copy.url }),
+      "Thank you, The BorderPay Velocity Team"].filter(Boolean).join("\n\n"), ctaText: copy.cta, ctaUrl: copy.url }),
   };
 }
 export function renderActive(props: Props = {}): RenderedEmail {

@@ -9,9 +9,9 @@ export interface IndividualEmailVerificationProps {
 export function render(p: IndividualEmailVerificationProps): RenderedEmail {
   const fn  = firstName(p.full_name);
   const ttl = p.expires_in_hours ?? 24;
-  const subject = "Confirm your BorderPay account";
+  const subject = "Confirm your BorderPay Velocity account";
   const heading = "Confirm your email";
-  const introText = `Hi ${fn}, thanks for joining BorderPay Africa. Tap the button below to verify this email and activate your account.`;
+  const introText = `Hi ${fn}, thanks for joining BorderPay Velocity. Tap the button below to verify this email and activate your account.`;
   const body = `
     <p style="margin:0 0 12px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">
       For security, this link expires in <strong style="color:${BORDERPAY_BRAND.text};">${ttl} hour${ttl === 1 ? '' : 's'}</strong> and can only be used once.
@@ -22,7 +22,7 @@ export function render(p: IndividualEmailVerificationProps): RenderedEmail {
     <p style="margin:6px 0 0;font-size:11px;color:${BORDERPAY_BRAND.accent};text-align:center;word-break:break-all;line-height:1.4;">
       ${escapeHtml(p.verification_url)}
     </p>`;
-  const footerNote = "If you didn't sign up for BorderPay, you can safely ignore this email.";
+  const footerNote = "If you didn't sign up for BorderPay Velocity, you can safely ignore this email.";
   return {
     subject,
     html: htmlLayout({ preview: subject, heading, introText, body, ctaText: "Verify my email", ctaUrl: p.verification_url, footerNote }),

@@ -4,8 +4,8 @@
  * Canonical payload to sign/verify:
  *   `${timestamp}.${rawBody}`
  *
- * Signature header format (recommended):
- *   x-borderpay-signature: sha256=<hex>
+ * Signature header format:
+ *   x-borderpay-signature: v1=<hex>
  *   x-borderpay-timestamp: <unix_seconds>
  */
 
@@ -48,6 +48,7 @@ async function hmacSha256Hex(secret: string, payload: string): Promise<string> {
 function normalizeSignature(signatureHeader: string): string | null {
   const raw = signatureHeader.trim();
   if (!raw) return null;
+  if (/^v1=[a-fA-F0-9]{64}$/.test(raw)) return raw.slice(3).toLowerCase();
   if (raw.startsWith("sha256=")) return raw.slice("sha256=".length).trim().toLowerCase();
   return raw.toLowerCase();
 }
@@ -60,7 +61,7 @@ export async function verifyBorderPayWebhook(input: VerifyWebhookInput): Promise
   if (!signature) return { valid: false, reason: "missing_header" };
 
   const ts = Number(input.timestamp);
-  if (!Number.isFinite(ts) || ts <= 0) return { valid: false, reason: "invalid_timestamp" };
+  if (!/^\d{10,}$/.test(input.timestamp) || !Number.isSafeInteger(ts) || ts <= 0 || !Number.isFinite(now) || !Number.isFinite(tolerance) || tolerance < 0) return { valid: false, reason: "invalid_timestamp" };
 
   if (Math.abs(now - ts) > tolerance) {
     return { valid: false, reason: "timestamp_out_of_window" };

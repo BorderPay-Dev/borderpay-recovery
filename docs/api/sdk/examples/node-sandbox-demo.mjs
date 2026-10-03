@@ -1,35 +1,17 @@
 import { BorderPayClient } from "../typescript/dist/index.js";
-
-async function main() {
-  const gatewayUrl = process.env.GATEWAY_URL;
-  const apiKey = process.env.API_KEY;
-  const mode = process.env.MODE || "sandbox";
-
-  if (!gatewayUrl || !apiKey) {
-    throw new Error("GATEWAY_URL and API_KEY are required");
-  }
-
-  const client = new BorderPayClient({ gatewayUrl, apiKey, mode });
-
-  const health = await client.health();
-  console.log("health:", health.data);
-
-  // Example customer create (replace email/ref before running in real sandbox)
-  const customer = await client.createCustomer(
-    {
-      account_type: "individual",
-      email: "partner-user@example.com",
-      country_code: "NG",
-      full_name: "Partner User",
-      borderpay_user_id: `partner_ref_${Date.now()}`,
-    },
-    `idem-customer-${Date.now()}`,
-  );
-
-  console.log("customer:", customer.data);
-}
-
-main().catch((e) => {
-  console.error("demo failed", e);
-  process.exit(1);
+// Run only after BorderPay confirms sandbox customer operations are enabled.
+const client = new BorderPayClient({
+  gatewayUrl: process.env.GATEWAY_URL || "https://sandbox.api.borderpayafrica.com",
+  apiKey: process.env.API_KEY,
+  mode: "sandbox",
+  customerAccessToken: process.env.CUSTOMER_ACCESS_TOKEN,
 });
+console.log((await client.health()).data);
+// This authorizes a business signup; it does not approve the business or open accounts.
+await client.createOnboardingAuthorization({
+  external_user_id: "synthetic-business-001",
+  onboarding_channel: "api",
+  requested_account_types: ["business"],
+}, "sandbox-business-001");
+console.log("Business signup authorization created; continue the hosted onboarding flow securely.");
+// Complete hosted business signup, KYB and owner verification before customer operations.

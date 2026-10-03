@@ -5,44 +5,119 @@
   "installCommand": "npm install",
   "headers": [
     {
+      "source": "/partner/authorize",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "no-referrer"
+        }
+      ]
+    },
+    {
       "source": "/",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
       ]
     },
     {
       "source": "/index.html",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
       ]
     },
     {
       "source": "/service-worker.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" }
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate, max-age=0"
+        }
       ]
     },
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=()" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=31536000; includeSubDomains"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(self), microphone=(self), geolocation=()"
+        }
       ]
     }
   ],
   "rewrites": [
-    { "source": "/privacy-policy", "destination": "/legal/privacy-policy.html" },
-    { "source": "/privacy-policy/", "destination": "/legal/privacy-policy.html" },
-    { "source": "/terms", "destination": "/legal/terms-of-service.html" },
-    { "source": "/terms/", "destination": "/legal/terms-of-service.html" },
-    { "source": "/terms-of-service", "destination": "/legal/terms-of-service.html" },
-    { "source": "/terms-of-service/", "destination": "/legal/terms-of-service.html" },
-    { "source": "/aml-policy", "destination": "/legal/aml-policy.html" },
-    { "source": "/aml-policy/", "destination": "/legal/aml-policy.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+    {
+      "source": "/privacy-policy",
+      "destination": "/legal/privacy-policy.html"
+    },
+    {
+      "source": "/privacy-policy/",
+      "destination": "/legal/privacy-policy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/legal/terms-of-service.html"
+    },
+    {
+      "source": "/terms/",
+      "destination": "/legal/terms-of-service.html"
+    },
+    {
+      "source": "/terms-of-service",
+      "destination": "/legal/terms-of-service.html"
+    },
+    {
+      "source": "/terms-of-service/",
+      "destination": "/legal/terms-of-service.html"
+    },
+    {
+      "source": "/aml-policy",
+      "destination": "/legal/aml-policy.html"
+    },
+    {
+      "source": "/aml-policy/",
+      "destination": "/legal/aml-policy.html"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "fix/business-only-partner-api": false,
+      "fix/velocity-email-branding": false,
+      "fix/nattypay-sandbox": false,
+      "fix/partner-customer-authorization": false
+    }
+  }
 }

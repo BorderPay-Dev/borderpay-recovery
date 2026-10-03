@@ -1,5 +1,5 @@
 export const BUSINESS_MIGRATION_NOTICE = {
-  "subject": "Important: your wallet balance and BorderPay’s planned migration",
+  "subject": "Important: your wallet balance and BorderPay Velocity’s planned migration",
   "preview": "What to do with available funds, payments under review and your business verification.",
   "heading": "Preparing a better home for your business payments",
   "intro": "Your business needs payment infrastructure that keeps pace with the way you operate. Recent account pauses, payment reviews and refunds have disrupted some of our merchants. We know the impact this has on your cash flow, and we are sorry for the disruption.",
@@ -23,15 +23,15 @@ export const BUSINESS_MIGRATION_NOTICE = {
     },
     {
       "title": "Verification not completed yet",
-      "text": "Whether your application is incomplete, under review, awaiting owners or has not been started, keep your existing BorderPay account. We will explain any verification steps required for the new arrangement. You do not need to create a duplicate account."
+      "text": "Whether your application is incomplete, under review, awaiting owners or has not been started, keep your existing BorderPay Velocity account. We will explain any verification steps required for the new arrangement. You do not need to create a duplicate account."
     },
     {
       "title": "Refunds and held payments remain separate cases",
-      "text": "Some affected payments are subject to our current infrastructure partner’s review, return or refund process. BorderPay remains your point of contact and is following up on these cases. Migration does not itself release or refund a payment; we will share confirmed updates for your transaction."
+      "text": "Some affected payments are subject to our current infrastructure partner’s review, return or refund process. BorderPay Velocity remains your point of contact and is following up on these cases. Migration does not itself release or refund a payment; we will share confirmed updates for your transaction."
     }
   ],
-  "closing": "We are working hard to give your business a more dependable solution, with clear guidance throughout the transition. Use only receiving details that BorderPay shows as active, and update your buyers only when new details are confirmed ready.",
+  "closing": "We are working hard to give your business a more dependable solution, with clear guidance throughout the transition. Use only receiving details that BorderPay Velocity shows as active, and update your buyers only when new details are confirmed ready.",
   "support": "If you need help, reply to your existing support ticket and include the transaction reference. Please do not open duplicate tickets; keeping one case helps us follow up with the full history.",
-  "cta": "Open BorderPay",
+  "cta": "Open BorderPay Velocity",
   "url": "https://app.borderpayafrica.com"
 } as const;
