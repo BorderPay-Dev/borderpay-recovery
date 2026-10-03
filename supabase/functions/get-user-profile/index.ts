@@ -1,3 +1,4 @@
+import {pausedBusinessReviewProjection} from '../_shared/paused-business-review.ts';
 // get-user-profile — provider-neutral; email_confirmed
 // derived from auth.users.email_confirmed_at.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -37,47 +38,18 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { data: profile, error: profileError } = await supabase
-      .from("user_profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    if (profileError && profileError.code !== "PGRST116") {
-      return new Response(JSON.stringify({ error: `Failed to fetch profile: ${profileError.message}` }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+    // Authenticate above, then fetch setup/profile data in one database request.
+    // No provider or KYB-host network dependency sits on dashboard rendering.
+    const { data: context, error: contextError } = await supabase.rpc('profile_setup_context', { p_user: user.id });
+    if (contextError || !context) {
+      return new Response(JSON.stringify({success:false,error:'Your profile is temporarily unavailable. Please try again.'}),{status:503,headers:{...corsHeaders,'Content-Type':'application/json'}});
     }
-
-    const { data: userData } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle();
-
-    const { data: securityData } = await supabase
-      .from("user_security")
-      .select("pin_set, two_factor_enabled")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    // Business KYB status lives on business_profiles (not user_profiles). Fetch it
-    // for business accounts so the payload carries the same Bridge status fields
-    // the frontend deriveKycStatus() expects (bridge_kyc_status / bridge_account_status
-    // come from user_profiles above; bridge_kyb_status from here).
-    const accountType = profile?.account_type || userData?.account_type || "individual";
-    let bridgeKybStatus: string | null = null;
-    let businessIncorporationCountry: string | null = null;
-    if (accountType === "business") {
-      const { data: biz } = await supabase
-        .from("business_profiles")
-        .select("bridge_kyb_status,country")
-        .eq("user_id", user.id)
-        .maybeSingle();
-      bridgeKybStatus = biz?.bridge_kyb_status ?? null;
-      businessIncorporationCountry = biz?.country ?? null;
-    }
+    const { profile, userData, securityData, business } = context;
+    const accountType = profile?.account_type || userData?.account_type || 'individual';
+    const bridgeKybStatus = business?.bridge_kyb_status ?? null;
+    const businessIncorporationCountry = business?.country ?? null;
+    const portalStatus: string | null = context.portalStatus || null;
+    const reviewOnly = context.reviewOnly === true;
 
     // The single source of truth for email-confirmed state is
     // auth.users.email_confirmed_at. Anything else (cached profile rows,
@@ -122,6 +94,8 @@ Deno.serve(async (req) => {
           country:             profile?.country || userData?.country || null,
           account_type:        accountType,
           business_incorporation_country: businessIncorporationCountry,
+          company_name: business?.company_name || null,
+          registration_number: business?.registration_number || null,
           kyc_status:          profile?.kyc_status || userData?.kyc_status || "unverified",
           kyc_level:           profile?.kyc_level || 0,
           wallet_activated:    userData?.wallet_activated || false,
@@ -137,7 +111,9 @@ Deno.serve(async (req) => {
           account_frozen_at: profile?.account_frozen_at || null,
           account_frozen_reason: profile?.account_frozen_reason || null,
           account_access_restricted: accountAccessRestricted,
-          bridge_kyb_status:   clientBusinessKybStatus,
+          bridge_kyb_status:   portalStatus || clientBusinessKybStatus,
+          verification_status: portalStatus,
+          verification_source: portalStatus ? "borderpay" : null,
           bridge_provider_kyb_status: bridgeKybStatus,
           address:             profile?.address || null,
           city:                profile?.city || null,
@@ -152,6 +128,7 @@ Deno.serve(async (req) => {
           last_sign_in_at:     user.last_sign_in_at || null,
           created_at:          profile?.created_at || userData?.created_at,
           updated_at:          profile?.updated_at || userData?.updated_at,
+          ...pausedBusinessReviewProjection(reviewOnly),
         },
       },
     }), {

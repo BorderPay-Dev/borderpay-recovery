@@ -6,6 +6,7 @@ import { supabase } from '../../utils/supabase/client';
 
 type Summary = {
  mode: 'receiving_paused' | 'locked';
+ review_status?: 'under_review';
  wallets?: Array<{ id: string; currency: string; balance: string; updated_at: string | null }>;
  receiving_currencies?: string[];
 };
@@ -34,16 +35,17 @@ export function PausedAccountWorkspace({ userId, name, isBusiness, onSignOut, on
  }, [userId]);
  useEffect(() => { void load(); }, [load]);
  const locked = summary?.mode === 'locked';
+ const reviewOnly = summary?.review_status === 'under_review';
  const walletView = route === 'dashboard' || route === 'wallet';
  return <div className="fixed inset-0 overflow-y-auto bg-[#080A0D] text-white">
   <AppShell route={route} onRoute={setRoute} userName={name} unreadCount={0} isBusinessAccount={isBusiness} onSignOut={onSignOut} onLock={onLock}>
    <main className="mx-auto w-full max-w-3xl px-5 pb-28 pt-6">
     <div role="status" className="mb-6 flex gap-3 rounded-2xl border border-amber-300/20 bg-amber-400/10 p-4">
      <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0 text-amber-300" aria-hidden="true"/>
-     <div><h1 className="font-semibold">{locked ? 'Your account is restricted' : 'Your receiving accounts are frozen'}</h1>
+     <div><h1 className="font-semibold">{locked ? 'Your account is restricted' : reviewOnly ? 'Under review' : 'Your receiving accounts are frozen'}</h1>
      <p className="mt-1 text-sm leading-6 text-white/70">{locked
       ? 'Financial actions remain unavailable while the account restriction is in place.'
-      : 'Receiving payments and viewing bank payment details are unavailable. You can still view your recorded wallet balances.'}</p></div>
+      : reviewOnly ? 'Your account is under review. You can view your recorded balances. Receiving accounts are deactivated and payments are unavailable. We will notify you when services become available.' : 'Receiving payments and viewing bank payment details are unavailable. You can still view your recorded wallet balances.'}</p></div>
     </div>
     {loading && <p role="status" className="text-sm text-white/70">Loading wallet information…</p>}
     {error && <div role="alert" className="rounded-2xl border border-white/10 p-5"><p>{error}</p><button className="mt-4 underline" onClick={() => void load()}>Try again</button></div>}
@@ -59,11 +61,11 @@ export function PausedAccountWorkspace({ userId, name, isBusiness, onSignOut, on
      </div>
      <p className="mt-4 text-xs leading-5 text-white/50">Balances reflect the latest recorded wallet information. A displayed balance does not confirm withdrawal eligibility.</p>
     </> : route === 'receive' ? <section className="rounded-3xl border border-white/10 p-5">
-     <h2 className="text-xl font-semibold">Receive is frozen</h2>
+     <h2 className="text-xl font-semibold">{reviewOnly ? 'Receiving accounts deactivated' : 'Receive is frozen'}</h2>
      <p className="mt-3 text-sm leading-6 text-white/70">Do not ask anyone to send money to your previous receiving details. Bank account numbers, payment instructions and wallet deposit addresses are locked.</p>
-     {(summary.receiving_currencies || []).map(currency => <div key={currency} className="mt-4 flex justify-between border-t border-white/10 pt-4"><span>{currency} receiving account</span><span className="text-amber-300">Frozen</span></div>)}
+     {(summary.receiving_currencies || []).map(currency => <div key={currency} className="mt-4 flex justify-between border-t border-white/10 pt-4"><span>{currency} receiving account</span><span className="text-amber-300">{reviewOnly ? 'Deactivated' : 'Frozen'}</span></div>)}
     </section> : route === 'send' ? <section className="rounded-3xl border border-white/10 p-5">
-     <h2 className="text-xl font-semibold">Withdraw remaining funds</h2>
+     <h2 className="text-xl font-semibold">{reviewOnly ? 'Payments unavailable' : 'Withdraw remaining funds'}</h2>
      <p className="mt-3 text-sm leading-6 text-white/70">Contact BorderPay support to review the return of your remaining wallet funds. Direct payments remain unavailable while your account is paused. Funds subject to a fraud hold cannot be withdrawn until the hold is released.</p>
      <a href="mailto:support@borderpayafrica.com?subject=Remaining%20wallet%20funds" className="mt-6 inline-flex rounded-2xl bg-[#c7ff00] px-5 py-3 font-semibold text-black">Contact support</a>
     </section> : route === 'transactions' ? <TransactionsScreen userId={userId} onBack={() => setRoute('wallet')} /> : <section className="rounded-3xl border border-white/10 p-5">
