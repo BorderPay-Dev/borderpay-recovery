@@ -43,3 +43,8 @@ export function usdPortfolio(merchantId: string, environment: Balance['environme
   // Never present a partial value as the total. Missing rates include stablecoins.
   return {currency:'USD', total:missing.length ? null : decimal(sum), knownSubtotal:decimal(sum), complete:missing.length===0, missing, valuedAt:new Date(now).toISOString()};
 }
+
+export function balanceSpendable(balance:Balance,now=Date.now(),maxAgeMs=60000):boolean {
+  const at=Date.parse(balance.observedAt);
+  try{return balance.active&&Number.isFinite(at)&&at<=now+5000&&now-at<=maxAgeMs&&units(balance.available)>0n;}catch{return false;}
+}

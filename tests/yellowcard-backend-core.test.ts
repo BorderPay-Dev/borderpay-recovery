@@ -1,4 +1,4 @@
-import { units, decimal, usdPortfolio, jsonAmount, type Balance } from '../supabase/functions/_shared/providers/yellowcard-money.ts';
+import { units, decimal, usdPortfolio, jsonAmount, balanceSpendable, type Balance } from '../supabase/functions/_shared/providers/yellowcard-money.ts';
 import { EvidenceCipher, payloadHash } from '../supabase/functions/_shared/providers/yellowcard-evidence.ts';
 import { institutionalParty, custodyPayment, virtualAccountPayment, type BusinessIdentity } from '../supabase/functions/_shared/providers/yellowcard-business.ts';
 import { financialState, errorAction, assertRfqAcceptable } from '../supabase/functions/_shared/providers/yellowcard-lifecycle.ts';
@@ -67,4 +67,9 @@ Deno.test('public contracts need explicit release and ambiguous VA route confirm
  const enabled=new YellowCardFullProductClient({...config,release:{operations:['createVault'],approvalReference:'SYNTHETIC-TEST-ONLY',confirmations:[]}},fetcher);
  await enabled.operation('createVault',{body:{name:'Synthetic'}});assert(called===1);
  await rejects(()=>enabled.operation('submitVirtualAccountSend',{body:{}}));assert(called===1);
+});
+
+Deno.test('restricted, stale, future-dated and zero balances are never labelled spendable',()=>{
+ assert(balanceSpendable(base,now));assert(!balanceSpendable({...base,active:false},now));assert(!balanceSpendable(base,now+61000));
+ assert(!balanceSpendable({...base,observedAt:new Date(now+60000).toISOString()},now));assert(!balanceSpendable({...base,available:'0'},now));
 });

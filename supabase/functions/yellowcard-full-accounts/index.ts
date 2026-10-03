@@ -15,6 +15,8 @@ Deno.serve(async(req:Request)=>{
       authorize:(user,merchant)=>r.store.authorizeUser(user,merchant,environment),
       balances:async(merchant)=>{
         const bindings=await r.store.request(`yc_resources?merchant_id=eq.${encodeURIComponent(merchant)}&environment=eq.${environment}&select=id,merchant_id,environment,provider_resource_id,resource_kind,status`) as BoundResource[];
+        const merchants=await r.store.request(`yc_merchants?merchant_id=eq.${encodeURIComponent(merchant)}&environment=eq.${environment}&select=status,controls_satisfied,global_blocked,cutover_approved_at`) as {status:string;controls_satisfied:boolean;global_blocked:boolean;cutover_approved_at:string|null}[];
+        const m=merchants[0];const maySpend=merchants.length===1&&m.status==='active'&&m.controls_satisfied&&!m.global_blocked&&!!m.cutover_approved_at;
         const list:Balance[]=[];
         if(bindings.length>100)throw new Error('Use paginated resource synchronization');
         // Bounded concurrency avoids serial waits across currency accounts.
@@ -27,7 +29,7 @@ Deno.serve(async(req:Request)=>{
           list.push(...group.flat());
         }
         if(list.length)await r.store.request('yc_balances?on_conflict=resource_id,asset','POST',list.map(balance=>({resource_id:balance.resourceId,merchant_id:merchant,environment,asset:balance.asset,available:balance.available,held:balance.held,observed_at:balance.observedAt,provider_reference:bindings.find(b=>b.id===balance.resourceId)!.provider_resource_id})),'resolution=merge-duplicates,return=minimal');
-        return list;
+        return list.map(balance=>({...balance,active:balance.active&&maySpend}));
       },
       accountDetails:async(merchant,id)=>{
         const scope=`merchant_id=eq.${encodeURIComponent(merchant)}&environment=eq.${environment}`;
