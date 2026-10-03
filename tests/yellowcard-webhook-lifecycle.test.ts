@@ -66,3 +66,10 @@ Deno.test('unverified authorization, cross-owner execution and shared treasury s
  const authorized=new YellowCardPaymentEngine(client,store,cipher,authorization),op=await authorized.prepare(context,intent(),{});
  await rejects(()=>authorized.execute({...context,merchantId:'b'},op));await rejects(()=>authorized.prepare(context,{...intent(),body:{...intent().body,vaultId:'someone-else'}},{}));assert(calls===0);
 });
+
+Deno.test('browser preflight is allowed only for the configured BorderPay app origins',async()=>{
+ const handle=accountsHandler({environment:'production',authenticate:async()=>null,authorize:async()=>false,balances:async()=>[],rates:async()=>[]});
+ const good=await handle(new Request('https://api.example',{method:'OPTIONS',headers:{Origin:'https://app.borderpayvelocity.xyz'}}));
+ assert(good.status===204&&good.headers.get('Access-Control-Allow-Origin')==='https://app.borderpayvelocity.xyz');
+ const bad=await handle(new Request('https://api.example',{method:'OPTIONS',headers:{Origin:'https://untrusted.example'}}));assert(bad.status===403);
+});

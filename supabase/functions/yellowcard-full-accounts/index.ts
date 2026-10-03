@@ -29,6 +29,16 @@ Deno.serve(async(req:Request)=>{
         if(list.length)await r.store.request('yc_balances?on_conflict=resource_id,asset','POST',list.map(balance=>({resource_id:balance.resourceId,merchant_id:merchant,environment,asset:balance.asset,available:balance.available,held:balance.held,observed_at:balance.observedAt,provider_reference:bindings.find(b=>b.id===balance.resourceId)!.provider_resource_id})),'resolution=merge-duplicates,return=minimal');
         return list;
       },
+      accountDetails:async(merchant,id)=>{
+        const scope=`merchant_id=eq.${encodeURIComponent(merchant)}&environment=eq.${environment}`;
+        const merchants=await r.store.request(`yc_merchants?${scope}&status=eq.active&controls_satisfied=eq.true&global_blocked=eq.false&select=merchant_id`) as unknown[];
+        if(merchants.length!==1)throw new Error('Receiving account unavailable');
+        const rows=await r.store.request(`yc_resources?${scope}&resource_kind=eq.virtual_account&id=eq.${encodeURIComponent(id)}&status=eq.active&select=provider_resource_id`) as {provider_resource_id:string}[];
+        if(rows.length!==1)throw new Error('Receiving account unavailable');
+        const data=await r.client.operation('getVirtualAccountById',{params:{id:rows[0].provider_resource_id}}) as Record<string,unknown>;
+        if(data.id!==rows[0].provider_resource_id||data.status!=='ACTIVE')throw new Error('Receiving account unavailable');
+        return Object.fromEntries(['currency','accountName','accountNumber','routingNumber','swiftCode','bankName','bankAddress','iban','sortCode','status'].filter(k=>data[k]!==undefined).map(k=>[k,data[k]]));
+      },
       rates:async()=>{
         const response=await r.client.operation('getRates') as {rates?:{code?:string;currency?:string;buy?:number;updatedAt?:string}[]};const rates:Rate[]=[];
         for(const row of response.rates??[]) {
