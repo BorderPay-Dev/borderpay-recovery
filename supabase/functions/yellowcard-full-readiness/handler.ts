@@ -1,7 +1,7 @@
 import { YellowCardFullProductClient, YellowCardRequestError } from "../_shared/providers/yellowcard-full-product.ts";
 
 /** Internal production READ audit only. No provider writes, database writes or merchant response data. */
-export function readinessHandler(serviceKey: string, config: { apiKeyId: string; secret: string }, transport: typeof fetch = fetch) {
+export function readinessHandler(serviceKey: string, config: { apiKeyId: string; secret: string; relay?: { url: string; token: string } }, transport: typeof fetch = fetch) {
   return async (req: Request): Promise<Response> => {
     const json = (value: unknown, status = 200) => Response.json(value, { status, headers: { "Cache-Control": "no-store" } });
     if (req.method !== "POST") return json({ error: "POST required" }, 405);
@@ -14,7 +14,9 @@ export function readinessHandler(serviceKey: string, config: { apiKeyId: string;
     if (mismatch) return json({ error: "Unauthorized" }, 401);
     if (!config.apiKeyId || !config.secret) return json({ configured: false, environment: "production", writes_enabled: false }, 503);
     // No caller-specified host, path, method, customer or key. Fixed GET inventory only.
-    const client = new YellowCardFullProductClient({ ...config, environment: "production" }, transport);
+    let client: YellowCardFullProductClient;
+    try { client = new YellowCardFullProductClient({ ...config, environment: "production" }, transport); }
+    catch { return json({ configured: false, environment: "production", writes_enabled: false }, 503); }
     const probes: [string, () => Promise<unknown>][] = [
       ["custody_configuration", () => client.cryptoConfiguration()],
       ["bank_onboarding", () => client.bankOnboardings()],
@@ -31,6 +33,6 @@ export function readinessHandler(serviceKey: string, config: { apiKeyId: string;
         catch (e) { return { product, read_available: false, http_status: e instanceof YellowCardRequestError ? e.status : null }; }
       })));
     }
-    return json({ environment: "production", configured: true, writes_enabled: false, ready_for_migration: false, checked_at: new Date().toISOString(), results });
+    return json({ environment: "production", transport: config.relay ? "existing_egress_relay" : "direct", configured: true, writes_enabled: false, ready_for_migration: false, checked_at: new Date().toISOString(), results });
   };
 }

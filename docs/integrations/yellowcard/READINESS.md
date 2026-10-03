@@ -55,3 +55,7 @@ Reference entry point: https://docs.yellowcard.engineering/llms.txt
 - Admin must display both provider IDs/statuses, current banking provider and recovery cases. User-facing banking uses approved YC accounts (IBAN/ACH/SWIFT/Faster Payments only where enabled) while Bridge records remain internal.
 - A non-fraud provider pause should select a migration/re-verification notification when that path is available, not claim approval or unrestricted old funds. Do not bulk send or change fraud-specific notices as a side effect of deploying the adapter.
 - Delete/revoke Bridge credentials only after no remaining active Bridge relationships, complete residual inventory, zero remaining amounts, no unresolved returns/recalls, archived records and explicit operator approval.
+
+## Live source audit correction
+
+The deployed `yellowcard-capabilities` v158 bundle contains a production client with mandatory egress relay support, unlike the older sandbox-default client on the repository baseline. No existing YC function is deployed from that older source by this work. The initial direct production probes returned 401, which cannot establish credential validity because they bypassed the existing relay. The new client supports the live relay envelope and preserves signed upstream paths; the readiness endpoint uses the existing relay environment configuration. Expanded product path permissions on that relay require validation separately from YC entitlement.

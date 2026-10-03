@@ -39,10 +39,16 @@ export interface FullProductConfig {
   secret: string;
   /** Explicit sandbox fixture harness only; never enable with customer identity data. */
   sandboxWrites?: boolean;
+  /** Existing server-configured production egress relay. Never accepted from an HTTP caller. */
+  relay?: { url: string; token: string };
 }
 export class YellowCardFullProductClient {
   constructor(private readonly config: FullProductConfig, private readonly fetcher: typeof fetch = fetch) {
     if (!hosts[config.environment] || !config.apiKeyId || !config.secret) throw new Error("Provider configuration missing");
+    if (config.relay) {
+      const u = new URL(config.relay.url);
+      if (config.environment !== "production" || u.protocol !== "https:" || u.username || u.password || u.hash || !config.relay.token) throw new Error("Invalid provider relay configuration");
+    }
   }
   private async request(method: "GET" | "POST", path: string, payload?: unknown, query?: Record<string, string>) {
     if (!path.startsWith("/business/") || /[?#\\]/.test(path) || path.includes("..")) throw new Error("Invalid provider path");
@@ -55,9 +61,15 @@ export class YellowCardFullProductClient {
     const signature = await yellowCardSignature(this.config.secret, timestamp, url.pathname, method, body);
     let response: Response;
     try {
-      response = await this.fetcher(url, { method, body, redirect: "error", signal: AbortSignal.timeout(8000), headers: {
-        "X-YC-Timestamp": timestamp, Authorization: `YcHmacV1 ${this.config.apiKeyId}:${signature}`, "Content-Type": "application/json",
-      } });
+      const auth = `YcHmacV1 ${this.config.apiKeyId}:${signature}`;
+      const relay = this.config.relay;
+      response = await this.fetcher(relay ? relay.url : url, { method: relay ? "POST" : method,
+        body: relay ? JSON.stringify({ method, path: path.slice("/business".length), query: query ?? {}, ...(payload === undefined ? {} : { body: payload }), timeout_ms: 8000 }) : body,
+        redirect: "error", signal: AbortSignal.timeout(10000), headers: relay ? {
+          Authorization: `Bearer ${relay.token}`, "Content-Type": "application/json", "Accept": "application/json",
+          "X-BorderPay-YC-Authorization": auth, "X-BorderPay-YC-Timestamp": timestamp,
+        } : { "X-YC-Timestamp": timestamp, Authorization: auth, "Content-Type": "application/json" },
+      });
     } catch { throw new YellowCardRequestError(null, mutation); }
     // Do not leak provider bodies, request payloads, signatures or credentials to logs/UI.
     if (!response.ok) {

@@ -5,6 +5,17 @@ const config = { environment: "sandbox" as const, apiKeyId: "fixture-key", secre
 Deno.test("signature matches independent HMAC fixture", async () => {
   assert(await yellowCardSignature(config.secret, "2026-10-03T10:00:00.000Z", "/business/vaults", "POST", '{"name":"Synthetic merchant"}') === "BbsJf92LhEV2gOayCEgeirEiScS1YP+DFYw6b1HuFMo=");
 });
+Deno.test("production relay preserves GET semantics and signs the full upstream path", async () => {
+  const c = new YellowCardFullProductClient({ ...config, environment: "production", relay: { url: "https://relay.example/proxy", token: "fixture-relay-secret" } }, async (input, init) => {
+    assert(String(input) === "https://relay.example/proxy" && init?.method === "POST" && init.redirect === "error");
+    const body = JSON.parse(String(init.body)); assert(body.method === "GET" && body.path === "/virtual-accounts" && !body.body);
+    const headers = new Headers(init.headers); assert(headers.get("Authorization") === "Bearer fixture-relay-secret");
+    const signature = await yellowCardSignature(config.secret, headers.get("X-BorderPay-YC-Timestamp")!, "/business/virtual-accounts", "GET");
+    assert(headers.get("X-BorderPay-YC-Authorization") === `YcHmacV1 fixture-key:${signature}`);
+    return new Response("{}");
+  });
+  await c.virtualAccounts();
+});
 Deno.test("webhook verifies original bytes and rejects altered bytes or bad signatures", async () => {
   const sig = "e+tQifyS/xeR+GvyjSu8ETrfOEKGqadZl0aRO3WLVtM=";
   assert(await verifyYellowCardSignature(new TextEncoder().encode('{"event":"VIBAN.ACTIVE"}'), sig, config.secret));
