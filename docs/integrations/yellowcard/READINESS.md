@@ -43,3 +43,15 @@ Reference entry point: https://docs.yellowcard.engineering/llms.txt
 ## Production read-only diagnostic
 
 `yellowcard-full-readiness` is a service-credential-only endpoint that uses the existing YC production credentials for six fixed GET requests. It returns endpoint availability/status only, never account numbers, balances, identities or keys. It does not activate any product or create any sandbox environment. A successful read is not evidence of write entitlement or a complete migration test. Current Bridge onboarding is confirmed disabled and new-business intake is enabled in BorderPay; existing rejected/paused KYB invitations retain their own authorization and financial restrictions.
+
+## Confirmed coexistence and retirement policy
+
+- Stop new Bridge onboarding; collect new applications in BorderPay KYB. Existing active Bridge merchants retain service during preparation.
+- Rejected/provider-paused business invitations permit new evidence submission without altering the old Bridge status. Fraud/global restrictions remain distinct from a provider pause.
+- After YC global-product approval and per-merchant compliance/cutover approval, select YC for new activity. Retain both relationships: e.g. Bridge `paused`, YC `active` or `under_review`. Never reuse one shared status column for both providers.
+- The new pure migration policy tests these boundaries; it is not yet wired to production profile reads, admin UI or webhook processing.
+- Persist Bridge residual balances in original currencies in a separate operator recovery case with customer ID, eligible recovery date, authorization, source/destination references, fees, transactions, unresolved recalls and reconciliation evidence. Hold expiry alone must not execute a transfer.
+- Old Bridge money is not spendable YC balance. Operators recover eligible funds and reconcile the destination credit before closing the case. Do not retry an ambiguous transfer automatically.
+- Admin must display both provider IDs/statuses, current banking provider and recovery cases. User-facing banking uses approved YC accounts (IBAN/ACH/SWIFT/Faster Payments only where enabled) while Bridge records remain internal.
+- A non-fraud provider pause should select a migration/re-verification notification when that path is available, not claim approval or unrestricted old funds. Do not bulk send or change fraud-specific notices as a side effect of deploying the adapter.
+- Delete/revoke Bridge credentials only after no remaining active Bridge relationships, complete residual inventory, zero remaining amounts, no unresolved returns/recalls, archived records and explicit operator approval.
