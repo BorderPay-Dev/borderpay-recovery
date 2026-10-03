@@ -95,9 +95,11 @@ export class YellowCardFullProductClient {
     catch { throw new YellowCardRequestError(response.status, mutation); }
   }
   /** Fixed public-contract catalog; no caller-supplied hosts or paths. This is a server-only adapter. */
-  operation(operation: YCOperation, input: { body?: unknown; params?: Record<string,string>; query?: Record<string,string> } = {}) {
+  validateOperation(operation: YCOperation, input: { body?: unknown; params?: Record<string,string>; query?: Record<string,string> } = {}) {
     const contract = YC_OPERATIONS[operation];
     if (!contract) throw new Error("Unsupported provider operation");
+    const granted=this.config.release?.approvalReference?.trim() && this.config.release.operations.includes(operation);
+    if(contract.effect!=='read' && !(this.config.environment==='sandbox'&&this.config.sandboxWrites) && !granted)throw new Error('Full-product writes are disabled');
     const confirmation = "confirmation" in contract ? contract.confirmation : null;
     if (confirmation && !this.config.release?.confirmations.includes(confirmation)) throw new Error("Provider contract confirmation required");
     if (operation === 'createSend' || operation === 'generateAddress') {
@@ -114,6 +116,10 @@ export class YellowCardFullProductClient {
       if (p.required && v === undefined) throw new Error("Missing provider request parameter");
     }
     const path = contract.path.replace(/\{([^}]+)\}/g, (_m, name) => segment(input.params?.[name] ?? ""));
+    return path;
+  }
+  operation(operation: YCOperation, input: { body?: unknown; params?: Record<string,string>; query?: Record<string,string> } = {}) {
+    const path=this.validateOperation(operation,input),contract=YC_OPERATIONS[operation];
     return this.request(contract.method, path, input.body, input.query, { operation, readOnly: contract.effect === "read" });
   }
   cryptoConfiguration() { return this.request("GET", "/business/vaults/config"); }

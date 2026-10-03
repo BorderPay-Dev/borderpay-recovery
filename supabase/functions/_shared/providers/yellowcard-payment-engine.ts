@@ -82,6 +82,7 @@ export class YellowCardPaymentEngine {
     }
   }
   async prepare(context:MerchantContext,intent:PaymentIntent,proof:unknown) {
+    this.client.validateOperation(intent.operation,{body:intent.body,params:intent.params});
     await this.validateOwnership(context,intent);
     const hash=await payloadHash({context,intent});
     const verified=await this.authorization.verifyAndConsume(context,hash,proof);
@@ -94,6 +95,7 @@ export class YellowCardPaymentEngine {
     const raw=await this.cipher.open(op.sealed_request,`yc:operation:${context.environment}:${context.merchantId}:${op.sequence_id}`);
     const intent=JSON.parse(new TextDecoder().decode(raw)) as PaymentIntent;
     if(await payloadHash({context,intent})!==op.request_hash)throw new Error('Operation evidence mismatch');
+    this.client.validateOperation(intent.operation,{body:intent.body,params:intent.params});
     await this.validateOwnership(context,intent);
     const lease=await this.store.claim(context,op.id,op.request_hash);
     if(!lease?.lease_token)return {id:op.id,state:'reconcile_existing',providerId:op.provider_id};

@@ -60,7 +60,7 @@ Deno.test('timeout never causes a second financial write and retains unknown out
  assert((await engine.execute(context,op)).state==='outcome_unknown');await engine.execute(context,op);assert(calls===1&&store.finishes[0]==='outcome_unknown');
 });
 Deno.test('unverified authorization, cross-owner execution and shared treasury sources are denied',async()=>{
- let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret'},()=>{calls++;return Promise.resolve(Response.json({}));});
+ let calls=0;const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret',cryptoTokens:['USDC_BASE'],release:{operations:['createSend'],approvalReference:'SYNTHETIC',confirmations:[]}},()=>{calls++;return Promise.resolve(Response.json({}));});
  const store=memoryStore(),engine=new YellowCardPaymentEngine(client,store,cipher,{verifyAndConsume:async()=>{throw new Error('PIN proof invalid');}});
  await rejects(()=>engine.prepare(context,intent(),{}));
  const authorized=new YellowCardPaymentEngine(client,store,cipher,authorization),op=await authorized.prepare(context,intent(),{});
@@ -72,4 +72,11 @@ Deno.test('browser preflight is allowed only for the configured BorderPay app or
  const good=await handle(new Request('https://api.example',{method:'OPTIONS',headers:{Origin:'https://app.borderpayvelocity.xyz'}}));
  assert(good.status===204&&good.headers.get('Access-Control-Allow-Origin')==='https://app.borderpayvelocity.xyz');
  const bad=await handle(new Request('https://api.example',{method:'OPTIONS',headers:{Origin:'https://untrusted.example'}}));assert(bad.status===403);
+});
+
+Deno.test('disabled or invalid operations do not consume authentication or reserve funds',async()=>{
+ let verified=0;const store=memoryStore();
+ const client=new YellowCardFullProductClient({environment:'production',apiKeyId:'key',secret:'secret'},()=>{throw new Error('No network');});
+ const engine=new YellowCardPaymentEngine(client,store,cipher,{verifyAndConsume:async()=>{verified++;return {reference:'proof',expiresAt:new Date(Date.now()+60000).toISOString()};}});
+ await rejects(()=>engine.prepare(context,intent(),{}));assert(verified===0&&store.ops.size===0);
 });

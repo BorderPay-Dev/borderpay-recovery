@@ -44,7 +44,7 @@ The existing YC work is in `BorderPay-Dev/borderpay-recovery`, draft PR #266, br
 
 `Yellow Card Full Backend Acceptance` runs type checks, synthetic application tests and the draft migration against PostgreSQL 16. SQL assertions cover raw-table/function restrictions, RLS, source ownership, idempotency, concurrent claim exclusion, reservation retention after unknown outcomes, immutable audit/linkages and duplicate/conflicting financial observations. GitHub Actions supplies the authoritative run result for the committed revision.
 
-The current suite has 42 application tests. Application tests cover signing, cross-environment isolation, quote expiry, currency precision, missing rates, pending refunds, authenticated webhook storage, tampering, unknown identity owners, duplicate concurrent submit, lost response recovery and no shared-treasury fallback. These are test fixtures, not evidence that YC has accepted a live transaction.
+The current suite has 43 application tests. Application tests cover signing, cross-environment isolation, quote expiry, currency precision, missing rates, pending refunds, authenticated webhook storage, tampering, unknown identity owners, duplicate concurrent submit, lost response recovery and no shared-treasury fallback. These are test fixtures, not evidence that YC has accepted a live transaction.
 
 ## Monday activation sequence
 
