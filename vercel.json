@@ -117,7 +117,8 @@
       "fix/business-only-partner-api": false,
       "fix/velocity-email-branding": false,
       "fix/nattypay-sandbox": false,
-      "fix/partner-customer-authorization": false
+      "fix/partner-customer-authorization": false,
+      "feat/yellowcard-full-product-foundation": false
     }
   }
 }
