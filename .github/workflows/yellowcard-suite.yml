@@ -29,6 +29,7 @@ jobs:
 
       - name: Verify commercial policy and payload contracts
         run: |
+          deno test tests/yellowcard-full-product.test.ts
           deno test tests/yellowcard-commercial-fees.test.ts
           deno test tests/yellowcard-commercial-policy.test.ts
           deno test tests/yellowcard-sandbox-account-scope.test.ts
