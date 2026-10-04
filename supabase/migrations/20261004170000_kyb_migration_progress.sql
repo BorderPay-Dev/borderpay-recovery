@@ -57,6 +57,6 @@ begin
   end if;
  end if;
  return jsonb_build_object('profile',p,'userData',u,'securityData',s,'business',b,'portalStatus',portal_status,'reviewOnly',coalesce(review_only,false),'migration',public.kyb_migration_context(p_user));
-end $function$
+end $function$;
 
 commit;
