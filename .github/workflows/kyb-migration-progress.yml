@@ -1,0 +1,30 @@
+name: KYB migration progress checks
+on:
+  push:
+    branches: [fix/kyb-migration-progress-20261004]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic_only
+          POSTGRES_DB: migration_test
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:synthetic_only@localhost:5432/migration_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config tests/kyb-migration-progress/profile.test.ts
+      - run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/kyb-migration-progress/fixture.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261004170000_kyb_migration_progress.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/kyb-migration-progress/assertions.sql
+      - run: deno check --no-config supabase/functions/get-user-profile/index.ts supabase/functions/bridge-kyb-link/index.ts
