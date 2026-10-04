@@ -1,0 +1,41 @@
+do $$begin
+ if has_function_privilege('authenticated','public.kyb_migration_context(uuid)','execute') or has_function_privilege('anon','public.kyb_migration_context(uuid)','execute') then raise exception 'client_grant';end if;
+ begin perform public.kyb_migration_context('00000000-0000-4000-8000-000000000001');raise exception 'missing_role_gate';exception when others then if sqlerrm<>'SERVICE_REQUIRED' then raise;end if;end;
+end $$;
+select set_config('request.jwt.claims','{"role":"service_role"}',false);
+do $$declare u uuid;v jsonb;before jsonb;begin
+ select jsonb_agg(to_jsonb(p) order by id) into before from public.user_profiles p;
+ foreach u in array array['00000000-0000-4000-8000-000000000001'::uuid,'00000000-0000-4000-8000-000000000002'::uuid] loop
+  v:=public.kyb_migration_context(u);if v->>'status'<>'not_started' or v->>'eligible'<>'true' then raise exception 'draft_status';end if;
+  if public.profile_setup_context(u)#>>'{migration,status}'<>'not_started' then raise exception 'profile_integration';end if;
+  update kyb.applications set revision=2 where id=u;
+  if public.kyb_migration_context(u)->>'status'<>'incomplete' then raise exception 'saved_progress';end if;
+  update kyb.applications set internal_status='in_review' where id=u;
+  if public.kyb_migration_context(u)->>'status'<>'under_review' then raise exception 'submission';end if;
+  update kyb.applications set internal_status='approved' where id=u;
+  if public.kyb_migration_context(u)->>'status'<>'under_review' then raise exception 'internal_approval_must_not_activate';end if;
+  update kyb.applications set internal_status='needs_information' where id=u;
+  if public.kyb_migration_context(u)->>'status'<>'incomplete' then raise exception 'rfi';end if;
+  update kyb.applications set internal_status='rejected' where id=u;
+  if public.kyb_migration_context(u)->>'status'<>'rejected' then raise exception 'local_rejection_hidden';end if;
+  update kyb.applications set internal_status='draft' where id=u;
+ end loop;
+ if before is distinct from (select jsonb_agg(to_jsonb(p) order by id) from public.user_profiles p) then raise exception 'provider_or_financial_state_mutated';end if;
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000003')->>'eligible'<>'false' then raise exception 'active_merchant_rerouted';end if;
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000004')->>'eligible'<>'false' then raise exception 'unknown_user';end if;
+ update public.user_profiles set account_frozen_reason='Fraud hold' where id='00000000-0000-4000-8000-000000000001';
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000001')->>'eligible'<>'false' then raise exception 'fraud_bypass';end if;
+ update public.user_profiles set account_frozen_reason='Bridge account paused',account_type='individual' where id='00000000-0000-4000-8000-000000000001';
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000001')->>'eligible'<>'false' then raise exception 'individual_bypass';end if;
+ update auth.users set banned_until=now()+interval '1 day' where id='00000000-0000-4000-8000-000000000002';
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000002')->>'eligible'<>'false' then raise exception 'banned_user';end if;
+ update auth.users set banned_until=null,email='changed@example.test' where id='00000000-0000-4000-8000-000000000002';
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000002')->>'eligible'<>'false' then raise exception 'email_binding';end if;
+ update auth.users set email='rejected@example.test' where id='00000000-0000-4000-8000-000000000002';
+ perform set_config('test.partner','true',true);
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000002')->>'eligible'<>'false' then raise exception 'partner_customer_rerouted';end if;
+ perform set_config('test.partner','false',true);
+ update kyb.reverification_authorizations set revoked_at=now();
+ if public.kyb_migration_context('00000000-0000-4000-8000-000000000002')->>'eligible'<>'false' then raise exception 'revocation';end if;
+end $$;
+select 'Migration progress, unchanged financial state, account isolation, fraud, business scope and revocation passed' result;
