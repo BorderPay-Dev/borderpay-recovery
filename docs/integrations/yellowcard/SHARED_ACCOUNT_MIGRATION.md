@@ -26,6 +26,23 @@ The existing admin Bridge recovery reservation was documented as relying on glob
 - Retain each provider's status and each resource's ownership. Existing Bridge restrictions stay effective even where a merchant can use YC. Global merchant restrictions override all providers.
 - Payments already sent to old Bridge instructions cannot be redirected by an internal routing change. Display the beneficiary and reference required for each selected collection route.
 
+## Founder clarification: previously reviewed cohort and references
+
+The founder confirms the reasons for the known non-fraud Bridge-paused merchant cohort have already been reviewed and this cohort is the migration priority. Reuse those recorded assessments and existing KYB/UBO evidence; do not impose a duplicate blanket KYB solely because Bridge says paused. Persist the specific eligibility decision, reviewer, rationale, evidence version and timestamp per merchant. Do not infer a recorded clearance for every new paused customer from this cohort instruction. Provision the cohort's internal allocations and collection instructions once the YC shared-account programme is enabled under the agreed controls; no live activation is performed by this draft.
+
+Confirmed fraud results in a permanent platform ban applying across all providers, with an auditable decision and controlled funds handling. Incoming fraud allegations/recalls must immediately enter a restriction and investigation workflow; an unverified allegation or duplicate webhook alone is not a confirmed fraud finding. No migration route can bypass fraud, sanctions or legal restrictions. Existing confirmed-fraud exclusions remain excluded.
+
+Preferred merchant payment-reference format: `BP-` followed by the merchant's verified legal entity name, for example `BP-VELVET HORIZON LTD`. This is a merchant allocation reference, not the beneficiary name. The shared account beneficiary remains BorderPay Africa, Inc.
+
+Reference requirements:
+- Persist a canonical, uniquely reserved reference per merchant and collection account. Never dynamically recompute it from an editable profile name.
+- Prefer the full uppercase legal name. Validate the actual YC/bank rail character set, length and returned-reference preservation before issuing payment instructions. The sample above is 21 characters; do not assume every rail preserves it.
+- If length/character restrictions or a name collision prevent the preferred reference, reserve a readable shorter name plus an immutable unique suffix. Show the exact accepted bank reference on payment instructions and invoices. Do not silently truncate the displayed full reference.
+- Normalize case/whitespace only under verified rail behavior; never assign payments by fuzzy legal-name matching. Merchant names alone are not globally unique.
+- Retain historical reference aliases when a legal name changes, with uniqueness and audit controls. Restrict access to internal reference-to-merchant mappings.
+- Unknown, truncated or ambiguous references go to suspense for reconciliation; no automatic available-balance credit. Duplicate events must not duplicate merchant credits.
+- Cover same-name merchants, long/non-Latin legal names, renamed businesses, missing/truncated references, cross-tenant access and duplicate/replayed deposit events in acceptance tests.
+
 ## Ledger and reconciliation
 
 Use distinct provider cash/control accounts and merchant liabilities. Merchant allocation is a liability entry, not BorderPay revenue or a second asset. Hold unmatched/ambiguous receipts in suspense; do not allocate by fuzzy sender name or an untrusted user claim.
