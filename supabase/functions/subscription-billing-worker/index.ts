@@ -1,3 +1,4 @@
+import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
 import { resolveUsageNoticeRecipient } from "../_shared/business-usage-recipient.ts";
 import { maintenanceEmailCapacity } from "../_shared/maintenance-email-capacity.ts";
 import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
@@ -276,6 +277,14 @@ async function sendEmails(remindersOnly = false) {
   for (const job of data ?? []) {
     if (partnerJobs.has(String(job.user_id))) {
       await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:partner_managed"}).eq("id",job.id);
+      continue;
+    }
+
+    // Recheck at delivery time; old queued reminders must not bypass VA status.
+    if (requiresActiveMaintenanceVa(job.template) && !await hasActiveMaintenanceVa(db, job.user_id, job.recipient)) {
+      const { error: suppressError } = await db.from("subscription_email_jobs")
+        .update({ status: "failed", last_error: "suppressed:no_active_virtual_account" }).eq("id", job.id);
+      if (suppressError) throw suppressError;
       continue;
     }
 
