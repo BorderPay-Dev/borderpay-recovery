@@ -22,10 +22,11 @@ export function renderExternalInvoice(p: Record<string, unknown>): RenderedEmail
   const url = new URL(String(p.payment_link || ''));
   if (!reference || url.protocol !== 'https:' || url.hostname !== 'checkout.flutterwave.com' || url.username || url.password || !url.pathname.startsWith('/v3/hosted/pay/')) throw new Error('Verified invoice payment link and reference required');
   const notice = String(p.notice || 'invoice');
-  if (!['invoice', 'reminder', 'final_warning'].includes(notice)) throw new Error('Unknown invoice notice');
+  if (!['invoice', 'reminder', 'final_warning', 'balance_reminder'].includes(notice)) throw new Error('Unknown invoice notice');
   const reminder = notice !== 'invoice';
   let deadline = '';
-  if (reminder) {
+  if (notice === 'balance_reminder' && billingDate > new Date().toISOString().slice(0, 10)) throw new Error('Future invoice cannot receive an overdue reminder');
+  if (reminder && notice !== 'balance_reminder') {
     const due = isoDate(p.deadline);
     if (due < billingDate || billingDate > new Date().toISOString().slice(0, 10)) throw new Error('Reminder dates are inconsistent with invoice');
     deadline = `\nPayment deadline: ${dateLabel(due)}`;

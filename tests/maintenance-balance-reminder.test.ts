@@ -1,0 +1,10 @@
+import {prepareInvoiceEmail} from '../supabase/functions/_shared/subscription-email-policy.ts';
+import {renderExternalInvoice} from '../supabase/functions/_shared/email-templates/subscription/maintenance.ts';
+const assert=(v:unknown)=>{if(!v)throw Error('assertion failed')};
+const invoice={user_id:'test',provider_reference:'TEST-NOT-PAYABLE',billing_period:'2026-09-30',amount:29.99,currency:'USD',status:'payment_link_created',paid_at:null,payment_link:'https://checkout.flutterwave.com/v3/hosted/pay/test-not-payable'};
+const job={user_id:'test',props:{transaction_reference:invoice.provider_reference,notice:'balance_reminder',customer_name:'Example <b>Ltd</b>'}};
+const subscription={user_id:'test',status:'active',grace_started_at:'2026-10-31T00:00:00Z'};
+Deno.test('unpaid prior invoice reminder does not inherit a future cycle deadline',()=>{const r=prepareInvoiceEmail(job,invoice,subscription,new Date('2026-10-05T12:00:00Z'));assert(r.action==='send');if(r.action!=='send')throw Error('not send');assert(!('deadline' in r.props));const email=renderExternalInvoice(r.props);assert(email.subject.includes('Maintenance payment reminder'));assert(email.text.includes('29.99 USD'));assert(!email.text.includes('Payment deadline'));assert(email.text.includes('not deducted'));assert(!email.html.includes('<b>Ltd</b>'));});
+Deno.test('paid, cancelled, foreign owner and inactive subscription suppressed',()=>{for(const i of [{...invoice,status:'paid',paid_at:'2026-10-05'},{...invoice,status:'cancelled'},{...invoice,user_id:'different'}])assert(prepareInvoiceEmail(job,i,subscription).action==='suppress');assert(prepareInvoiceEmail(job,invoice,{...subscription,status:'cancelled'}).action==='suppress');});
+Deno.test('future invoice is never treated as overdue',()=>assert(prepareInvoiceEmail(job,{...invoice,billing_period:'2026-10-31'},subscription,new Date('2026-10-05')).action==='defer'));
+Deno.test('timed grace reminder preserves original deadline rules',()=>assert(prepareInvoiceEmail({...job,props:{...job.props,notice:'reminder'}},invoice,subscription,new Date('2026-10-05')).action==='defer'));
