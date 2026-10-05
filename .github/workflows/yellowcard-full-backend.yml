@@ -1,0 +1,47 @@
+name: Yellow Card Full Backend Acceptance
+on:
+  workflow_dispatch:
+  push:
+    branches: [feat/yellowcard-full-product-foundation]
+    paths:
+      - 'supabase/functions/_shared/providers/yellowcard-*.ts'
+      - 'supabase/functions/yellowcard-full-*/**'
+      - 'supabase/functions/yellowcard-identity-callback/**'
+      - 'supabase/migrations/20261003180000_yellowcard_full_product.sql'
+      - 'tests/yellowcard-*.test.ts'
+      - 'tests/sql/yellowcard_full_*.sql'
+      - '.github/workflows/yellowcard-full-backend.yml'
+permissions:
+  contents: read
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic-ci-only
+          POSTGRES_DB: yc_acceptance
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
+        with:
+          deno-version: v2.x
+      - name: Typecheck backend entry points
+        run: deno check --no-config supabase/functions/yellowcard-full-webhook/index.ts supabase/functions/yellowcard-full-worker/index.ts supabase/functions/yellowcard-full-accounts/index.ts supabase/functions/yellowcard-identity-callback/handler.ts
+      - name: Synthetic backend acceptance (no network or production secrets)
+        run: deno test --no-config tests/yellowcard-full-product.test.ts tests/yellowcard-full-readiness.test.ts tests/yellowcard-migration-policy.test.ts tests/yellowcard-backend-core.test.ts tests/yellowcard-webhook-lifecycle.test.ts
+      - name: Apply draft schema to ephemeral PostgreSQL and verify security invariants
+        env:
+          PGHOST: localhost
+          PGPORT: '5432'
+          PGUSER: postgres
+          PGPASSWORD: synthetic-ci-only
+          PGDATABASE: yc_acceptance
+        run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/yellowcard_full_fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261003180000_yellowcard_full_product.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/yellowcard_full_acceptance.sql
