@@ -197,7 +197,7 @@ Deno.serve(async (req: Request) => {
 
   // Applies to direct calls as well as billing-worker reminders. Fail closed on lookup errors.
   try {
-    if (requiresActiveMaintenanceVa(body.template) && !await hasActiveMaintenanceVa(supabaseAdmin, body.user_id, body.to)) {
+    if (requiresActiveMaintenanceVa(body.template) && !await hasActiveMaintenanceVa(supabaseAdmin, body.user_id, body.to, String(body.props?.billing_period || body.props?.billing_start_date || "") || undefined)) {
       return json({ success: true, data: { status: "suppressed", reason: "no_active_virtual_account", provider_id: null } });
     }
   } catch {

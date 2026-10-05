@@ -280,8 +280,17 @@ async function sendEmails(remindersOnly = false) {
       continue;
     }
 
+    const maintenancePeriod = job.props?.billing_period || job.props?.billing_start_date;
+    const maintenanceDue = typeof maintenancePeriod === "string" && /^\d{4}-\d{2}-\d{2}$/.test(maintenancePeriod)
+      ? Date.parse(maintenancePeriod + "T00:00:00Z") : NaN;
+    if (requiresActiveMaintenanceVa(job.template) && maintenanceDue > Date.now()) {
+      const { error: deferError } = await db.from("subscription_email_jobs")
+        .update({ next_attempt_at: new Date(maintenanceDue).toISOString(), last_error: null }).eq("id", job.id);
+      if (deferError) throw deferError;
+      continue;
+    }
     // Recheck at delivery time; old queued reminders must not bypass VA status.
-    if (requiresActiveMaintenanceVa(job.template) && !await hasActiveMaintenanceVa(db, job.user_id, job.recipient)) {
+    if (requiresActiveMaintenanceVa(job.template) && !await hasActiveMaintenanceVa(db, job.user_id, job.recipient, job.props?.billing_period || job.props?.billing_start_date)) {
       const { error: suppressError } = await db.from("subscription_email_jobs")
         .update({ status: "failed", last_error: "suppressed:no_active_virtual_account" }).eq("id", job.id);
       if (suppressError) throw suppressError;
