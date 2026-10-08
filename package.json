@@ -35,13 +35,13 @@
     "@capacitor-community/in-app-review": "^8.0.0",
     "@capacitor-firebase/app-check": "8.5.1",
     "@capacitor-firebase/messaging": "^8.3.0",
-    "@capacitor/android": "^8.4.1",
+    "@capacitor/android": "^8.4.3",
     "@capacitor/app-launcher": "^8.0.1",
     "@capacitor/browser": "^8.0.4",
-    "@capacitor/cli": "^8.4.1",
-    "@capacitor/core": "^8.4.1",
+    "@capacitor/cli": "^8.4.3",
+    "@capacitor/core": "^8.4.3",
     "@capacitor/filesystem": "^8.1.2",
-    "@capacitor/ios": "^8.4.1",
+    "@capacitor/ios": "^8.4.3",
     "@capacitor/share": "^8.0.1",
     "@popperjs/core": "^2.11.8",
     "@radix-ui/react-accordion": "^1.2.3",
@@ -114,5 +114,8 @@
   "engines": {
     "node": "24.x",
     "npm": ">=10.0.0"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "1.13.6"
   }
 }
