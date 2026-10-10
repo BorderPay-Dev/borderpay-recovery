@@ -6,6 +6,8 @@ Internal engineering documentation. Source audit: 10 October 2026. Draft PR #274
 
 BorderPay selected **Universal KYB** on 10 October 2026. Our onboarding UI collects the business, ownership and evidence pack; the backend sends it through REAP's UKYB API. `compliancePolicy` fixes entity creation to `BUSINESS` / `UKYB`; other modes, including an omitted mode that would default to KYCAAS, are rejected. `prepareBusinessEntity` derives a stable external reference from the authenticated merchant tenant ID.
 
+**One customer-facing verification flow:** reuse the merchant's complete, current BorderPay business details, UBO identity records and clean supporting documents for Universal KYB. Do not launch a second REAP-hosted questionnaire or identity-capture flow. Request only missing, expired, inconsistent or specifically requested evidence through BorderPay. REAP reviews the submitted pack in the background; evidence reuse does not mean transferring another provider's approval automatically.
+
 Use `REAP_SANDBOX_COMPLIANCE_API_KEY` for the compliance sandbox. REAP still needs to enable Universal KYB for our programme. This selection does not assume existing BorderPay/Bridge verification is automatically accepted, or that business approval replaces any additional named-cardholder checks required by REAP.
 
 The sequence is business entity → KYB pack → save returned UBO mappings → company and owner document uploads → submit for review → signed notifications/current status retrieval. Issuing remains blocked until REAP reports both APPROVED and `cardIssuanceEnabled=true`, alongside our internal controls.

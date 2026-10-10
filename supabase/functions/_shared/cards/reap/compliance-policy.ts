@@ -3,6 +3,8 @@
  */
 export const compliancePolicy = Object.freeze({
   merchantType: "BUSINESS" as const,
+  evidenceCollection: "borderpay" as const,
+  hostedVerification: false as const,
   verificationMode: "UKYB" as const,
   sandboxCredential: "REAP_SANDBOX_COMPLIANCE_API_KEY" as const,
 });

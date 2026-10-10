@@ -1,4 +1,7 @@
-import { prepareBusinessEntity } from "./compliance-policy.ts";
+import {
+  compliancePolicy,
+  prepareBusinessEntity,
+} from "./compliance-policy.ts";
 import { readKybSnapshot, validateKybPack } from "./kyb.ts";
 import { SandboxTransport } from "./transport.ts";
 import { planWebhookWork } from "./work-plan.ts";
@@ -131,6 +134,10 @@ Deno.test("selected Universal KYB entity request is stable and business-only", (
   const a = prepareBusinessEntity(uuid);
   const b = prepareBusinessEntity(uuid.toUpperCase());
   assert(a.type === "BUSINESS" && a.verificationMode === "UKYB");
+  assert(
+    compliancePolicy.evidenceCollection === "borderpay" &&
+      compliancePolicy.hostedVerification === false,
+  );
   assert(a.externalId === b.externalId && a.externalId.includes(uuid));
 });
 Deno.test("business onboarding cannot fall back to another verification product", async () => {
