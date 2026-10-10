@@ -6,18 +6,23 @@ export function prepareInvoiceEmail(job: any, invoice: any, subscription: any, n
   const due = Date.parse(`${invoice.billing_period}T00:00:00Z`);
   if (!Number.isFinite(due)) return suppress('invalid_invoice_date');
   const notice = String(job.props?.notice || 'invoice');
-  if (!['invoice', 'reminder', 'final_warning'].includes(notice)) return suppress('unsupported_notice');
+  if (!['invoice', 'reminder', 'final_warning', 'balance_reminder'].includes(notice)) return suppress('unsupported_notice');
+  if (job.props?.deactivation_date) {
+    const warningDate = String(job.props.deactivation_date);
+    if (notice !== 'balance_reminder' || !/^\d{4}-\d{2}-\d{2}$/.test(warningDate) || warningDate !== now.toISOString().slice(0, 10) || due > now.getTime()) return suppress('deactivation_warning_not_due_today');
+  }
   const rawGrace = subscription.grace_started_at ? Date.parse(subscription.grace_started_at) : due;
   if (!Number.isFinite(rawGrace)) return suppress('invalid_grace_date');
   const grace = Math.max(rawGrace, due);
   const deadline = new Date(grace + 7 * 86400000).toISOString().slice(0, 10);
-  if (notice !== 'invoice') {
+  if (notice === 'balance_reminder' && now.getTime() < due) return { action: 'defer' as const, nextAttemptAt: new Date(due).toISOString() };
+  if (notice !== 'invoice' && notice !== 'balance_reminder') {
     const eligibleAt = grace + (notice === 'reminder' ? 3 : 7) * 86400000;
     if (now.getTime() < eligibleAt) return { action: 'defer' as const, nextAttemptAt: new Date(eligibleAt).toISOString() };
   }
   return { action: 'send' as const, props: { ...job.props, amount: Number(invoice.amount), currency: invoice.currency,
     billing_period: invoice.billing_period, payment_link: invoice.payment_link, transaction_reference: invoice.provider_reference,
-    ...(notice !== 'invoice' ? { deadline } : {}) } };
+    ...(notice !== 'invoice' && notice !== 'balance_reminder' ? { deadline } : {}) } };
 }
 
 export function confirmedEmailDelivery(responseOk: boolean, payload: any): boolean {
