@@ -1,0 +1,30 @@
+name: REAP sandbox contracts
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/cards/reap/**'
+      - 'scripts/reap/**'
+      - 'docs/integrations/reap/**'
+      - '.github/workflows/reap-sandbox-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Reject credentials in reference documentation
+        run: python3 scripts/reap/sanitize-reference.py
+      - name: Verify generated contracts
+        run: |
+          python3 scripts/reap/generate-contracts.py
+          git diff --exit-code -- supabase/functions/_shared/cards/reap/contracts.json
+      - name: Lint
+        run: deno lint --config=supabase/functions/_shared/cards/reap/deno.json supabase/functions/_shared/cards/reap/
+      - name: Test contracts, security and PostgreSQL persistence
+        run: deno test --config=supabase/functions/_shared/cards/reap/deno.json --lock=supabase/functions/_shared/cards/reap/deno.lock --frozen --allow-read supabase/functions/_shared/cards/reap/

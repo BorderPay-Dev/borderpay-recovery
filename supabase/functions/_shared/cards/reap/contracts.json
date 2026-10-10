@@ -1,0 +1,2982 @@
+{
+  "createCard": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/cards",
+    "parameters": [
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "cardType": {
+                "type": "string",
+                "enum": [
+                  "Virtual",
+                  "Physical"
+                ]
+              },
+              "spendLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0
+              },
+              "customerType": {
+                "type": "string",
+                "enum": [
+                  "Business",
+                  "Consumer"
+                ]
+              },
+              "kyc": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "firstName": {
+                        "type": "string"
+                      },
+                      "lastName": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "dob": {
+                        "type": "string"
+                      },
+                      "nationality": {
+                        "type": "string"
+                      },
+                      "residentialAddress": {
+                        "type": "object",
+                        "properties": {
+                          "line1": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line2": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line3": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line4": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line5": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 3,
+                            "minLength": 3
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "city": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 2
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            ],
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "line1",
+                          "line2",
+                          "country",
+                          "city"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "idDocumentType": {
+                        "type": "string",
+                        "enum": [
+                          "Passport",
+                          "Health",
+                          "NationalID",
+                          "TaxIDNumber",
+                          "SocialService",
+                          "DriversLicense"
+                        ]
+                      },
+                      "idDocumentNumber": {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "signature": {
+                        "type": "string"
+                      },
+                      "providerId": {
+                        "type": "string"
+                      },
+                      "issuerCustomerId": {
+                        "type": "string",
+                        "maxLength": 25
+                      },
+                      "expiresAt": {
+                        "type": "string",
+                        "format": "date-time"
+                      }
+                    },
+                    "required": [
+                      "firstName",
+                      "dob",
+                      "residentialAddress",
+                      "idDocumentType",
+                      "idDocumentNumber"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "enum": [
+                          "Person",
+                          "Company"
+                        ]
+                      },
+                      "registeredAddress": {
+                        "type": "object",
+                        "properties": {
+                          "line1": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line3": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line4": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line5": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 3,
+                            "minLength": 3
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "city": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 2
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            ],
+                            "nullable": true
+                          },
+                          "line2": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "line1",
+                          "country",
+                          "city"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "businessName": {
+                        "type": "string"
+                      },
+                      "businessRegistrationNumber": {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "businessOperationAddress": {
+                        "type": "object",
+                        "properties": {
+                          "line1": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line3": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line4": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line5": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 3,
+                            "minLength": 3
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "city": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 2
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            ],
+                            "nullable": true
+                          },
+                          "line2": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "line1",
+                          "country",
+                          "city"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "cardholder": {
+                        "oneOf": [
+                          {
+                            "type": "object",
+                            "properties": {
+                              "firstName": {
+                                "type": "string"
+                              },
+                              "lastName": {
+                                "type": "string",
+                                "nullable": true
+                              },
+                              "dob": {
+                                "type": "string"
+                              },
+                              "nationality": {
+                                "type": "string"
+                              },
+                              "residentialAddress": {
+                                "type": "object",
+                                "properties": {
+                                  "line1": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                  },
+                                  "line2": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                  },
+                                  "line3": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "nullable": true
+                                  },
+                                  "line4": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "nullable": true
+                                  },
+                                  "line5": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "nullable": true
+                                  },
+                                  "country": {
+                                    "type": "string",
+                                    "maxLength": 3,
+                                    "minLength": 3
+                                  },
+                                  "postalCode": {
+                                    "type": "string",
+                                    "maxLength": 255,
+                                    "nullable": true
+                                  },
+                                  "city": {
+                                    "type": "string",
+                                    "maxLength": 255
+                                  },
+                                  "state": {
+                                    "oneOf": [
+                                      {
+                                        "type": "string",
+                                        "minLength": 2,
+                                        "maxLength": 2
+                                      },
+                                      {
+                                        "type": "string",
+                                        "maxLength": 255
+                                      }
+                                    ],
+                                    "nullable": true
+                                  }
+                                },
+                                "required": [
+                                  "line1",
+                                  "line2",
+                                  "country",
+                                  "city"
+                                ],
+                                "additionalProperties": false
+                              },
+                              "idDocumentType": {
+                                "type": "string",
+                                "enum": [
+                                  "Passport",
+                                  "Health",
+                                  "NationalID",
+                                  "TaxIDNumber",
+                                  "SocialService",
+                                  "DriversLicense"
+                                ]
+                              },
+                              "idDocumentNumber": {
+                                "type": "string",
+                                "maxLength": 255
+                              },
+                              "signature": {
+                                "type": "string"
+                              },
+                              "providerId": {
+                                "type": "string"
+                              },
+                              "issuerCustomerId": {
+                                "type": "string",
+                                "maxLength": 25
+                              },
+                              "expiresAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "firstName",
+                              "dob",
+                              "residentialAddress",
+                              "idDocumentType",
+                              "idDocumentNumber"
+                            ],
+                            "additionalProperties": false
+                          },
+                          {
+                            "type": "object",
+                            "properties": {},
+                            "additionalProperties": false
+                          }
+                        ]
+                      },
+                      "issuerCustomerId": {
+                        "type": "string",
+                        "maxLength": 25
+                      },
+                      "entityId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fullName",
+                      "entityType",
+                      "registeredAddress",
+                      "businessName",
+                      "businessRegistrationNumber",
+                      "businessOperationAddress"
+                    ],
+                    "additionalProperties": false
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "fullName": {
+                        "type": "string"
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "enum": [
+                          "Person",
+                          "Company"
+                        ]
+                      },
+                      "registeredAddress": {
+                        "type": "object",
+                        "properties": {
+                          "line1": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line3": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line4": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line5": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 3,
+                            "minLength": 3
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "city": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 2
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            ],
+                            "nullable": true
+                          },
+                          "line2": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "line1",
+                          "country",
+                          "city"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "businessName": {
+                        "type": "string"
+                      },
+                      "businessRegistrationNumber": {
+                        "type": "string",
+                        "maxLength": 255
+                      },
+                      "businessOperationAddress": {
+                        "type": "object",
+                        "properties": {
+                          "line1": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "line3": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line4": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "line5": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "country": {
+                            "type": "string",
+                            "maxLength": 3,
+                            "minLength": 3
+                          },
+                          "postalCode": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          },
+                          "city": {
+                            "type": "string",
+                            "maxLength": 255
+                          },
+                          "state": {
+                            "oneOf": [
+                              {
+                                "type": "string",
+                                "minLength": 2,
+                                "maxLength": 2
+                              },
+                              {
+                                "type": "string",
+                                "maxLength": 255
+                              }
+                            ],
+                            "nullable": true
+                          },
+                          "line2": {
+                            "type": "string",
+                            "maxLength": 255,
+                            "nullable": true
+                          }
+                        },
+                        "required": [
+                          "line1",
+                          "country",
+                          "city"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "issuerCustomerId": {
+                        "type": "string",
+                        "maxLength": 25
+                      },
+                      "cardholder": {
+                        "type": "object",
+                        "properties": {
+                          "firstName": {
+                            "type": "string"
+                          },
+                          "lastName": {
+                            "type": "string"
+                          },
+                          "email": {
+                            "type": "string",
+                            "format": "email"
+                          },
+                          "dob": {
+                            "type": "string"
+                          },
+                          "nationalityOfEmployee": {
+                            "type": "string"
+                          },
+                          "nationality": {},
+                          "placeOfBirth": {
+                            "type": "string"
+                          },
+                          "countryOfBirth": {
+                            "type": "string"
+                          },
+                          "countryOfResidence": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "firstName",
+                          "lastName",
+                          "email"
+                        ],
+                        "additionalProperties": false
+                      },
+                      "entityId": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "fullName",
+                      "entityType",
+                      "registeredAddress",
+                      "businessName",
+                      "businessRegistrationNumber",
+                      "businessOperationAddress",
+                      "cardholder",
+                      "entityId"
+                    ],
+                    "additionalProperties": false
+                  }
+                ]
+              },
+              "expiryDate": {
+                "type": "string",
+                "format": "date",
+                "nullable": true
+              },
+              "preferredCardName": {
+                "type": "string",
+                "maxLength": 27
+              },
+              "secondaryCardName": {
+                "type": "string",
+                "maxLength": 27
+              },
+              "meta": {
+                "type": "object",
+                "properties": {
+                  "otpPhoneNumber": {
+                    "type": "object",
+                    "properties": {
+                      "dialCode": {
+                        "type": "number",
+                        "format": "float"
+                      },
+                      "phoneNumber": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "dialCode",
+                      "phoneNumber"
+                    ],
+                    "additionalProperties": false
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "maxLength": 50,
+                    "nullable": true
+                  }
+                },
+                "required": [
+                  "otpPhoneNumber",
+                  "id"
+                ]
+              },
+              "cardDesign": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "topUpWallet": {
+                "type": "object",
+                "properties": {
+                  "currency": {
+                    "type": "string",
+                    "enum": [
+                      "USDC"
+                    ]
+                  }
+                },
+                "additionalProperties": false
+              },
+              "programType": {
+                "type": "string",
+                "enum": [
+                  "commercial",
+                  "retail"
+                ]
+              },
+              "scheme": {
+                "type": "string",
+                "enum": [
+                  "visa"
+                ]
+              }
+            },
+            "required": [
+              "cardType",
+              "customerType",
+              "kyc",
+              "preferredCardName",
+              "meta"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_cards.md",
+    "sourceSha256": "539b3443fef98f553d20bc212a4e64dd873725a02bab0e5429351c676ba3d32e"
+  },
+  "getCard": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/cards/{cardId}",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_cards-cardid.md",
+    "sourceSha256": "0dd13a22fc68cd5e63bfb95fc92959a81d9d4178f9e474aba5500c76b354309b"
+  },
+  "listCards": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/cards",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "number",
+          "format": "float"
+        }
+      },
+      {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "number",
+          "format": "float",
+          "maximum": 100
+        }
+      },
+      {
+        "in": "query",
+        "name": "status",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "metadataId",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_cards.md",
+    "sourceSha256": "b39dfe1e63bc6b95dae2138e0d02220bf7e25e0d5bcc460416d51ca7fb3bd3d1"
+  },
+  "listDesigns": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/card-design/",
+    "parameters": [
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_card-design.md",
+    "sourceSha256": "6040aad1f2b3a96da0f9a76c32e5636d28d974b59ad952d05fb56d26abec3a5f"
+  },
+  "freezeCard": {
+    "service": "cards",
+    "method": "PUT",
+    "path": "/cards/{cardId}/status",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "freeze": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "freeze"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/put_cards-cardid-status.md",
+    "sourceSha256": "0d14bbb556d950b7bb2211c58923cc56afb11fbbb1d144e8744809361e3ce4eb"
+  },
+  "adjustCredit": {
+    "service": "cards",
+    "method": "PUT",
+    "path": "/cards/{cardId}/credit",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "adjustment": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "adjustment"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/put_cards-cardid-credit.md",
+    "sourceSha256": "85550f09cc45b629ca9998a47c8e2ca3d67814a5489a51ce0a5f982b75925992"
+  },
+  "spendControls": {
+    "service": "cards",
+    "method": "PUT",
+    "path": "/cards/{cardId}/spend-control",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "transactionLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              },
+              "dailyLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              },
+              "weeklyLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              },
+              "monthlyLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              },
+              "yearlyLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              },
+              "allTimeLimit": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0,
+                "maximum": 999999999.99
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/put_cards-cardid-spend-control.md",
+    "sourceSha256": "3431baa605b6f9deb5156bc2d9ed23aa53d7a695110ab132b1238fba1dfe1972"
+  },
+  "revealHtml": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/cards/{cardId}/reveal-html",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "publicKey": {
+                "type": "string",
+                "nullable": true
+              },
+              "stylesheetUrl": {
+                "type": "string"
+              },
+              "copyPan": {
+                "type": "boolean"
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_cards-cardid-reveal-html.md",
+    "sourceSha256": "4ec7c2ebb9d24cc93e6552f08e8df94e916df236b67b1ba604c88457189770c9"
+  },
+  "terminateCard": {
+    "service": "cards",
+    "method": "DELETE",
+    "path": "/cards/{cardId}",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/delete_cards-cardid.md",
+    "sourceSha256": "c2e9a9c77a95bdad18aa355d8fd6a99ce2579d88042b2c47b59eeeada8cc1c6b"
+  },
+  "accountBalance": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/account/balance",
+    "parameters": [
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_account-balance.md",
+    "sourceSha256": "89bf986619c51709b4fe0caf7fbbd42cfbed0d73d1fe5b7a3444b4b76120ed36"
+  },
+  "balanceHistory": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/cards/{cardId}/balance-history",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "string",
+          "maximum": 100
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "toDate",
+        "schema": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "fromDate",
+        "schema": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "type",
+        "schema": {
+          "type": "string",
+          "enum": [
+            "DEPOSIT",
+            "WITHDRAWAL"
+          ]
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "txnHash",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_cards-cardid-balance-history.md",
+    "sourceSha256": "3643541dd5aff1a10e1f3f3a608cb8657ad1a9173f61d94998b2fb4e04eba703"
+  },
+  "cardTransactions": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/cards/{cardId}/transactions",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "cardId",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "string",
+          "maximum": 100
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "toDate",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      {
+        "required": false,
+        "in": "query",
+        "name": "fromDate",
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_cards-cardid-transactions.md",
+    "sourceSha256": "2950fec1c1275335142bf629cc84063fb49b9a4e118f0b675a3f8bd3a6b110d9"
+  },
+  "transactions": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/transactions",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "number",
+          "format": "float",
+          "minimum": 1
+        }
+      },
+      {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "number",
+          "format": "float",
+          "maximum": 100
+        }
+      },
+      {
+        "in": "query",
+        "name": "fromDate",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "in": "query",
+        "name": "toDate",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_transactions.md",
+    "sourceSha256": "fb2e6486a95df01efc1967dbdfcd74d07fde1c4c6d0b98aca822790d4c16449b"
+  },
+  "getTransaction": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/transactions/{transactionId}",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "transactionId",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_transactions-transactionid.md",
+    "sourceSha256": "4f7e8635607ada67a1e1b2a0f858753ba6e6f8a631049b8bb4c5f2fa0123b055"
+  },
+  "requestReport": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/files/{fileType}",
+    "parameters": [
+      {
+        "name": "date",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "date"
+        }
+      },
+      {
+        "name": "fileType",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "enum": [
+            "monthly",
+            "daily",
+            "fee",
+            "monthlyTransactionFees",
+            "monthlyNonTransactionFees",
+            "dailyTransactionFees",
+            "monthlyShippingFees"
+          ]
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_files-filetype.md",
+    "sourceSha256": "3d829e20918dfcc6275899c7960222dab6ff743d3daee92d85d48796d2ef6919"
+  },
+  "subscribeCards": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/webhooks",
+    "parameters": [],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "subscriberUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "subscriberUrl"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_webhooks.md",
+    "sourceSha256": "3d975f5631ed05986cb6c29eb45e82455fd49746ec242f1a6b294008f0db4584"
+  },
+  "listCardSubscriptions": {
+    "service": "cards",
+    "method": "GET",
+    "path": "/webhooks",
+    "parameters": [],
+    "body": {},
+    "source": "https://reap.readme.io/reference/get_webhooks.md",
+    "sourceSha256": "7ace5d8050c9dec9ab9aa596b771fe946189fdce8eb52e3b49f4e6702fd95db0"
+  },
+  "simulateAuthorization": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/simulate/authorisation",
+    "parameters": [
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "cardID": {
+                "type": "string"
+              },
+              "billAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0
+              },
+              "transactionAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 0
+              },
+              "transactionCurrency": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              },
+              "transactionID": {
+                "type": "string"
+              },
+              "simulateIncorrectCVV": {
+                "type": "boolean"
+              },
+              "simulateIncorrectPIN": {
+                "type": "boolean"
+              },
+              "simulateIncorrectExpiryDate": {
+                "type": "boolean"
+              },
+              "simulateTimeout": {
+                "type": "boolean"
+              },
+              "simulateFraud": {
+                "type": "boolean"
+              },
+              "merchantName": {
+                "type": "string"
+              },
+              "merchantLocation": {
+                "type": "string"
+              },
+              "mcc": {
+                "type": "string",
+                "pattern": "^\\d{4}$"
+              },
+              "acquirerCountry": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              }
+            },
+            "required": [
+              "cardID",
+              "billAmount"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_simulate-authorisation.md",
+    "sourceSha256": "72727c876aef9215ddc8bb68cdce761d07aa1a3cfe50892e079e255ed616d4bd"
+  },
+  "simulateClearing": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/simulate/{transactionID}/clearing",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "transactionID",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "transactionAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 1
+              },
+              "transactionCurrency": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              },
+              "simulateOfflineTxn": {
+                "type": "boolean"
+              },
+              "billAmount": {
+                "oneOf": [
+                  {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 1
+                  },
+                  {
+                    "type": "number",
+                    "format": "float",
+                    "minimum": 1
+                  }
+                ]
+              },
+              "cardID": {
+                "oneOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "string"
+                  }
+                ]
+              },
+              "acquirerCountry": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_simulate-transactionid-clearing.md",
+    "sourceSha256": "17919ed64f94c9fe408aa028c2ad4351d7ae509d39c3bc71b6f73ae3e08d769b"
+  },
+  "simulateRefund": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/simulate/{transactionID}/refund",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "transactionID",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "billAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 1
+              },
+              "transactionAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 1
+              },
+              "unrelated": {
+                "type": "boolean"
+              },
+              "acquirerCountry": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_simulate-transactionid-refund.md",
+    "sourceSha256": "f18e7d98133693af2972eba0671ebcfecd6d4327fc35efcba0d8c4dd665f5545"
+  },
+  "simulateReversal": {
+    "service": "cards",
+    "method": "POST",
+    "path": "/simulate/{transactionID}/reversal",
+    "parameters": [
+      {
+        "required": true,
+        "in": "path",
+        "name": "transactionID",
+        "schema": {
+          "type": "string"
+        }
+      },
+      {
+        "required": true,
+        "in": "header",
+        "name": "Accept-Version",
+        "schema": {
+          "type": "string"
+        }
+      }
+    ],
+    "body": {
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "billAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 1
+              },
+              "transactionAmount": {
+                "type": "number",
+                "format": "float",
+                "minimum": 1
+              },
+              "acquirerCountry": {
+                "type": "string",
+                "minLength": 3,
+                "maxLength": 3,
+                "nullable": true
+              }
+            },
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap.readme.io/reference/post_simulate-transactionid-reversal.md",
+    "sourceSha256": "1fae29a5ebf78762554c0b0ffceaed50ff1a5b2ceeaa4a11a03848f5002b3365"
+  },
+  "subscribeCompliance": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/notification",
+    "parameters": [],
+    "body": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "notificationChannel": {
+                "type": "string",
+                "enum": [
+                  "WEBHOOK"
+                ]
+              },
+              "notificationTypes": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "account_status_change",
+                    "kyb_status_change"
+                  ]
+                },
+                "minItems": 1
+              },
+              "webhookUrl": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "notificationChannel",
+              "notificationTypes",
+              "webhookUrl"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/post_notification.md",
+    "sourceSha256": "dc7f4a171532801c884c6ab25e73c4384d22b7b853f84218cd7fb2aed65e913e"
+  },
+  "listComplianceSubscriptions": {
+    "service": "compliance",
+    "method": "GET",
+    "path": "/notification",
+    "parameters": [
+      {
+        "in": "query",
+        "name": "page",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      {
+        "in": "query",
+        "name": "limit",
+        "schema": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/get_notification.md",
+    "sourceSha256": "37135868dc6fc007023f67ff2519723e527ffe5eac10cc10be5ae6936ee53706"
+  },
+  "createBusiness": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/entity",
+    "parameters": [],
+    "body": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "externalId": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "INDIVIDUAL",
+                  "BUSINESS"
+                ]
+              },
+              "verificationMode": {
+                "type": "string",
+                "enum": [
+                  "KYCAAS",
+                  "UKYC",
+                  "UKYB",
+                  "SUMSUB_TOKEN_SHARING",
+                  "UKYC_INTERNAL"
+                ]
+              }
+            },
+            "required": [
+              "externalId",
+              "type"
+            ],
+            "additionalProperties": false
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/post_entity.md",
+    "sourceSha256": "8a679370f7e7a12653c4ccb97efd962087b77333045f6028faea5d21ad0eb879"
+  },
+  "getEntity": {
+    "service": "compliance",
+    "method": "GET",
+    "path": "/entity/{entityId}",
+    "parameters": [
+      {
+        "name": "entityId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/get_entity-entityid.md",
+    "sourceSha256": "2cd0bbaf99aca8a7b576b1f2ff205d7d897b474941d4c6aaff3d760668a01f82"
+  },
+  "createKyb": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/entity/{entityId}/ukyb",
+    "parameters": [
+      {
+        "name": "entityId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "legalBusinessName",
+              "legalFormOfCompany",
+              "businessRegistrationNumber",
+              "uboDeclaration",
+              "registeredAddress",
+              "principalPlaceOfBusinessAddress",
+              "validEmailDomains",
+              "lineOfBusiness",
+              "dateOfIncorporation"
+            ],
+            "properties": {
+              "legalBusinessName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "legalFormOfCompany": {
+                "type": "string",
+                "enum": [
+                  "PRIVATE_LIMITED",
+                  "PUBLIC_LIMITED",
+                  "LLC",
+                  "LLP",
+                  "PARTNERSHIP",
+                  "SOLE_PROPRIETORSHIP",
+                  "TRUST",
+                  "CORPORATE",
+                  "OTHER"
+                ]
+              },
+              "businessRegistrationNumber": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "uboDeclaration": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "externalUserId",
+                    "ownershipPct",
+                    "identity",
+                    "document",
+                    "address"
+                  ],
+                  "properties": {
+                    "externalUserId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "ownershipPct": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "identity": {
+                      "type": "object",
+                      "required": [
+                        "firstName",
+                        "lastName",
+                        "fullName",
+                        "dob",
+                        "nationality"
+                      ],
+                      "properties": {
+                        "firstName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "middleName": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "dob": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "nationality": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        }
+                      }
+                    },
+                    "document": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "documentCategory",
+                          "type",
+                          "number",
+                          "country"
+                        ],
+                        "properties": {
+                          "documentCategory": {
+                            "type": "string",
+                            "enum": [
+                              "IDV"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "PASSPORT",
+                              "ID_CARD",
+                              "DRIVERS_LICENCE"
+                            ]
+                          },
+                          "number": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 50
+                          },
+                          "country": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 3
+                          },
+                          "issuingDate": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "expiryDate": {
+                            "type": "string",
+                            "format": "date"
+                          }
+                        }
+                      }
+                    },
+                    "address": {
+                      "type": "object",
+                      "required": [
+                        "country",
+                        "formattedAddress"
+                      ],
+                      "properties": {
+                        "country": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        },
+                        "postCode": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "town": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "street": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "subStreet": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "state": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "buildingName": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "flatNumber": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "buildingNumber": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "formattedAddress": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "registeredAddress": {
+                "type": "object",
+                "required": [
+                  "line1",
+                  "city",
+                  "country"
+                ],
+                "properties": {
+                  "line1": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "line2": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                }
+              },
+              "principalPlaceOfBusinessAddress": {
+                "type": "object",
+                "required": [
+                  "line1",
+                  "city",
+                  "country"
+                ],
+                "properties": {
+                  "line1": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "line2": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                }
+              },
+              "businessWebsiteUrl": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 500
+              },
+              "validEmailDomains": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "lineOfBusiness": {
+                "type": "string",
+                "enum": [
+                  "PROFESSIONAL_SERVICES",
+                  "CONSULTING_SERVICES",
+                  "HUMAN_RESOURCES_RECRUITMENT",
+                  "BUSINESS_PROCESS_OUTSOURCING",
+                  "RESEARCH_DEVELOPMENT",
+                  "INFORMATION_TECHNOLOGY_SOFTWARE",
+                  "TELECOMMUNICATIONS",
+                  "RETAIL_TRADE",
+                  "WHOLESALE_TRADE",
+                  "E_COMMERCE",
+                  "MANUFACTURING",
+                  "CONSTRUCTION_ENGINEERING",
+                  "LOGISTICS_TRANSPORTATION",
+                  "HEALTHCARE_SERVICES",
+                  "EDUCATION_TRAINING",
+                  "REAL_ESTATE_SERVICES",
+                  "HOSPITALITY_TOURISM",
+                  "MEDIA_ADVERTISING",
+                  "AGRICULTURE_FARMING",
+                  "FINTECH",
+                  "PAYMENT_SERVICE_PROVIDER",
+                  "MONEY_SERVICES_BUSINESS_REMITTANCE",
+                  "FOREIGN_EXCHANGE_SERVICES",
+                  "INSURANCE",
+                  "LENDING_CREDIT_SERVICES",
+                  "INVESTMENT_ASSET_MANAGEMENT",
+                  "REGULATED_FINANCIAL_SERVICES_LICENSE_REQUIRED",
+                  "VIRTUAL_ASSET_SERVICE_PROVIDER",
+                  "CRYPTOCURRENCY_EXCHANGE",
+                  "BLOCKCHAIN_INFRASTRUCTURE",
+                  "DIGITAL_ASSET_CUSTODY",
+                  "DECENTRALISED_FINANCE",
+                  "GOVERNMENT_ENTITY",
+                  "STATE_OWNED_ENTERPRISE",
+                  "INTERNATIONAL_ORGANISATION",
+                  "NON_PROFIT_ORGANISATION",
+                  "CHARITY_FOUNDATION",
+                  "GAMING_GAMBLING",
+                  "ADULT_ENTERTAINMENT",
+                  "PRECIOUS_METALS_STONES",
+                  "AUCTION_HOUSE_ART_DEALER",
+                  "CASH_INTENSIVE_BUSINESS",
+                  "POLITICALLY_EXPOSED_ORGANISATION",
+                  "TRUST_COMPANY_SERVICE_PROVIDER",
+                  "HOLDING_COMPANY",
+                  "FAMILY_OFFICE",
+                  "CONGLOMERATE",
+                  "OTHER"
+                ]
+              },
+              "dateOfIncorporation": {
+                "type": "string",
+                "format": "date"
+              },
+              "ddq": {
+                "type": "object",
+                "required": [
+                  "cardAuthorities",
+                  "expectedSpendProfile"
+                ],
+                "properties": {
+                  "cardAuthorities": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "fullName",
+                        "role"
+                      ],
+                      "properties": {
+                        "fullName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "role": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      }
+                    }
+                  },
+                  "expectedSpendProfile": {
+                    "type": "object",
+                    "required": [
+                      "spendBuckets"
+                    ],
+                    "properties": {
+                      "spendBuckets": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 50,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "name",
+                            "expectedSpendUsd"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "expectedSpendUsd": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "jurisdictionIso": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            },
+                            "txnPattern": {
+                              "type": "object",
+                              "properties": {
+                                "frequency": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 50
+                                },
+                                "avgTicketUsd": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "peakDays": {
+                                  "type": "array",
+                                  "maxItems": 7,
+                                  "items": {
+                                    "type": "string",
+                                    "enum": [
+                                      "MON",
+                                      "TUE",
+                                      "WED",
+                                      "THU",
+                                      "FRI",
+                                      "SAT",
+                                      "SUN"
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "numberOfEmployees": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "edd": {
+                "type": "object",
+                "required": [
+                  "sourceOfFundsDeclaration",
+                  "sourceOfWealthDeclaration"
+                ],
+                "properties": {
+                  "sourceOfFundsDeclaration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "sourceOfWealthDeclaration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/post_entity-entityid-ukyb.md",
+    "sourceSha256": "52837cff07b00bb7d1f83e048cc23ee6d41258978bc582d5c3d0732abf8f51dd"
+  },
+  "amendKyb": {
+    "service": "compliance",
+    "method": "PATCH",
+    "path": "/entity/{entityId}/ukyb",
+    "parameters": [
+      {
+        "name": "entityId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "minProperties": 1,
+            "additionalProperties": false,
+            "properties": {
+              "legalBusinessName": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 200
+              },
+              "legalFormOfCompany": {
+                "type": "string",
+                "enum": [
+                  "PRIVATE_LIMITED",
+                  "PUBLIC_LIMITED",
+                  "LLC",
+                  "LLP",
+                  "PARTNERSHIP",
+                  "SOLE_PROPRIETORSHIP",
+                  "TRUST",
+                  "CORPORATE",
+                  "OTHER"
+                ]
+              },
+              "businessRegistrationNumber": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 100
+              },
+              "uboDeclaration": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 50,
+                "items": {
+                  "type": "object",
+                  "required": [
+                    "externalUserId",
+                    "ownershipPct",
+                    "identity",
+                    "document",
+                    "address"
+                  ],
+                  "properties": {
+                    "externalUserId": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 100
+                    },
+                    "ownershipPct": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 100
+                    },
+                    "identity": {
+                      "type": "object",
+                      "required": [
+                        "firstName",
+                        "lastName",
+                        "fullName",
+                        "dob",
+                        "nationality"
+                      ],
+                      "properties": {
+                        "firstName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "middleName": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "lastName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "fullName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 200
+                        },
+                        "dob": {
+                          "type": "string",
+                          "format": "date"
+                        },
+                        "nationality": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        }
+                      }
+                    },
+                    "document": {
+                      "type": "array",
+                      "minItems": 1,
+                      "maxItems": 3,
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "documentCategory",
+                          "type",
+                          "number",
+                          "country"
+                        ],
+                        "properties": {
+                          "documentCategory": {
+                            "type": "string",
+                            "enum": [
+                              "IDV"
+                            ]
+                          },
+                          "type": {
+                            "type": "string",
+                            "enum": [
+                              "PASSPORT",
+                              "ID_CARD",
+                              "DRIVERS_LICENCE"
+                            ]
+                          },
+                          "number": {
+                            "type": "string",
+                            "minLength": 1,
+                            "maxLength": 50
+                          },
+                          "country": {
+                            "type": "string",
+                            "minLength": 3,
+                            "maxLength": 3
+                          },
+                          "issuingDate": {
+                            "type": "string",
+                            "format": "date"
+                          },
+                          "expiryDate": {
+                            "type": "string",
+                            "format": "date"
+                          }
+                        }
+                      }
+                    },
+                    "address": {
+                      "type": "object",
+                      "required": [
+                        "country",
+                        "formattedAddress"
+                      ],
+                      "properties": {
+                        "country": {
+                          "type": "string",
+                          "minLength": 3,
+                          "maxLength": 3
+                        },
+                        "postCode": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "town": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "street": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "subStreet": {
+                          "type": "string",
+                          "maxLength": 200
+                        },
+                        "state": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "buildingName": {
+                          "type": "string",
+                          "maxLength": 100
+                        },
+                        "flatNumber": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "buildingNumber": {
+                          "type": "string",
+                          "maxLength": 20
+                        },
+                        "formattedAddress": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 500
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "registeredAddress": {
+                "type": "object",
+                "required": [
+                  "line1",
+                  "city",
+                  "country"
+                ],
+                "properties": {
+                  "line1": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "line2": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                }
+              },
+              "principalPlaceOfBusinessAddress": {
+                "type": "object",
+                "required": [
+                  "line1",
+                  "city",
+                  "country"
+                ],
+                "properties": {
+                  "line1": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 200
+                  },
+                  "line2": {
+                    "type": "string",
+                    "maxLength": 200
+                  },
+                  "city": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 100
+                  },
+                  "state": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "postalCode": {
+                    "type": "string",
+                    "maxLength": 20
+                  },
+                  "country": {
+                    "type": "string",
+                    "minLength": 3,
+                    "maxLength": 3
+                  }
+                }
+              },
+              "businessWebsiteUrl": {
+                "type": "string",
+                "format": "uri",
+                "maxLength": 500
+              },
+              "validEmailDomains": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 10,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "lineOfBusiness": {
+                "type": "string",
+                "enum": [
+                  "PROFESSIONAL_SERVICES",
+                  "CONSULTING_SERVICES",
+                  "HUMAN_RESOURCES_RECRUITMENT",
+                  "BUSINESS_PROCESS_OUTSOURCING",
+                  "RESEARCH_DEVELOPMENT",
+                  "INFORMATION_TECHNOLOGY_SOFTWARE",
+                  "TELECOMMUNICATIONS",
+                  "RETAIL_TRADE",
+                  "WHOLESALE_TRADE",
+                  "E_COMMERCE",
+                  "MANUFACTURING",
+                  "CONSTRUCTION_ENGINEERING",
+                  "LOGISTICS_TRANSPORTATION",
+                  "HEALTHCARE_SERVICES",
+                  "EDUCATION_TRAINING",
+                  "REAL_ESTATE_SERVICES",
+                  "HOSPITALITY_TOURISM",
+                  "MEDIA_ADVERTISING",
+                  "AGRICULTURE_FARMING",
+                  "FINTECH",
+                  "PAYMENT_SERVICE_PROVIDER",
+                  "MONEY_SERVICES_BUSINESS_REMITTANCE",
+                  "FOREIGN_EXCHANGE_SERVICES",
+                  "INSURANCE",
+                  "LENDING_CREDIT_SERVICES",
+                  "INVESTMENT_ASSET_MANAGEMENT",
+                  "REGULATED_FINANCIAL_SERVICES_LICENSE_REQUIRED",
+                  "VIRTUAL_ASSET_SERVICE_PROVIDER",
+                  "CRYPTOCURRENCY_EXCHANGE",
+                  "BLOCKCHAIN_INFRASTRUCTURE",
+                  "DIGITAL_ASSET_CUSTODY",
+                  "DECENTRALISED_FINANCE",
+                  "GOVERNMENT_ENTITY",
+                  "STATE_OWNED_ENTERPRISE",
+                  "INTERNATIONAL_ORGANISATION",
+                  "NON_PROFIT_ORGANISATION",
+                  "CHARITY_FOUNDATION",
+                  "GAMING_GAMBLING",
+                  "ADULT_ENTERTAINMENT",
+                  "PRECIOUS_METALS_STONES",
+                  "AUCTION_HOUSE_ART_DEALER",
+                  "CASH_INTENSIVE_BUSINESS",
+                  "POLITICALLY_EXPOSED_ORGANISATION",
+                  "TRUST_COMPANY_SERVICE_PROVIDER",
+                  "HOLDING_COMPANY",
+                  "FAMILY_OFFICE",
+                  "CONGLOMERATE",
+                  "OTHER"
+                ]
+              },
+              "dateOfIncorporation": {
+                "type": "string",
+                "format": "date"
+              },
+              "ddq": {
+                "type": "object",
+                "required": [
+                  "cardAuthorities",
+                  "expectedSpendProfile"
+                ],
+                "properties": {
+                  "cardAuthorities": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 50,
+                    "items": {
+                      "type": "object",
+                      "required": [
+                        "fullName",
+                        "role"
+                      ],
+                      "properties": {
+                        "fullName": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        },
+                        "role": {
+                          "type": "string",
+                          "minLength": 1,
+                          "maxLength": 100
+                        }
+                      }
+                    }
+                  },
+                  "expectedSpendProfile": {
+                    "type": "object",
+                    "required": [
+                      "spendBuckets"
+                    ],
+                    "properties": {
+                      "spendBuckets": {
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 50,
+                        "items": {
+                          "type": "object",
+                          "required": [
+                            "name",
+                            "expectedSpendUsd"
+                          ],
+                          "properties": {
+                            "name": {
+                              "type": "string",
+                              "minLength": 1,
+                              "maxLength": 200
+                            },
+                            "expectedSpendUsd": {
+                              "type": "number",
+                              "minimum": 0
+                            },
+                            "jurisdictionIso": {
+                              "type": "string",
+                              "minLength": 3,
+                              "maxLength": 3
+                            },
+                            "txnPattern": {
+                              "type": "object",
+                              "properties": {
+                                "frequency": {
+                                  "type": "string",
+                                  "minLength": 1,
+                                  "maxLength": 50
+                                },
+                                "avgTicketUsd": {
+                                  "type": "number",
+                                  "minimum": 0
+                                },
+                                "peakDays": {
+                                  "type": "array",
+                                  "maxItems": 7,
+                                  "items": {
+                                    "type": "string",
+                                    "enum": [
+                                      "MON",
+                                      "TUE",
+                                      "WED",
+                                      "THU",
+                                      "FRI",
+                                      "SAT",
+                                      "SUN"
+                                    ]
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  "numberOfEmployees": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              },
+              "edd": {
+                "type": "object",
+                "required": [
+                  "sourceOfFundsDeclaration",
+                  "sourceOfWealthDeclaration"
+                ],
+                "properties": {
+                  "sourceOfFundsDeclaration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  },
+                  "sourceOfWealthDeclaration": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 5000
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/patch_entity-entityid-ukyb.md",
+    "sourceSha256": "016eb3290f4b5d3b5c03042c65d17b9ff625d1aa73160c6d07b734b92e890153"
+  },
+  "uploadKyb": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/entity/{entityId}/ukyb/documents",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "entityId",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {
+      "required": true,
+      "content": {
+        "multipart/form-data": {
+          "schema": {
+            "type": "object",
+            "required": [
+              "documentType",
+              "files"
+            ],
+            "properties": {
+              "documentType": {
+                "type": "string",
+                "enum": [
+                  "certificate-of-incorporation",
+                  "company-profile",
+                  "shareholding-chart",
+                  "register-of-directors",
+                  "business-registry",
+                  "source-of-funds-supporting-doc",
+                  "source-of-wealth-supporting-doc",
+                  "ubo-kyc"
+                ]
+              },
+              "uboDocumentType": {
+                "type": "string",
+                "enum": [
+                  "PASSPORT",
+                  "ID_CARD",
+                  "DRIVERS_LICENCE"
+                ]
+              },
+              "individualEntityId": {
+                "type": "string",
+                "format": "uuid"
+              },
+              "files": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/post_entity-entityid-ukyb-documents.md",
+    "sourceSha256": "84ab596329715a227768ca465a8c0108650ec416b2c30e07163a5c1f213fbff8"
+  },
+  "submitKyb": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/entity/{entityId}/ukyb/submit",
+    "parameters": [
+      {
+        "name": "entityId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/post_entity-entityid-ukyb-submit.md",
+    "sourceSha256": "71c9a2e3397141650d8117521f197f06c722c3f53833a99f9ea39a0a727d85af"
+  },
+  "getKyb": {
+    "service": "compliance",
+    "method": "GET",
+    "path": "/entity/{entityId}/ukyb",
+    "parameters": [
+      {
+        "name": "entityId",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/get_entity-entityid-ukyb.md",
+    "sourceSha256": "f5a72d48d4f8825d17e1a418a6b160de03498db813a284cf98e553d6eb555369"
+  },
+  "kybDocuments": {
+    "service": "compliance",
+    "method": "GET",
+    "path": "/entity/{entityId}/ukyb/documents",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "entityId",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/get_entity-entityid-ukyb-documents.md",
+    "sourceSha256": "1e1a0dd425c799f567aface5f1b3be0ad4546e43e20e4db26a0c633da93089e7"
+  },
+  "simulateKyb": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/simulate/entity/{entityId}/ukyb",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "entityId",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {
+      "required": true,
+      "content": {
+        "application/json": {
+          "schema": {
+            "type": "object",
+            "properties": {
+              "status": {
+                "type": "string",
+                "enum": [
+                  "approved",
+                  "rejected",
+                  "pending_additional_info",
+                  "cancelled_by_client"
+                ]
+              }
+            },
+            "required": [
+              "status"
+            ]
+          }
+        }
+      }
+    },
+    "source": "https://reap-ra.readme.io/reference/post_simulate-entity-entityid-ukyb.md",
+    "sourceSha256": "9c1c78da318256a4393824e7b5dac79d6eabc10e25e9a0a3a0c54ba193381b15"
+  },
+  "resetKyb": {
+    "service": "compliance",
+    "method": "POST",
+    "path": "/simulate/entity/{entityId}/ukyb/reset",
+    "parameters": [
+      {
+        "in": "path",
+        "name": "entityId",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      }
+    ],
+    "body": {},
+    "source": "https://reap-ra.readme.io/reference/post_simulate-entity-entityid-ukyb-reset.md",
+    "sourceSha256": "8de390a13ce1e054ee6e7d9ebb04dd5aa9faf64fd155ea05f5577e983a29ab0c"
+  }
+}
