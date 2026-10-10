@@ -39,5 +39,12 @@
     "require-from-string@2.0.2": {
       "integrity": "sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw=="
     }
+  },
+  "workspace": {
+    "dependencies": [
+      "npm:@electric-sql/pglite@0.3.14",
+      "npm:ajv-formats@3.0.1",
+      "npm:ajv@8.17.1"
+    ]
   }
 }

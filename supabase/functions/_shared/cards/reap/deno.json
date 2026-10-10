@@ -1,0 +1,9 @@
+{
+  "imports": {
+    "ajv": "npm:ajv@8.17.1",
+    "ajv-formats": "npm:ajv-formats@3.0.1",
+    "@electric-sql/pglite": "npm:@electric-sql/pglite@0.3.14"
+  },
+  "nodeModulesDir": "none",
+  "lock": "deno.lock"
+}

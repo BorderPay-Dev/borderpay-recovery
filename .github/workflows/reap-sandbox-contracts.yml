@@ -23,6 +23,6 @@ jobs:
           python3 scripts/reap/generate-contracts.py
           git diff --exit-code -- supabase/functions/_shared/cards/reap/contracts.json
       - name: Lint
-        run: deno lint supabase/functions/_shared/cards/reap/
+        run: deno lint --config=supabase/functions/_shared/cards/reap/deno.json supabase/functions/_shared/cards/reap/
       - name: Test contracts, security and PostgreSQL persistence
-        run: deno test --no-config --node-modules-dir=none --lock=supabase/functions/_shared/cards/reap/deno.lock --frozen --allow-read supabase/functions/_shared/cards/reap/
+        run: deno test --config=supabase/functions/_shared/cards/reap/deno.json --lock=supabase/functions/_shared/cards/reap/deno.lock --frozen --allow-read supabase/functions/_shared/cards/reap/

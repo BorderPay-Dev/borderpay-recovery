@@ -1,4 +1,4 @@
-import { PGlite } from "npm:@electric-sql/pglite@0.3.14";
+import { PGlite } from "@electric-sql/pglite";
 import { PostgresSandboxStore, type SqlExecutor } from "./store.ts";
 import { runCommand } from "./commands.ts";
 import { SandboxTransport } from "./transport.ts";

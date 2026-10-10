@@ -82,6 +82,6 @@ Offline tests cover contracts, request validation, tenant isolation, concurrent 
 
 Run from repository root:
 
-    deno test --no-config --node-modules-dir=none --lock=supabase/functions/_shared/cards/reap/deno.lock --frozen --allow-read supabase/functions/_shared/cards/reap/
+    deno test --config=supabase/functions/_shared/cards/reap/deno.json --lock=supabase/functions/_shared/cards/reap/deno.lock --frozen --allow-read supabase/functions/_shared/cards/reap/
 
 Before activation, complete `ACCEPTANCE.md`. No real sandbox lifecycle, issuer artwork approval, 3DS delivery, hosted reveal, physical fulfilment, Apple/Google wallet provisioning or programme billing behavior has been certified. These last two product families are documented dependencies, not silently enabled features. Do not claim production readiness from offline tests.
