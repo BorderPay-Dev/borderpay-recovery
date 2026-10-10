@@ -29,6 +29,12 @@ The sequence is business entity → KYB pack → save returned UBO mappings → 
 
 Existing `card-*` Edge Functions still use `cards-locked.ts`. No API key is loaded by these new modules automatically. `SandboxTransport` is an internal primitive, not an authenticated customer endpoint. Never expose its programme-wide reads directly to a customer.
 
+## Imported documentation security
+
+Documentation examples are untrusted inputs. Run `python3 scripts/reap/sanitize-reference.py --write` when importing and run it without `--write` in CI. Signed download URLs and access-key examples must never be committed. The manifest's `sha256` verifies the stored sanitized file; `source_sha256`, when present, records the original public source digest without retaining its credential-bearing URL. Never follow a sample signed URL while investigating an alert.
+
+On 11 October 2026, GitHub alert #3 was traced to an expired signed S3 URL in REAP's public files-webhook example imported into this draft. Its stated validity was 12 February 2025, 04:19–04:24 UTC. The full URL and temporary access-key reference were removed from the branch tip. No BorderPay secret was the source of this alert; no AWS credential was revoked or rotated. The original public example remains in earlier draft commits, so removal from the current file is not represented as history erasure.
+
 ## Required configuration, when REAP provides sandbox
 
 - `REAP_SANDBOX_API_KEY`: CaaS sandbox key, server only (Vault).

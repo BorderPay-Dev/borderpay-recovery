@@ -121,7 +121,7 @@ To load the iFrame securely, **request a signed access URL** by calling the [`PO
 
 ```json
 {
-  "accessUrl": "https://secure.reap.com/card-display?token=abc123"
+  "accessUrl": "https://example.invalid/reap/sanitized-document-download"
 }
 ```
 

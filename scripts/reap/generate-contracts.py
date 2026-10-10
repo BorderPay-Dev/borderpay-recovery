@@ -20,7 +20,7 @@ for name,file in operations.items():
   if isinstance(s,dict) and 'openapi' in s:spec=s;break
  assert spec,f
  path,methods=next(iter(spec['paths'].items()));method,op=next((k,v) for k,v in methods.items() if k in ['get','post','put','patch','delete'])
- out[name]={'service':'compliance' if file.startswith('compliance') else 'cards','method':method.upper(),'path':path,'parameters':strip(op.get('parameters',[])), 'body':strip(op.get('requestBody',{})), 'source':manifest[f]['url'],'sourceSha256':manifest[f]['sha256']}
+ out[name]={'service':'compliance' if file.startswith('compliance') else 'cards','method':method.upper(),'path':path,'parameters':strip(op.get('parameters',[])), 'body':strip(op.get('requestBody',{})), 'source':manifest[f]['url'],'sourceSha256':manifest[f].get('source_sha256',manifest[f]['sha256'])}
  if '$ref' in json.dumps(out[name]):raise RuntimeError('unresolved ref '+name)
 (r/'supabase/functions/_shared/cards/reap/contracts.json').write_text(json.dumps(out,indent=2)+'\n')
 print('Generated',len(out),'contracts')

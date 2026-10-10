@@ -51,7 +51,9 @@
     "url": "https://reap.readme.io/docs/card-widget.md",
     "file": "docs-card-widget.md",
     "success": true,
-    "sha256": "3036590d5022006b36cff184c0d6e36489f62493c8e6170fb277816b5a18741d"
+    "sha256": "85b30498d29bde1ba363fb1f87bf1f1c0874400006bd9bab6cde99549688b40b",
+    "source_sha256": "3036590d5022006b36cff184c0d6e36489f62493c8e6170fb277816b5a18741d",
+    "sanitized": true
   },
   {
     "url": "https://reap.readme.io/docs/card-status.md",
@@ -423,7 +425,9 @@
     "url": "https://reap.readme.io/reference/webhook-eventtype-files.md",
     "file": "reference-webhook-eventtype-files.md",
     "success": true,
-    "sha256": "9b0b672a9652a5a34288c3221faa4897172e35d92640c895dac351a8ec63fa8c"
+    "sha256": "e1f030f319ad129e4932e95b7a9ff4b381d3e86d94bd18a246f9772e5f9cb957",
+    "source_sha256": "9b0b672a9652a5a34288c3221faa4897172e35d92640c895dac351a8ec63fa8c",
+    "sanitized": true
   },
   {
     "url": "https://reap.readme.io/reference/webhook-eventtype-notification.md",

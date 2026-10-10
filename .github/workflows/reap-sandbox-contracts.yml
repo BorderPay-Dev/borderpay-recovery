@@ -18,6 +18,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Reject credentials in reference documentation
+        run: python3 scripts/reap/sanitize-reference.py
       - name: Verify generated contracts
         run: |
           python3 scripts/reap/generate-contracts.py
