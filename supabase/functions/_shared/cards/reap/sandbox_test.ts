@@ -86,9 +86,11 @@ Deno.test("provider errors never expose response body", async () => {
   const client = new ReapSandboxClient(
     "synthetic",
     (() =>
-      Promise.resolve(new Response("secret-personal-information", {
-        status: 401,
-      }))) as typeof fetch,
+      Promise.resolve(
+        new Response("secret-personal-information", {
+          status: 401,
+        }),
+      )) as typeof fetch,
   );
   await rejects(() => client.listCards(), "sandbox_request_failed");
 });
