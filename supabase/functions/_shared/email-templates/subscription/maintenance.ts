@@ -14,7 +14,7 @@ function amountLabel(p: Record<string, unknown>): string {
   return `${amount.toFixed(2)} ${currency}`;
 }
 function message(heading: string, body: string, ctaText?: string, ctaUrl?: string): RenderedEmail {
-  return { subject: `BorderPay — ${heading}`, html: htmlLayout({ heading, body: body.split('\n\n').map(p => `<p style="line-height:1.6;overflow-wrap:anywhere">${escapeHtml(p).replaceAll('\n', '<br />')}</p>`).join(''), ctaText, ctaUrl }), text: textLayout({ heading, body, ctaText, ctaUrl }) };
+  return { subject: `BorderPay Velocity — ${heading}`, html: htmlLayout({ heading, body: body.split('\n\n').map(p => `<p style="line-height:1.6;overflow-wrap:anywhere">${escapeHtml(p).replaceAll('\n', '<br />')}</p>`).join(''), ctaText, ctaUrl }), text: textLayout({ heading, body, ctaText, ctaUrl }) };
 }
 export function renderExternalInvoice(p: Record<string, unknown>): RenderedEmail {
   const amount = amountLabel(p), billingDate = isoDate(p.billing_period);
@@ -22,16 +22,22 @@ export function renderExternalInvoice(p: Record<string, unknown>): RenderedEmail
   const url = new URL(String(p.payment_link || ''));
   if (!reference || url.protocol !== 'https:' || url.hostname !== 'checkout.flutterwave.com' || url.username || url.password || !url.pathname.startsWith('/v3/hosted/pay/')) throw new Error('Verified invoice payment link and reference required');
   const notice = String(p.notice || 'invoice');
-  if (!['invoice', 'reminder', 'final_warning'].includes(notice)) throw new Error('Unknown invoice notice');
+  if (!['invoice', 'reminder', 'final_warning', 'balance_reminder'].includes(notice)) throw new Error('Unknown invoice notice');
   const reminder = notice !== 'invoice';
   let deadline = '';
-  if (reminder) {
+  if (notice === 'balance_reminder' && billingDate > new Date().toISOString().slice(0, 10)) throw new Error('Future invoice cannot receive an overdue reminder');
+  if (reminder && notice !== 'balance_reminder') {
     const due = isoDate(p.deadline);
     if (due < billingDate || billingDate > new Date().toISOString().slice(0, 10)) throw new Error('Reminder dates are inconsistent with invoice');
     deadline = `\nPayment deadline: ${dateLabel(due)}`;
   }
-  const heading = reminder ? 'Maintenance payment reminder' : 'Your maintenance invoice is ready';
-  const body = `Hello ${String(p.customer_name || 'there')},\n\n${reminder ? 'Our records show that this maintenance invoice is still unpaid.' : 'Your account maintenance invoice is available. You may pay it before its billing date.'}\n\nAmount: ${amount}\nBilling date: ${dateLabel(billingDate)}${deadline}\nReference: ${reference}\nPayment link: ${url.href}\n\nPay externally using the secure checkout below. This fee is not deducted from your BorderPay account balance.\n\nPayment is recorded against this invoice after confirmation from the payment provider. If you have already paid, please contact Support before paying again.`;
+  const warningDate = p.deactivation_date ? isoDate(p.deactivation_date) : '';
+  if (warningDate && (notice !== 'balance_reminder' || warningDate !== new Date().toISOString().slice(0, 10) || billingDate > warningDate)) throw new Error('Deactivation warning must concern an outstanding invoice and today');
+  const billingMonth = new Intl.DateTimeFormat('en-GB', { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(billingDate));
+  const heading = warningDate ? `Final warning: ${billingMonth} maintenance fee due today` : reminder ? 'Maintenance payment reminder' : 'Your maintenance invoice is ready';
+  const warning = warningDate ? `\n\nYour ${billingMonth} maintenance fee must be paid today, ${dateLabel(warningDate)}. If payment remains unconfirmed, your global receiving accounts will be deactivated today and will no longer be available to receive payments. Please use your secure payment link below.` : '';
+
+  const body = `Hello ${String(p.customer_name || 'there')},\n\n${reminder ? 'Our records show that this maintenance invoice is still unpaid.' : 'Your account maintenance invoice is available. You may pay it before its billing date.'}\n\nAmount: ${amount}\nBilling date: ${dateLabel(billingDate)}${deadline}${warning}\n\nReference: ${reference}\nPayment link: ${url.href}\n\nPay externally using the secure checkout below. This fee is not deducted from your BorderPay Velocity account balance.\n\nPayment is recorded against this invoice after confirmation from the payment provider. If you have already paid, please contact Support before paying again.`;
   return message(heading, body, 'Pay maintenance invoice', url.href);
 }
 export function renderPaymentStatus(p: Record<string, unknown>): RenderedEmail {
