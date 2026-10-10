@@ -1,3 +1,4 @@
+import { compliancePolicy } from "./compliance-policy.ts";
 import { prepareMerchantCard } from "./prepare-business-card.ts";
 import { type KybUpload, prepareKybUpload } from "./documents.ts";
 import {
@@ -39,7 +40,10 @@ export class SandboxTransport {
     }
     if (operation === "createBusiness") {
       const b = input.body as Record<string, unknown>;
-      if (b?.type !== "BUSINESS" || b?.verificationMode !== "UKYB") {
+      if (
+        b?.type !== compliancePolicy.merchantType ||
+        b?.verificationMode !== compliancePolicy.verificationMode
+      ) {
         throw new ProviderError("business_ukyb_required");
       }
     }

@@ -2,6 +2,14 @@
 
 Internal engineering documentation. Source audit: 10 October 2026. Draft PR #274, `borderpay-recovery`. No deployment, existing function change, UI change, live customer submission or production migration.
 
+## Selected compliance path: Universal KYB
+
+BorderPay selected **Universal KYB** on 10 October 2026. Our onboarding UI collects the business, ownership and evidence pack; the backend sends it through REAP's UKYB API. `compliancePolicy` fixes entity creation to `BUSINESS` / `UKYB`; other modes, including an omitted mode that would default to KYCAAS, are rejected. `prepareBusinessEntity` derives a stable external reference from the authenticated merchant tenant ID.
+
+Use `REAP_SANDBOX_COMPLIANCE_API_KEY` for the compliance sandbox. REAP still needs to enable Universal KYB for our programme. This selection does not assume existing BorderPay/Bridge verification is automatically accepted, or that business approval replaces any additional named-cardholder checks required by REAP.
+
+The sequence is business entity → KYB pack → save returned UBO mappings → company and owner document uploads → submit for review → signed notifications/current status retrieval. Issuing remains blocked until REAP reports both APPROVED and `cardIssuanceEnabled=true`, alongside our internal controls.
+
 ## What is implemented
 
 | Area | Implementation | Verification |
@@ -22,7 +30,7 @@ Existing `card-*` Edge Functions still use `cards-locked.ts`. No API key is load
 ## Required configuration, when REAP provides sandbox
 
 - `REAP_SANDBOX_API_KEY`: CaaS sandbox key, server only (Vault).
-- `REAP_SANDBOX_COMPLIANCE_API_KEY`: separate compliance sandbox key if Universal KYB is enabled for our programme.
+- `REAP_SANDBOX_COMPLIANCE_API_KEY`: separate compliance sandbox key for the selected Universal KYB path; programme enablement remains pending REAP.
 - Confirm the chosen authorization model. First sandbox key fixes the model per REAP account. This command layer supports Standard Authorisation; real-time authorisation is deliberately rejected.
 - Confirm the programme’s currencies, markets, card funding model, fees, commercial BIN and merchant/cardholder verification requirements.
 - Retrieve the approved BorderPay logo artwork using `GET /card-design/`; set the returned `cardDesign` UUID. Arbitrary `logo_url` is not a card-creation parameter.

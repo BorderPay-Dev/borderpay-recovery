@@ -1,3 +1,4 @@
+import { prepareBusinessEntity } from "./compliance-policy.ts";
 import { readKybSnapshot, validateKybPack } from "./kyb.ts";
 import { SandboxTransport } from "./transport.ts";
 import { planWebhookWork } from "./work-plan.ts";
@@ -124,4 +125,42 @@ Deno.test("late webhook schedules current state read rather than overwriting app
     body: { data: { entityId: uuid, status: "UNDER_REVIEW" } },
   });
   assert(work.kind === "refresh_kyb");
+});
+
+Deno.test("selected Universal KYB entity request is stable and business-only", () => {
+  const a = prepareBusinessEntity(uuid);
+  const b = prepareBusinessEntity(uuid.toUpperCase());
+  assert(a.type === "BUSINESS" && a.verificationMode === "UKYB");
+  assert(a.externalId === b.externalId && a.externalId.includes(uuid));
+});
+Deno.test("business onboarding cannot fall back to another verification product", async () => {
+  let calls = 0;
+  const client = new SandboxTransport(
+    { compliance: "synthetic" },
+    (() => {
+      calls++;
+      return Promise.resolve(Response.json({ id: uuid }));
+    }) as typeof fetch,
+  );
+  for (
+    const verificationMode of [
+      undefined,
+      "KYCAAS",
+      "UKYC",
+      "SUMSUB_TOKEN_SHARING",
+    ]
+  ) {
+    await rejects(() =>
+      client.execute("createBusiness", {
+        body: { ...prepareBusinessEntity(uuid), verificationMode },
+      }, uuid)
+    );
+  }
+  assert(calls === 0);
+  await client.execute(
+    "createBusiness",
+    { body: prepareBusinessEntity(uuid) },
+    uuid,
+  );
+  assert(calls === 1);
 });
