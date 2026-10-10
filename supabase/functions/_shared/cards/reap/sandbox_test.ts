@@ -57,13 +57,13 @@ const fixture = () => ({
 Deno.test("uses sandbox origin, version and auth; blocks redirects", async () => {
   const client = new ReapSandboxClient(
     "synthetic-key",
-    (async (url, init) => {
+    ((url, init) => {
       assert(url === "https://sandbox.api.caas.reap.global/card-design/");
       const h = new Headers(init?.headers);
       assert(h.get("Accept-Version") === "v2.0");
       assert(h.get("x-reap-api-key") === "synthetic-key");
       assert(init?.redirect === "error");
-      return Response.json({ items: [] });
+      return Promise.resolve(Response.json({ items: [] }));
     }) as typeof fetch,
   );
   await client.listDesigns();
@@ -73,9 +73,9 @@ Deno.test("invalid IDs and pagination make no network request", async () => {
   let calls = 0;
   const client = new ReapSandboxClient(
     "synthetic",
-    (async () => {
+    (() => {
       calls++;
-      return Response.json({});
+      return Promise.resolve(Response.json({}));
     }) as typeof fetch,
   );
   await rejects(() => client.getCard("../reveal"), "invalid_card_id");
@@ -85,10 +85,10 @@ Deno.test("invalid IDs and pagination make no network request", async () => {
 Deno.test("provider errors never expose response body", async () => {
   const client = new ReapSandboxClient(
     "synthetic",
-    (async () =>
-      new Response("secret-personal-information", {
+    (() =>
+      Promise.resolve(new Response("secret-personal-information", {
         status: 401,
-      })) as typeof fetch,
+      }))) as typeof fetch,
   );
   await rejects(() => client.listCards(), "sandbox_request_failed");
 });
@@ -96,9 +96,9 @@ Deno.test("network errors sanitized and not automatically retried", async () => 
   let calls = 0;
   const client = new ReapSandboxClient(
     "synthetic",
-    (async () => {
+    (() => {
       calls++;
-      throw new Error("credential-containing-url");
+      return Promise.reject(new Error("credential-containing-url"));
     }) as typeof fetch,
   );
   await rejects(
