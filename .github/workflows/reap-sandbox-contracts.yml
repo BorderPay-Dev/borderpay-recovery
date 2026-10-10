@@ -1,0 +1,19 @@
+name: REAP sandbox contracts
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/cards/reap/**'
+      - '.github/workflows/reap-sandbox-contracts.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test supabase/functions/_shared/cards/reap/sandbox_test.ts

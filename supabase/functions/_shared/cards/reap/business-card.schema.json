@@ -1,0 +1,398 @@
+{
+  "type": "object",
+  "properties": {
+    "cardType": {
+      "type": "string",
+      "enum": [
+        "Virtual",
+        "Physical"
+      ]
+    },
+    "spendLimit": {
+      "type": "number",
+      "format": "float",
+      "minimum": 0
+    },
+    "customerType": {
+      "type": "string",
+      "enum": [
+        "Business"
+      ]
+    },
+    "kyc": {
+      "type": "object",
+      "properties": {
+        "fullName": {
+          "type": "string"
+        },
+        "entityType": {
+          "type": "string",
+          "enum": [
+            "Person",
+            "Company"
+          ]
+        },
+        "registeredAddress": {
+          "type": "object",
+          "properties": {
+            "line1": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "line3": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "line4": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "line5": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "country": {
+              "type": "string",
+              "maxLength": 3,
+              "minLength": 3
+            },
+            "postalCode": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "state": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 2
+                },
+                {
+                  "type": "string",
+                  "maxLength": 255
+                }
+              ],
+              "nullable": true
+            },
+            "line2": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            }
+          },
+          "required": [
+            "line1",
+            "country",
+            "city"
+          ],
+          "additionalProperties": false
+        },
+        "businessName": {
+          "type": "string"
+        },
+        "businessRegistrationNumber": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "businessOperationAddress": {
+          "type": "object",
+          "properties": {
+            "line1": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "line3": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "line4": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "line5": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "country": {
+              "type": "string",
+              "maxLength": 3,
+              "minLength": 3
+            },
+            "postalCode": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            },
+            "city": {
+              "type": "string",
+              "maxLength": 255
+            },
+            "state": {
+              "oneOf": [
+                {
+                  "type": "string",
+                  "minLength": 2,
+                  "maxLength": 2
+                },
+                {
+                  "type": "string",
+                  "maxLength": 255
+                }
+              ],
+              "nullable": true
+            },
+            "line2": {
+              "type": "string",
+              "maxLength": 255,
+              "nullable": true
+            }
+          },
+          "required": [
+            "line1",
+            "country",
+            "city"
+          ],
+          "additionalProperties": false
+        },
+        "cardholder": {
+          "oneOf": [
+            {
+              "type": "object",
+              "properties": {
+                "firstName": {
+                  "type": "string"
+                },
+                "lastName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "dob": {
+                  "type": "string"
+                },
+                "nationality": {
+                  "type": "string"
+                },
+                "residentialAddress": {
+                  "type": "object",
+                  "properties": {
+                    "line1": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "line2": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "line3": {
+                      "type": "string",
+                      "maxLength": 255,
+                      "nullable": true
+                    },
+                    "line4": {
+                      "type": "string",
+                      "maxLength": 255,
+                      "nullable": true
+                    },
+                    "line5": {
+                      "type": "string",
+                      "maxLength": 255,
+                      "nullable": true
+                    },
+                    "country": {
+                      "type": "string",
+                      "maxLength": 3,
+                      "minLength": 3
+                    },
+                    "postalCode": {
+                      "type": "string",
+                      "maxLength": 255,
+                      "nullable": true
+                    },
+                    "city": {
+                      "type": "string",
+                      "maxLength": 255
+                    },
+                    "state": {
+                      "oneOf": [
+                        {
+                          "type": "string",
+                          "minLength": 2,
+                          "maxLength": 2
+                        },
+                        {
+                          "type": "string",
+                          "maxLength": 255
+                        }
+                      ],
+                      "nullable": true
+                    }
+                  },
+                  "required": [
+                    "line1",
+                    "line2",
+                    "country",
+                    "city"
+                  ],
+                  "additionalProperties": false
+                },
+                "idDocumentType": {
+                  "type": "string",
+                  "enum": [
+                    "Passport",
+                    "Health",
+                    "NationalID",
+                    "TaxIDNumber",
+                    "SocialService",
+                    "DriversLicense"
+                  ]
+                },
+                "idDocumentNumber": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "signature": {
+                  "type": "string"
+                },
+                "providerId": {
+                  "type": "string"
+                },
+                "issuerCustomerId": {
+                  "type": "string",
+                  "maxLength": 25
+                },
+                "expiresAt": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              },
+              "required": [
+                "firstName",
+                "dob",
+                "residentialAddress",
+                "idDocumentType",
+                "idDocumentNumber"
+              ],
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "properties": {},
+              "additionalProperties": false
+            }
+          ]
+        },
+        "issuerCustomerId": {
+          "type": "string",
+          "maxLength": 25
+        },
+        "entityId": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "fullName",
+        "entityType",
+        "registeredAddress",
+        "businessName",
+        "businessRegistrationNumber",
+        "businessOperationAddress"
+      ],
+      "additionalProperties": false
+    },
+    "expiryDate": {
+      "type": "string",
+      "format": "date",
+      "nullable": true
+    },
+    "preferredCardName": {
+      "type": "string",
+      "maxLength": 27
+    },
+    "secondaryCardName": {
+      "type": "string",
+      "maxLength": 27
+    },
+    "meta": {
+      "type": "object",
+      "properties": {
+        "otpPhoneNumber": {
+          "type": "object",
+          "properties": {
+            "dialCode": {
+              "type": "number",
+              "format": "float"
+            },
+            "phoneNumber": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "dialCode",
+            "phoneNumber"
+          ],
+          "additionalProperties": false
+        },
+        "id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 50,
+          "nullable": true
+        }
+      },
+      "required": [
+        "otpPhoneNumber",
+        "id"
+      ]
+    },
+    "cardDesign": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "topUpWallet": {
+      "type": "object",
+      "properties": {
+        "currency": {
+          "type": "string",
+          "enum": [
+            "USDC"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "programType": {
+      "type": "string",
+      "enum": [
+        "commercial"
+      ]
+    },
+    "scheme": {
+      "type": "string",
+      "enum": [
+        "visa"
+      ]
+    }
+  },
+  "required": [
+    "cardType",
+    "customerType",
+    "kyc",
+    "preferredCardName",
+    "meta"
+  ],
+  "additionalProperties": false
+}
