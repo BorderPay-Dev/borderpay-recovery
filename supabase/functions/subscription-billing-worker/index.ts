@@ -369,10 +369,17 @@ async function sendEmails(remindersOnly = false, maintenanceOnly = false) {
         }
       }
     }
-    const response = await fetch(`${URL}/functions/v1/send-email`, {
+    let response: Response;
+    try {
+      response = await fetch(`${URL}/functions/v1/send-email`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${EMAIL_TOKEN}` },
       body: JSON.stringify({ template: job.template, to: job.recipient, user_id: job.user_id, props, attachments, idempotency_key: job.idempotency_key }),
-    });
+      signal: AbortSignal.timeout(20000),
+      });
+    } catch {
+      await db.from("subscription_email_jobs").update({attempt_count:job.attempt_count+1,next_attempt_at:new Date(Date.now()+60000).toISOString(),last_error:"email_delivery_connection_interrupted"}).eq("id",job.id);
+      failed++;continue;
+    }
     const delivery = await response.json().catch(() => ({}));
     if (confirmedEmailDelivery(response.ok, delivery)) {
       await db.from("subscription_email_jobs").update({ status: "sent", sent_at: new Date().toISOString(), attempt_count: job.attempt_count + 1, last_error: null }).eq("id", job.id);
