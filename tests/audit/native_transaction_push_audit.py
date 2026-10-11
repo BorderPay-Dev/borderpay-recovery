@@ -6,6 +6,7 @@ PACKAGE = (ROOT / "package.json").read_text()
 CLIENT = (ROOT / "utils/notifications/nativePush.ts").read_text()
 MIGRATION = (ROOT / "supabase/migrations/20260811021000_native_transaction_push.sql").read_text()
 WORKER = (ROOT / "supabase/functions/push-delivery-worker/index.ts").read_text()
+POLICY = (ROOT / "supabase/functions/push-delivery-worker/policy.ts").read_text()
 MAIN = (ROOT / "components/app/MainApp.tsx").read_text()
 APP = (ROOT / "App.tsx").read_text()
 ENTITLEMENTS = (ROOT / "ios/App/App/App.entitlements").read_text()
@@ -30,7 +31,8 @@ def main() -> None:
         "authenticated Firebase credential health check": "verify_credentials" in WORKER,
         "cron worker bypasses platform JWT gateway": "[functions.push-delivery-worker]\nverify_jwt = false" in SUPABASE_CONFIG,
         "server credential secret": "FIREBASE_SERVICE_ACCOUNT_JSON" in WORKER,
-        "invalid-token revocation": "UNREGISTERED" in WORKER,
+        "worker requires exact trusted credential": "isAuthorizedWorkerToken(token" in WORKER and "jwtRole" not in WORKER,
+        "invalid-token revocation": "UNREGISTERED" in POLICY and "failure.revokeDevice" in WORKER,
     }
     failures.extend(label for label, ok in checks.items() if not ok)
     if failures:
