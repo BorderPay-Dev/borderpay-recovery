@@ -1,5 +1,5 @@
 import {agreementType, AGREEMENT_LABELS, requireConsumerTerms} from "./predeposit-agreement.ts";
-import { PDFDocument, rgb, type PDFPage, type PDFFont } from "npm:pdf-lib@1.17.1";
+import { PDFDocument, PDFString, rgb, type PDFPage, type PDFFont } from "npm:pdf-lib@1.17.1";
 import fontkit from "npm:@pdf-lib/fontkit@1.1.1";
 import type { Invoice } from "./predeposit-policy.ts";
 import type { BankPaymentInstructions } from "./predeposit-payment-instructions.ts";
@@ -11,6 +11,7 @@ type Args = PdfStyleAssets & {
   invoice: Invoice; invoiceNumber: string; fontBytes: Uint8Array; templateBody?: string;
   logo?: Uint8Array; signature?: Uint8Array; bank?: BankPaymentInstructions;
   customerCopy?: boolean; attachments?: PdfAttachment[]; agreementOnly?: boolean; agreementDraft?: boolean; approved?: boolean;
+  sellerAddress?: string; paymentNote?: string; paymentUrl?: string; billingDates?: { issued: string; due: string; deadline: string };
   complianceReview?: { assessment: unknown; recorded_at: string };
 };
 
@@ -112,19 +113,22 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
     rect(left, y, right - left, h);
     text("INVOICE NUMBER", left + 14, y + 11, 7.5, bold, muted);
     block(args.invoiceNumber, left + 14, y + 27, 258, 10, bold);
-    text("REVISION", 350, y + 11, 7.5, bold, muted);
-    text(String(inv.revision), 350, y + 27, 10, bold);
+    text(args.billingDates ? "DUE DATE" : "REVISION", 350, y + 11, 7.5, bold, muted);
+    text(args.billingDates?.due || String(inv.revision), 350, y + 27, 10, bold);
     text("CURRENCY", 470, y + 11, 7.5, bold, muted); text(inv.currency, 470, y + 27, 10, bold);
-    y += h + 24;
+    y += h + (args.billingDates ? 12 : 24);
+    if(args.billingDates){ paragraph("Issued: " + args.billingDates.issued + "   |   Grace ends: " + args.billingDates.deadline, 8, muted); y += 10; }
   };
   const parties = () => {
     const col = 236;
     const seller = wrap(inv.merchant.legal_name, col, 12, bold);
     const buyer = wrap(inv.buyer.legal_name, col, 12, bold);
     const detail = wrap(inv.buyer.address + " | " + inv.buyer.country + (inv.buyer.tax_id ? "\nTax / VAT ID: " + inv.buyer.tax_id : ""), col, 9);
-    const required = 20 + Math.max(seller.length * 17 + 16, buyer.length * 17 + detail.length * 13) + 24;
+    const sellerDetails = args.sellerAddress || "Incorporation: " + inv.merchant.incorporation_country;
+    const sellerRows = wrap(sellerDetails,col,9);
+    const required = 20 + Math.max(seller.length * 17 + sellerRows.length * 13 + 8, buyer.length * 17 + detail.length * 13) + 24;
     if (required > bottom - 155) {
-      section("Seller"); paragraph(inv.merchant.legal_name); paragraph(inv.merchant.incorporation_country, 9, muted);
+      section("Seller"); paragraph(inv.merchant.legal_name); paragraph(sellerDetails, 9, muted);
       section("Buyer"); paragraph(inv.buyer.legal_name); paragraph(inv.buyer.address + " | " + inv.buyer.country);
       if (inv.buyer.tax_id) paragraph("Tax / VAT ID: " + inv.buyer.tax_id, 9, muted);
       y += 18; return;
@@ -132,10 +136,10 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
     ensure(required);
     text("FROM", left, y, 7.5, bold, muted); text("BILL TO", 315, y, 7.5, bold, muted);
     const sellerEnd = block(inv.merchant.legal_name, left, y + 17, col, 12, bold, ink, 17);
-    text("Incorporation: " + inv.merchant.incorporation_country, left, sellerEnd + 4, 9, font, muted);
+    const sellerBottom=block(sellerDetails,left,sellerEnd+4,col,9,font,muted,13);
     const buyerEnd = block(inv.buyer.legal_name, 315, y + 17, col, 12, bold, ink, 17);
     const end = block(inv.buyer.address + " | " + inv.buyer.country + (inv.buyer.tax_id ? "\nTax / VAT ID: " + inv.buyer.tax_id : ""), 315, buyerEnd + 4, col, 9, font, muted, 13);
-    y = Math.max(sellerEnd + 20, end) + 20;
+    y = Math.max(sellerBottom, end) + (args.billingDates ? 10 : 20);
     line(y); y += 19;
     if (inv.order_reference) { paragraph("Order reference: " + inv.order_reference, 9, muted); y += 14; }
   };
@@ -179,7 +183,7 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
     text("INVOICE TOTAL", 338, y + 11, 7.5, bold, lime);
     const value = money(total) + " " + inv.currency;
     text(value, right - 12, y + 31, fit(value, right - 350, 19, bold, 10), bold, white, "right");
-    y += 82;
+    y += args.billingDates ? 65 : 82;
   };
   const bankInstructions = () => {
     if (!args.bank) return;
@@ -224,7 +228,13 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
   else if (!args.customerCopy && !args.approved && !args.agreementOnly) { paragraph("UNDER REVIEW - NOT PAYMENT INSTRUCTIONS", 8, muted); y += 14; }
   if(args.agreementDraft){paragraph("DRAFT FOR REVIEW - NOT EXECUTED. Do not present this agreement as signed or approved.",9,muted);y+=12;}
   parties();
-  if (!args.agreementOnly) { items(); totalPanel(); bankInstructions(); }
+  if (!args.agreementOnly) { items(); totalPanel();
+    if(args.paymentUrl){ if(args.billingDates){ensure(55);text("Pay online",left,y,11,bold);y+=21;}else section("Pay online");paragraph("Pay securely via Flutterwave. Payment confirmation is automatic.",9,muted);
+      const label="Open secure payment link";ensure(26);text(label,left,y,10,bold);const linkY=y;
+      page.node.addAnnot(doc.context.register(doc.context.obj({Type:"Annot",Subtype:"Link",Rect:[left,height-linkY-16,left+170,height-linkY+2],Border:[0,0,0],A:{Type:"Action",S:"URI",URI:PDFString.of(args.paymentUrl)}})));y+=26; }
+    bankInstructions();
+    if(args.paymentNote){ const size=args.billingDates ? 8 : 8.5;ensure(wrap(args.paymentNote,right-left,size).length*(size+5));paragraph(args.paymentNote,size,muted);y+=10;}
+  }
 
   if (args.templateBody) {
     if (!args.agreementOnly) { newPage("AGREEMENT", false); metadata(); parties(); }

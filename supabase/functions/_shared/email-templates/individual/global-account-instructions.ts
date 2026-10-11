@@ -16,8 +16,8 @@ export function render(p: IndividualGlobalAccountInstructionsProps): RenderedEma
 
   const body = `
     <p style="margin:0 0 14px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;">
-      ${attached ? "Your account instructions letter is attached to this email." : "Open BorderPay to view your account details."}
-      Use the exact account holder name, routing details, and account number shown in BorderPay or on the account letter.
+      ${attached ? "Your account instructions letter is attached to this email." : "Open BorderPay Velocity to view your account details."}
+      Use the exact account holder name, routing details, and account number shown in BorderPay Velocity or on the account letter.
     </p>
     <div style="background:${BORDERPAY_BRAND.bg};border:1px solid ${BORDERPAY_BRAND.border};padding:14px 16px;border-radius:6px;margin:14px 0;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.55;">
       <strong>Important:</strong> If a marketplace asks for proof of account ownership, upload the attached account letter together with your ACH/FedNow routing and account details.
@@ -34,13 +34,13 @@ export function render(p: IndividualGlobalAccountInstructionsProps): RenderedEma
       heading,
       introText,
       body,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
     text: textLayout({
       heading,
-      body: `${introText}\n\n${attached ? "Your account instructions letter is attached to this email." : "Open BorderPay to view your account details."} Use the exact account holder name, routing details, and account number shown in BorderPay or on the account letter.\n\nIf a marketplace asks for proof of account ownership, upload the account letter together with your ACH/FedNow routing and account details.\n\nDo not edit the account letter or change the account holder name when submitting it to a marketplace.`,
-      ctaText: "Open BorderPay",
+      body: `${introText}\n\n${attached ? "Your account instructions letter is attached to this email." : "Open BorderPay Velocity to view your account details."} Use the exact account holder name, routing details, and account number shown in BorderPay Velocity or on the account letter.\n\nIf a marketplace asks for proof of account ownership, upload the account letter together with your ACH/FedNow routing and account details.\n\nDo not edit the account letter or change the account holder name when submitting it to a marketplace.`,
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
   };

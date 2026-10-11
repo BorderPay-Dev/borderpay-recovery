@@ -1,3 +1,9 @@
+import { runBusinessMaintenanceCycle, queueConfirmedMaintenanceNotices } from "./business-maintenance.ts";
+import { requestMaintenancePdf } from "../_shared/maintenance-invoice-client.ts";
+import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
+import { resolveUsageNoticeRecipient } from "../_shared/business-usage-recipient.ts";
+import { maintenanceEmailCapacity } from "../_shared/maintenance-email-capacity.ts";
+import { partnerMemberships } from "../_shared/partner-customer-policy.ts";
 import { prepareInvoiceEmail, confirmedEmailDelivery } from "../_shared/subscription-email-policy.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
@@ -53,64 +59,10 @@ function currentMonthEnd(): string {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
 }
 
-async function prepareApprovedBusinessBilling(dryRun = false, queueBeforeDue = false) {
-  const billingPeriod = currentMonthEnd();
-  const { data: sync, error: syncError } = await db.rpc("sync_active_va_maintenance_subscriptions", {
-    p_billing_period: billingPeriod,
-    p_dry_run: dryRun,
-  });
-  if (syncError) throw syncError;
-
-  const { data, error } = await db.from("subscriptions")
-    .select("id,user_id,next_billing_date")
-    .eq("account_type", "business")
-    .eq("status", "active")
-    .is("restricted_at", null)
-    .lte("next_billing_date", billingPeriod)
-    .limit(1000);
-  if (error) throw error;
-
-  const scopedRows = await mapWithConcurrency(data ?? [], 3, async (row) => ({
-    row,
-    scope: await resolveBillingCountry(row.user_id),
-  }));
-  const eligible = scopedRows.filter(({ scope }) => Boolean(scope.country));
-  const blocked = scopedRows.filter(({ scope }) => !scope.country)
-    .map(({ row }) => ({ id: row.id, user_id: row.user_id, reason: "maintenance_identity_or_country_unresolved" }));
-
-  if (dryRun) {
-    return { billing_period: billingPeriod, sync, eligible: eligible.length, blocked, queued: 0, results: [] };
-  }
-  const today = new Date().toISOString().slice(0, 10);
-  if (!queueBeforeDue && today < billingPeriod) {
-    return {
-      billing_period: billingPeriod,
-      sync,
-      eligible: eligible.length,
-      blocked,
-      queued: 0,
-      results: [],
-      invoice_creation_scheduled_for: billingPeriod,
-    };
-  }
-
-  const results = [];
-  for (const { row, scope } of eligible) {
-    const { data: result, error: invoiceError } = await db.rpc("queue_external_subscription_invoice", {
-      p_subscription_id: row.id,
-      p_billing_date: billingPeriod,
-      p_scope_country: scope.country,
-      p_provider: "flutterwave",
-    });
-    results.push({
-      id: row.id,
-      route: "flutterwave_invoice",
-      eea: scope.eea,
-      result,
-      error: invoiceError?.message ?? null,
-    });
-  }
-  return { billing_period: billingPeriod, sync, eligible: eligible.length, blocked, queued: results.filter((r) => !r.error).length, results };
+async function prepareApprovedBusinessBilling(dryRun = false, _queueBeforeDue = false) {
+  const {data,error}=await db.rpc("prepare_verified_business_maintenance",{p_dry_run:dryRun});
+  if(error)throw error;
+  return data;
 }
 
 async function runBusinessOnboardingLifecycle(dryRun = false) {
@@ -238,7 +190,7 @@ async function accessEnforcementEnabled(): Promise<boolean> {
   return String(data ?? "").trim().toLowerCase() === "true";
 }
 
-async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
+async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
   const { data: reconciliation, error: reconciliationError } = await db.rpc("reconcile_subscription_access_actions", {
     p_dry_run: dryRun,
     p_limit: Math.max(1, Math.min(limit, 500)),
@@ -259,7 +211,10 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
 
   let completed = 0;
   let failed = 0;
+  const partnerActions = await partnerMemberships(db, (data ?? []).map((a: any) => String(a.user_id)));
   for (const action of (data ?? []) as AccessAction[]) {
+    if (partnerActions.has(action.user_id)) continue; // Never retail-restrict or reactivate a partner account.
+
     const claimedAt = new Date().toISOString();
     const { data: claimed } = await db.from("subscription_provider_access_actions")
       .update({ status: "processing", last_attempt_at: claimedAt, attempt_count: action.attempt_count + 1, updated_at: claimedAt })
@@ -269,6 +224,21 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
       .maybeSingle();
     if (!claimed?.id) continue;
     try {
+      const {data:sub,error:subError}=await db.from("subscriptions").select("account_type,status").eq("id",action.subscription_id).single();if(subError)throw subError;
+      const {data:exemption,error:exemptionError}=await db.from("maintenance_billing_exemptions").select("user_id").eq("user_id",action.user_id).maybeSingle();if(exemptionError)throw exemptionError;
+      if(exemption || sub.status!=="active")throw Error("maintenance_action_no_longer_eligible");
+      if(sub.account_type==="business") {
+        const {data:allowed,error:guardError}=await db.rpc("business_maintenance_action_allowed",{p_action_id:action.id});if(guardError)throw guardError;if(!allowed)throw Error("maintenance_action_no_longer_eligible");
+        const live=await bridgeProvider.getCustomerProfile(action.bridge_customer_id);
+        if(String((live.raw as any)?.status)!=="active")throw Error("provider_customer_not_active");
+        if(action.action==="deactivate") {
+          const vas=await bridgeProvider.listVirtualAccounts(action.bridge_customer_id);
+          const va=vas.find(v=>v.virtual_account_id===action.bridge_virtual_account_id);
+          const {data:local}=await db.from("bridge_virtual_accounts").select("deactivation_reason").eq("bridge_virtual_account_id",action.bridge_virtual_account_id).single();
+          // Never relabel a pre-existing provider restriction as maintenance nonpayment.
+          if(!va || (!['active','activated'].includes(String(va.status)) && local?.deactivation_reason!=="subscription_nonpayment"))throw Error("provider_account_already_restricted");
+        }
+      }
       const providerResult = action.action === "deactivate"
         ? await bridgeProvider.deactivateVirtualAccount(action.bridge_customer_id, action.bridge_virtual_account_id, action.idempotency_key)
         : await bridgeProvider.reactivateVirtualAccount(action.bridge_customer_id, action.bridge_virtual_account_id, action.idempotency_key);
@@ -283,8 +253,8 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
       const details = va?.account_details && typeof va.account_details === "object" ? va.account_details as Record<string, unknown> : {};
       const accessMetadata = { action_id: action.id, subscription_id: action.subscription_id, action: action.action, completed_at: now };
       const update = action.action === "deactivate"
-        ? { status: "deactivated", deactivated_at: now, deactivation_reason: "subscription_nonpayment", account_details: { ...details, subscription_access_control: accessMetadata } }
-        : { status: "active", deactivated_at: null, deactivation_reason: null, account_details: { ...details, subscription_access_control: accessMetadata } };
+        ? { status: "deactivated", deactivated_at: now, deactivation_reason: "subscription_nonpayment", account_details: { ...details, status: "deactivated", subscription_access_control: accessMetadata } }
+        : { status: "active", deactivated_at: null, deactivation_reason: null, account_details: { ...details, status: "active", subscription_access_control: accessMetadata } };
       const { error: updateError } = await db.from("bridge_virtual_accounts").update(update).eq("bridge_virtual_account_id", action.bridge_virtual_account_id);
       if (updateError) throw updateError;
       await db.from("subscription_provider_access_actions").update({
@@ -311,22 +281,65 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 100) {
   return { reconciliation, processed: data?.length ?? 0, completed, failed };
 }
 
-async function sendEmails() {
-  const { data, error } = await db.from("subscription_email_jobs").select("*")
-    .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(30);
+async function sendEmails(remindersOnly = false, maintenanceOnly = false) {
+  const capacity=await maintenanceEmailCapacity(db);
+  if(capacity<=0)return {sent:0,deferred:true,reason:"daily_email_allowance_reserved"};
+  let pending = db.from("subscription_email_jobs").select("*")
+    .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(Math.min(30,capacity));
+  if (maintenanceOnly) pending = pending.eq("template", "business.subscription_external_invoice");
+  if (remindersOnly) pending = pending.eq("template", "business.subscription_external_invoice").contains("props", { notice: "balance_reminder" });
+  const { data, error } = await pending;
   if (error) throw error;
   let sent = 0; let failed = 0;
+  const partnerJobs = await partnerMemberships(db, (data ?? []).map((j: any) => String(j.user_id)));
   for (const job of data ?? []) {
+    if (partnerJobs.has(String(job.user_id))) {
+      await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:partner_managed"}).eq("id",job.id);
+      continue;
+    }
+
+    const maintenancePeriod = job.props?.billing_period || job.props?.billing_start_date;
+    const maintenanceDue = typeof maintenancePeriod === "string" && /^\d{4}-\d{2}-\d{2}$/.test(maintenancePeriod)
+      ? Date.parse(maintenancePeriod + "T00:00:00Z") : NaN;
+    if (requiresActiveMaintenanceVa(job.template) && maintenanceDue > Date.now()) {
+      const { error: deferError } = await db.from("subscription_email_jobs")
+        .update({ next_attempt_at: new Date(maintenanceDue).toISOString(), last_error: null }).eq("id", job.id);
+      if (deferError) throw deferError;
+      continue;
+    }
+    // Recheck at delivery time; old queued reminders must not bypass VA status.
+    if (requiresActiveMaintenanceVa(job.template) && !await hasActiveMaintenanceVa(db, job.user_id, job.recipient, job.props?.billing_period || job.props?.billing_start_date)) {
+      const { error: suppressError } = await db.from("subscription_email_jobs")
+        .update({ status: "failed", last_error: "suppressed:no_active_virtual_account" }).eq("id", job.id);
+      if (suppressError) throw suppressError;
+      continue;
+    }
+
     let props = job.props;
+    let attachments: Array<{name:string;content:string}> = [];
+    if (job.template === "business.business_activity_update" && job.props?.usage_notice === true) {
+      props = await resolveUsageNoticeRecipient(db, job);
+      if (!props) {
+        const { error: suppressError } = await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:usage_notice_recipient_ineligible"}).eq("id",job.id);
+        if (suppressError) throw suppressError;
+        continue;
+      }
+    }
     if (job.template.endsWith(".subscription_external_invoice")) {
       const { data: invoice, error: invoiceError } = await db.from("subscription_external_invoices")
-        .select("id,user_id,subscription_id,amount,currency,billing_period,status,paid_at,payment_link,provider_reference")
+        .select("id,user_id,subscription_id,amount,currency,billing_period,status,paid_at,payment_link,provider_reference,created_at,expires_at")
         .eq("user_id", job.user_id).eq("provider_reference", String(job.props?.transaction_reference || "")).maybeSingle();
       if (invoiceError) throw invoiceError;
       const { data: subscription, error: subscriptionError } = invoice
-        ? await db.from("subscriptions").select("user_id,status,grace_started_at").eq("id", invoice.subscription_id).maybeSingle()
+        ? await db.from("subscriptions").select("user_id,status,grace_started_at,account_type").eq("id", invoice.subscription_id).maybeSingle()
         : { data: null, error: null };
       if (subscriptionError) throw subscriptionError;
+      if(job.props?.notice==='deactivated') {
+        const {data:held,error:heldError}=await db.from('bridge_virtual_accounts').select('currency,status,deactivation_reason').or(`user_id.eq.${job.user_id},business_user_id.eq.${job.user_id}`);if(heldError)throw heldError;
+        const confirmed=[...new Set<string>((held||[]).filter((v:any)=>v.status==='deactivated'&&v.deactivation_reason==='subscription_nonpayment').map((v:any)=>v.currency))];
+        if(!confirmed.length){await db.from('subscription_email_jobs').update({status:'failed',last_error:'suppressed:no_maintenance_deactivated_accounts'}).eq('id',job.id);continue;}
+        job.props={...job.props,deactivated_currencies:confirmed};
+      }
       const plan = prepareInvoiceEmail(job, invoice, subscription);
       if (plan.action === "suppress") {
         await db.from("subscription_email_jobs").update({ status: "failed", last_error: `suppressed:${plan.reason}` }).eq("id", job.id);
@@ -336,18 +349,37 @@ async function sendEmails() {
         await db.from("subscription_email_jobs").update({ next_attempt_at: plan.nextAttemptAt, last_error: null }).eq("id", job.id);
         continue;
       }
-      const { data: billable, error: billableError } = await db.rpc("maintenance_account_is_billable", { p_user_id: job.user_id });
+      if(!subscription || !invoice)continue;
+      const { data: billable, error: billableError } = subscription.account_type === "business"
+        ? await db.rpc("business_maintenance_invoice_eligible", { p_invoice_id: invoice.id })
+        : await db.rpc("maintenance_account_is_billable", { p_user_id: job.user_id });
       if (billableError) throw billableError;
       if (billable !== true) {
         await db.from("subscription_email_jobs").update({ status: "failed", last_error: "suppressed:account_not_billable" }).eq("id", job.id);
         continue;
       }
       props = plan.props;
+      if(subscription.account_type==='business') {
+        try {
+          const pdf=await requestMaintenancePdf(URL,SERVICE_ROLE,invoice.id);
+          attachments=[{name:pdf.name,content:pdf.content}];props={...props,customer_name:pdf.buyerName,invoice_number:pdf.invoiceNumber,pdf_attached:true};
+        } catch(error) {
+          await db.from('subscription_email_jobs').update({next_attempt_at:new Date(Date.now()+300000).toISOString(),last_error:'invoice_pdf_unavailable',attempt_count:job.attempt_count+1}).eq('id',job.id);
+          failed++;continue;
+        }
+      }
     }
-    const response = await fetch(`${URL}/functions/v1/send-email`, {
+    let response: Response;
+    try {
+      response = await fetch(`${URL}/functions/v1/send-email`, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${EMAIL_TOKEN}` },
-      body: JSON.stringify({ template: job.template, to: job.recipient, user_id: job.user_id, props, idempotency_key: job.idempotency_key }),
-    });
+      body: JSON.stringify({ template: job.template, to: job.recipient, user_id: job.user_id, props, attachments, idempotency_key: job.idempotency_key }),
+      signal: AbortSignal.timeout(20000),
+      });
+    } catch {
+      await db.from("subscription_email_jobs").update({attempt_count:job.attempt_count+1,next_attempt_at:new Date(Date.now()+60000).toISOString(),last_error:"email_delivery_connection_interrupted"}).eq("id",job.id);
+      failed++;continue;
+    }
     const delivery = await response.json().catch(() => ({}));
     if (confirmedEmailDelivery(response.ok, delivery)) {
       await db.from("subscription_email_jobs").update({ status: "sent", sent_at: new Date().toISOString(), attempt_count: job.attempt_count + 1, last_error: null }).eq("id", job.id);
@@ -449,9 +481,23 @@ Deno.serve(async (req) => {
     return json({ success: false, error: "Unauthorized" }, 401);
   }
   try {
-    const { mode = "drain" } = await req.json().catch(() => ({}));
+    const body = await req.json().catch(() => ({}));
+    const { mode = "drain" } = body;
     const out: Record<string, unknown> = {};
-    if (mode === "prepare") {
+    if(mode==='maintenance_invoice_preview') {
+      const {data:invoice,error}=await db.from('subscription_external_invoices').select('*').eq('id',String(body.invoice_id||'')).single();if(error)throw error;
+      const pdf=await requestMaintenancePdf(URL,SERVICE_ROLE,invoice.id);return json({success:true,name:pdf.name,content:pdf.content});
+    }
+    if(mode==='maintenance_cycle') {
+      out.business_calendar=await runBusinessMaintenanceCycle(db,URL,SERVICE_ROLE);
+      out.access=await reconcileSubscriptionAccess(false);
+      out.notices=await queueConfirmedMaintenanceNotices(db);
+      out.emails=await sendEmails(false,true);
+      return json({success:true,data:out});
+    }
+    // Explicit email-only operation: never bill, provision, collect funds or change access.
+    if (mode === "reminders_only") return json({ success: true, data: { emails: await sendEmails(true) } });
+    if (["prepare", "references", "emails"].includes(mode)) {
       out.business_maintenance = await prepareApprovedBusinessBilling(false, true);
     }
     if (["bill_due", "drain"].includes(mode)) {
@@ -466,10 +512,12 @@ Deno.serve(async (req) => {
     if (["bill_due", "drain", "onboarding"].includes(mode)) {
       out.onboarding = await runBusinessOnboardingLifecycle(false);
     }
+    if (["references", "emails"].includes(mode)) out.external_invoices = await drainExternalInvoices();
     if (["bill_due", "drain"].includes(mode)) {
       out.billing = await billDue();
       out.external_invoices = await drainExternalInvoices();
     }
+    if (["grace", "drain", "bill_due"].includes(mode)) out.business_calendar=await runBusinessMaintenanceCycle(db,URL,SERVICE_ROLE);
     if (["grace", "drain"].includes(mode)) {
       const { data, error } = await db.rpc("apply_subscription_grace_controls"); if (error) throw error; out.grace = data;
       out.unpaid_invoices = await queueUnpaidInvoices();
@@ -478,6 +526,7 @@ Deno.serve(async (req) => {
     }
     if (mode === "access_dry_run") out.access = await reconcileSubscriptionAccess(true);
     if (mode === "access") out.access = await reconcileSubscriptionAccess(false);
+    if (["grace","drain","access","emails"].includes(mode)) out.maintenance_notices=await queueConfirmedMaintenanceNotices(db);
     if (mode === "announcement") out.announcement = await queueAnnouncement();
     if (["emails", "drain", "announcement", "onboarding"].includes(mode)) {
       out.emails = await sendEmails();

@@ -18,14 +18,14 @@ export function applyWhiteLabelEmail(
   brand: EmailBrand,
 ) {
   const text = (value: string) =>
-    value.replace(/BorderPay Africa|BorderPay/g, () => brand.brandName)
+    value.replace(/BorderPay Velocity|BorderPay Africa(?!, Inc\.)|BorderPay(?! Africa, Inc\.)/g, () => brand.brandName)
       .replaceAll("https://app.borderpayafrica.com", brand.appOrigin)
       .replaceAll(
         "support@borderpayafrica.com",
         brand.supportEmail || "support@borderpayafrica.com",
       );
   let html = rendered.html.replace(
-    /BorderPay Africa|BorderPay/g,
+    /BorderPay Velocity|BorderPay Africa(?!, Inc\.)|BorderPay(?! Africa, Inc\.)/g,
     () => escapeBrand(brand.brandName),
   ).replaceAll("https://app.borderpayafrica.com", escapeBrand(brand.appOrigin))
     .replaceAll("#C7FF00", brand.primaryColor).replaceAll(
@@ -33,7 +33,7 @@ export function applyWhiteLabelEmail(
       brand.primaryColor,
     );
   if (brand.logoUrl) {
-    html = html.replaceAll(defaultLogo, escapeBrand(brand.logoUrl));
+    html = html.replaceAll(defaultLogo, escapeBrand(brand.logoUrl)).replaceAll("https://www.borderpayafrica.com/assets/brand/borderpay-velocity-white.png", escapeBrand(brand.logoUrl));
   }
   if (brand.supportEmail) {
     html = html.replaceAll(

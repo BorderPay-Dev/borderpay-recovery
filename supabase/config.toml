@@ -265,3 +265,6 @@ verify_jwt = false
 
 [functions.white-label-config]
 verify_jwt = false
+
+[functions.maintenance-invoice-renderer]
+verify_jwt = false

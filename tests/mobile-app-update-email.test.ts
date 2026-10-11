@@ -6,7 +6,7 @@ for (const audience of ['individual', 'business'] as const) {
  for (const template of ['mobile_app_update', 'app_store_announcement'] as const) {
   Deno.test(`${audience} ${template}: current approved builds and both store links`, () => {
    const email = renderTemplate(`${audience}.${template}`, { full_name: 'Alex Example', company_name: 'Example Ltd' });
-   assertEquals(email.subject, 'Your BorderPay 1.0.10 update');
+   assertEquals(email.subject, 'Your BorderPay Velocity 1.0.10 update');
    for (const body of [email.html, email.text]) {
     assert(body.includes(APP_STORE_URL)); assert(body.includes(GOOGLE_PLAY_URL));
     assert(body.includes('1.0.10 (build 73)')); assert(body.includes('1.0.10 (build 77)'));

@@ -11,33 +11,33 @@ export function render(p: BusinessAccountMaintenanceFeeProps): RenderedEmail {
   const body = `
     <p style="margin:0 0 16px;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">Hello ${escapeHtml(company)},</p>
     <p style="margin:0 0 16px;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">
-      Your active BorderPay Business account has a <strong>$29.99 monthly account maintenance fee</strong>.
+      Your active BorderPay Velocity Business account has a <strong>$29.99 monthly account maintenance fee</strong>.
     </p>
     <div style="margin:0 0 16px;padding:16px;border:1px solid ${BORDERPAY_BRAND.border};background:#FFFFFF;">
       <strong style="color:${BORDERPAY_BRAND.text};">Business account: $29.99/month</strong><br />
       <span style="color:${BORDERPAY_BRAND.textMuted};">First billing date: ${escapeHtml(billingDate)}</span>
     </div>
     <p style="margin:0 0 16px;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">
-      Billing applies while at least one BorderPay receiving account is active. Your invoice and payment status are available securely in BorderPay.
+      Billing applies while at least one BorderPay Velocity receiving account is active. Your invoice and payment status are available securely in BorderPay Velocity.
     </p>
     <p style="margin:0;color:${BORDERPAY_BRAND.text};font-size:14px;line-height:1.65;">
       If every receiving account is deactivated, recurring billing is paused until account activation.
     </p>`;
 
   return {
-    subject: "Your BorderPay Business Account Maintenance Fee",
+    subject: "Your BorderPay Velocity Business Account Maintenance Fee",
     html: htmlLayout({
       preview: "Your active Business account maintenance fee is $29.99/month.",
       heading: "Business account maintenance",
       introText: "Monthly billing begins at the end of the month.",
       body,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
     text: textLayout({
-      heading: "Your BorderPay Business Account Maintenance Fee",
-      body: `Hello ${company},\n\nYour active BorderPay Business account has a $29.99 monthly account maintenance fee.\n\nFirst billing date: ${billingDate}\n\nBilling applies while at least one BorderPay receiving account is active. Your invoice and payment status are available securely in BorderPay. If every receiving account is deactivated, recurring billing is paused until account activation.`,
-      ctaText: "Open BorderPay",
+      heading: "Your BorderPay Velocity Business Account Maintenance Fee",
+      body: `Hello ${company},\n\nYour active BorderPay Velocity Business account has a $29.99 monthly account maintenance fee.\n\nFirst billing date: ${billingDate}\n\nBilling applies while at least one BorderPay Velocity receiving account is active. Your invoice and payment status are available securely in BorderPay Velocity. If every receiving account is deactivated, recurring billing is paused until account activation.`,
+      ctaText: "Open BorderPay Velocity",
       ctaUrl: BORDERPAY_BRAND.appUrl,
     }),
   };

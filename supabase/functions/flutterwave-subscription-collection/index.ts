@@ -1,3 +1,5 @@
+declare const EdgeRuntime: { waitUntil(promise: Promise<unknown>): void };
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
@@ -351,6 +353,8 @@ async function handleWebhook(req: Request) {
     p_event_id: eventId,
   });
   if (error) throw error;
+  // Queue processing is durable in SQL; this fast background nudge avoids waiting for the scheduled drain.
+  EdgeRuntime.waitUntil(fetch(`${SUPABASE_URL}/functions/v1/subscription-billing-worker`,{method:"POST",headers:{Authorization:`Bearer ${SERVICE_ROLE}`,"Content-Type":"application/json"},body:JSON.stringify({mode:"access"})}).catch(()=>undefined));
   return json({ success: true, signature_version: signatureVersion, invoice_scope: "maintenance", data });
 }
 

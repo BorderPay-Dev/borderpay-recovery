@@ -1,0 +1,24 @@
+name: Maintenance calendar safety
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/subscription-billing-worker/**'
+      - 'supabase/functions/maintenance-invoice-renderer/**'
+      - 'supabase/functions/flutterwave-subscription-collection/**'
+      - 'supabase/functions/_shared/maintenance*.ts'
+      - 'supabase/functions/_shared/subscription-email-policy.ts'
+      - 'supabase/functions/_shared/email-templates/subscription/**'
+      - 'tests/maintenance-calendar.test.ts'
+      - '.github/workflows/maintenance-calendar.yml'
+jobs:
+  safety:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config --node-modules-dir=none tests/maintenance-calendar.test.ts
+      - run: deno check --no-config --node-modules-dir=none supabase/functions/subscription-billing-worker/index.ts supabase/functions/send-email/index.ts supabase/functions/flutterwave-subscription-collection/index.ts supabase/functions/maintenance-invoice-renderer/index.ts
