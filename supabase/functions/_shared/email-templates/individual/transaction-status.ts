@@ -40,13 +40,13 @@ const COPY: Record<TransactionStatusProps["status"], { subject: string; heading:
   approved: {
     subject: "Transaction approved",
     heading: "Transaction approved",
-    intro: "This transaction has been approved and is now reflected in your BorderPay account.",
+    intro: "This transaction has been approved and is now reflected in your BorderPay Velocity account.",
     tone: "default",
   },
   canceled: {
     subject: "Transaction canceled",
     heading: "Transaction canceled",
-    intro: "This transaction was canceled and no funds were made available in your BorderPay account.",
+    intro: "This transaction was canceled and no funds were made available in your BorderPay Velocity account.",
     tone: "danger",
   },
   refund_in_flight: {
@@ -122,7 +122,7 @@ export function render(p: TransactionStatusProps): RenderedEmail {
       ${p.source_rail ? `<tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">Payment rail</td>
           <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;text-align:right;">${escapeHtml(String(p.source_rail).toUpperCase())}</td></tr>` : ""}
       ${serviceChargeAmount > 0 ? `<tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">Service charge</td>
-          <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;font-family:'DM Mono',monospace;text-align:right;">${escapeHtml(fmtMoney(serviceChargeAmount, sourceCurrency))}<br /><span style="font-family:'Inter','Helvetica Neue',Arial,sans-serif;color:${BORDERPAY_BRAND.textMuted};font-size:11px;">BorderPay</span></td></tr>` : ""}
+          <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;font-family:'DM Mono',monospace;text-align:right;">${escapeHtml(fmtMoney(serviceChargeAmount, sourceCurrency))}<br /><span style="font-family:'Inter','Helvetica Neue',Arial,sans-serif;color:${BORDERPAY_BRAND.textMuted};font-size:11px;">BorderPay Velocity</span></td></tr>` : ""}
       <tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">Available for conversion</td>
           <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;font-family:'DM Mono',monospace;text-align:right;">${escapeHtml(fmtMoney(availableAmount, sourceCurrency))}</td></tr>
       ${Number.isFinite(Number(p.exchange_rate)) && Number(p.exchange_rate) > 0 ? `<tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">Exchange rate</td>
@@ -189,7 +189,7 @@ export function render(p: TransactionStatusProps): RenderedEmail {
       heading: displayHeading,
       introText: hasReceipt ? displayIntro : `Hi ${fn}, ${c.intro}`,
       body,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl,
       brandTone: c.tone,
     }),
@@ -198,7 +198,7 @@ export function render(p: TransactionStatusProps): RenderedEmail {
       body: hasReceipt
         ? `${displayHeading}\n\n${isRefund ? `Return reason: ${p.refund_return_reason || p.description || "Payment refunded"}\n${refundReturnedAt ? `Returned at: ${refundReturnedAt}\n` : ""}${p.refund_risk_rejection_reason ? `Risk rejection reason: ${p.refund_risk_rejection_reason}\n` : ""}The payment has been refunded to the original destination.\n${p.refund_rail ? `Refund rail: ${p.refund_rail}\n` : ""}${p.refund_beneficiary_name ? `Refund beneficiary name: ${p.refund_beneficiary_name}\n` : ""}${p.refund_reference_id ? `Refund reference ID: ${p.refund_reference_id}\n` : ""}` : (`What this means: ${receiptSummary}`)}\n\n${p.deposit_id ? `Deposit #${p.deposit_id}\n` : ""}Incoming funds: ${fmtMoney(sourceAmount, sourceCurrency)}\n${p.source_rail ? `Payment rail: ${String(p.source_rail).toUpperCase()}\n` : ""}${serviceChargeAmount > 0 ? `Service charge: ${fmtMoney(serviceChargeAmount, sourceCurrency)}\nBorderPay\n` : ""}Available for conversion: ${fmtMoney(availableAmount, sourceCurrency)}\n${Number.isFinite(Number(p.exchange_rate)) && Number(p.exchange_rate) > 0 ? `Exchange rate: 1 ${sourceCurrency} = ${p.exchange_rate} ${destinationCurrency}\n` : ""}Outgoing funds: ${outgoing}\n${p.destination_address ? `Destination: ${p.destination_address}\n` : ""}Status: ${displayHeading}\nReference: ${p.reference}\nWhen: ${occurredAt}`
         : `${c.intro}\n${hasFeeBreakdown ? `Full amount received: ${gross}\n${transactionFeeAmount > 0 ? `Transaction fee: -${transactionFee}\n` : ""}${exchangeFeeAmount > 0 ? `Exchange fee: -${exchangeFee}\n` : ""}Net amount: ${amount}` : `Amount: ${amount}`}\nStatus: ${c.heading}\nReference: ${p.reference}\n${p.description ? "Description: " + p.description + "\n" : ""}When: ${occurredAt}`,
-      ctaText: "Open BorderPay",
+      ctaText: "Open BorderPay Velocity",
       ctaUrl,
     }),
   };

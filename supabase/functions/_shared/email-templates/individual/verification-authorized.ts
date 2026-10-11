@@ -14,8 +14,8 @@ export function render(p: IndividualVerificationAuthorizedProps): RenderedEmail 
   const name = firstName(p.full_name) || "there";
   const subject = "Verify your identity";
   const heading = "Verify your identity";
-  const introText = `Hi ${name}, please verify your identity to continue using BorderPay.`;
-  const closing = "Open BorderPay and complete identity verification.";
+  const introText = `Hi ${name}, please verify your identity to continue using BorderPay Velocity.`;
+  const closing = "Open BorderPay Velocity and complete identity verification.";
 
   return {
     subject,

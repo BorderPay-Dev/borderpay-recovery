@@ -49,13 +49,13 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
       introText: isCredit
         ? `${company} just received funds.`
         : `${company} just sent a payment. Receipt below.`,
-      body, ctaText: "Open BorderPay", ctaUrl,
+      body, ctaText: "Open BorderPay Velocity", ctaUrl,
       footerNote: "Didn't recognise this? Reply to this email or contact support immediately.",
     }),
     text: textLayout({
       heading,
       body: `${company}\n${isCredit ? "Received" : "Sent"} ${amountStr}\nReference: ${p.reference}\n${p.counterparty ? (isCredit ? "From" : "To") + ": " + p.counterparty + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}`,
-      ctaText: "Open BorderPay", ctaUrl,
+      ctaText: "Open BorderPay Velocity", ctaUrl,
     }),
   };
 }

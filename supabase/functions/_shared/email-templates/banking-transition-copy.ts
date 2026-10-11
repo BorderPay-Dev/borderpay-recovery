@@ -1,9 +1,9 @@
 export const BANKING_TRANSITION_ACTIVE = {
   "subject": "October update: USD receiving accounts in your business name",
-  "preview": "Planned for October 2026: broader USD access for BorderPay businesses.",
+  "preview": "Planned for October 2026: broader USD access for BorderPay Velocity businesses.",
   "heading": "More ways to receive business payments this October",
   "intro": "In October 2026, we plan to introduce new banking infrastructure and expand access to USD receiving accounts in your business’s legal name—including for eligible businesses that do not currently have USD access.",
-  "continuity": "You will continue using your existing BorderPay business account and sign-in details. We will notify you when the new services are ready for your business.",
+  "continuity": "You will continue using your existing BorderPay Velocity business account and sign-in details. We will notify you when the new services are ready for your business.",
   "items": [
     {
       "title": "USD accounts in your business name",
@@ -11,7 +11,7 @@ export const BANKING_TRANSITION_ACTIVE = {
     },
     {
       "title": "Keep using your active accounts",
-      "text": "Continue using the receiving details shown as active in BorderPay. Do not use details marked deactivated. Update your invoices and customer instructions only after your new receiving accounts are confirmed active."
+      "text": "Continue using the receiving details shown as active in BorderPay Velocity. Do not use details marked deactivated. Update your invoices and customer instructions only after your new receiving accounts are confirmed active."
     },
     {
       "title": "Any steps needed",
@@ -22,9 +22,9 @@ export const BANKING_TRANSITION_ACTIVE = {
       "text": "The rollout does not automatically transfer existing balances or resolve pending payments, refunds or reviews. We will provide separate instructions where needed."
     }
   ],
-  "closing": "We are preparing this upgrade to support more dependable day-to-day business payments, with a familiar BorderPay experience.",
+  "closing": "We are preparing this upgrade to support more dependable day-to-day business payments, with a familiar BorderPay Velocity experience.",
   "support": "If you need help with an existing payment, reply to your current support ticket so we can keep your case history together.",
-  "cta": "Open BorderPay",
+  "cta": "Open BorderPay Velocity",
   "url": "https://app.borderpayafrica.com"
 } as const;
 
@@ -33,7 +33,7 @@ export const BANKING_TRANSITION_RESTRICTED = {
   "preview": "An update for businesses whose receiving services or applications are restricted.",
   "heading": "A new path for your business this October",
   "intro": "In October 2026, we plan to introduce an alternative business onboarding and review path as part of our banking infrastructure upgrade.",
-  "continuity": "You can keep your existing BorderPay sign-in. We will contact you when the new review path is available for your business and explain the steps to take.",
+  "continuity": "You can keep your existing BorderPay Velocity sign-in. We will contact you when the new review path is available for your business and explain the steps to take.",
   "items": [
     {
       "title": "A separate business review",
@@ -41,7 +41,7 @@ export const BANKING_TRANSITION_RESTRICTED = {
     },
     {
       "title": "Wait for confirmed activation",
-      "text": "Do not ask buyers to pay to receiving details marked paused, frozen or deactivated. Only share new bank details after BorderPay confirms that the accounts are active."
+      "text": "Do not ask buyers to pay to receiving details marked paused, frozen or deactivated. Only share new bank details after BorderPay Velocity confirms that the accounts are active."
     },
     {
       "title": "Existing funds and payments",
@@ -50,7 +50,7 @@ export const BANKING_TRANSITION_RESTRICTED = {
   ],
   "closing": "Our aim is to give your business a clearer way forward. This announcement does not mean that a new account has already been approved.",
   "support": "If you need help with an existing payment, reply to your current support ticket so we can keep your case history together.",
-  "cta": "Open BorderPay",
+  "cta": "Open BorderPay Velocity",
   "url": "https://app.borderpayafrica.com"
 } as const;
 

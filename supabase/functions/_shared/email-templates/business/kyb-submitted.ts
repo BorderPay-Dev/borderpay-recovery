@@ -27,7 +27,7 @@ export function render(p: BusinessKybSubmittedProps): RenderedEmail {
     </p>`;
   return {
     subject,
-    html: htmlLayout({ preview: subject, heading, introText, body, ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl }),
-    text: textLayout({ heading, body: `${company}\nReference: ${ref}\nSubmitted: ${submittedAt}\nTypical review window: 1–2 business days.`, ctaText: "Open BorderPay", ctaUrl: BORDERPAY_BRAND.appUrl }),
+    html: htmlLayout({ preview: subject, heading, introText, body, ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl }),
+    text: textLayout({ heading, body: `${company}\nReference: ${ref}\nSubmitted: ${submittedAt}\nTypical review window: 1–2 business days.`, ctaText: "Open BorderPay Velocity", ctaUrl: BORDERPAY_BRAND.appUrl }),
   };
 }

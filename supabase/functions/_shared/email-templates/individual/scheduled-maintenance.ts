@@ -12,14 +12,14 @@ export function render(p: IndividualScheduledMaintenanceProps): RenderedEmail {
   const maintenanceDate = String(p.maintenance_date || "Saturday, August 1, 2026");
   const maintenanceTime = String(p.maintenance_time || "8:00 PM Pacific Time");
   const maintenanceDuration = String(p.maintenance_duration || "up to 30 minutes");
-  const subject = "Scheduled BorderPay maintenance";
+  const subject = "Scheduled BorderPay Velocity maintenance";
   const heading = "Scheduled maintenance";
   const introText = `Hello ${name}, we have a short maintenance window coming up.`;
   const bodyText =
-    `BorderPay will be temporarily unavailable on ${maintenanceDate}, starting at ${maintenanceTime}. ` +
+    `BorderPay Velocity will be temporarily unavailable on ${maintenanceDate}, starting at ${maintenanceTime}. ` +
     `The maintenance is expected to last ${maintenanceDuration}. During this time, you may not be able to sign in, view account details, or complete payment actions.`;
   const safetyText = "Your funds and account information remain safe. No action is required from you.";
-  const reasonText = "We are completing this work to improve BorderPay reliability and performance.";
+  const reasonText = "We are completing this work to improve BorderPay Velocity reliability and performance.";
 
   const body = `
     <p style="margin:0 0 14px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">${escapeHtml(bodyText)}</p>

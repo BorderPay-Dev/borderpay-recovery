@@ -1,3 +1,4 @@
+import { renderBusinessActivityNotice } from "./business-activity.ts";
 import { renderMigrationNotice } from "./business-migration.ts";
 import { render as accountStatement } from "./account-statement.ts";
 import { renderActive as bankingTransitionActive, renderRestricted as bankingTransitionRestricted } from "./banking-transition.ts";
@@ -6,7 +7,7 @@ import { renderExternalInvoice, renderPaymentStatus } from "./subscription/maint
 import { render as mobileAppUpdate } from "./mobile-app-update.ts";
 /**
  * Email template registry — single source of truth for every transactional
- * email BorderPay sends. Each template exports a `render(props)` function
+ * email BorderPay Velocity sends. Each template exports a `render(props)` function
  * returning `{ subject, html, text }`.
  *
  * Add a new template:
@@ -71,6 +72,7 @@ import { render as partnerAccessInvite }                from "./partner/access-i
 
 export type TemplateName =
   | "account.statement"
+  | "business.business_activity_update"
   | "business.business_migration_notice"
   | "business.banking_transition_active"
   | "business.banking_transition_restricted"
@@ -136,6 +138,7 @@ type Renderer = (props: any) => RenderedEmail;
 
 export const TEMPLATES: Record<TemplateName, Renderer> = {
   "account.statement": accountStatement,
+  "business.business_activity_update": renderBusinessActivityNotice,
   "business.business_migration_notice": renderMigrationNotice,
   "business.banking_transition_active": bankingTransitionActive,
   "business.banking_transition_restricted": bankingTransitionRestricted,

@@ -29,8 +29,8 @@ export function render(p: IndividualPaymentReceivedProps): RenderedEmail {
   const url = p.kyc_url || BORDERPAY_BRAND.appUrl;
   const subject = "Verify your identity";
   const heading = "Verify your identity";
-  const introText = `Hi ${name}, your BorderPay account is ready for verification.`;
-  const closing = "Verify your identity to unlock your BorderPay account. Tap the button below to start secure verification — it only takes a few minutes.";
+  const introText = `Hi ${name}, your BorderPay Velocity account is ready for verification.`;
+  const closing = "Verify your identity to unlock your BorderPay Velocity account. Tap the button below to start secure verification — it only takes a few minutes.";
 
   return {
     subject,

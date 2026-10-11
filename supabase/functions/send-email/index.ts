@@ -1,3 +1,5 @@
+import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
+import { recipientIsPartner, suppressDirectPartnerEmail } from "../_shared/partner-customer-policy.ts";
 import { applyWhiteLabelEmail, escapeBrand } from "../_shared/white-label-email.ts";
 import { loadPublishedWhiteLabel } from "../_shared/white-label-config.ts";
 // send-email — unified transactional email entrypoint.
@@ -41,7 +43,7 @@ const SUPABASE_SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const BREVO_KEY             = Deno.env.get("BREVO_API_KEY") ?? Deno.env.get("BREVO_API_KEYS") ?? "";
 const RESEND_KEY            = Deno.env.get("RESEND_API_KEY") ?? "";
 const EMAIL_PROVIDER        = (Deno.env.get("EMAIL_PROVIDER") ?? "").trim().toLowerCase();
-const FROM_EMAIL            = Deno.env.get("BORDERPAY_FROM_EMAIL") ?? "BorderPay Africa <noreply@borderpayafrica.com>";
+const FROM_EMAIL            = Deno.env.get("BORDERPAY_FROM_EMAIL") ?? "BorderPay Velocity <noreply@borderpayafrica.com>";
 const BREVO_FROM_EMAIL      = Deno.env.get("BREVO_FROM_EMAIL") ?? FROM_EMAIL;
 const RESEND_FROM_EMAIL     = Deno.env.get("RESEND_FROM_EMAIL") ?? FROM_EMAIL;
 // Dedicated internal caller token. send-email is invoked server-to-server only
@@ -183,6 +185,25 @@ Deno.serve(async (req: Request) => {
     return json({ success: false, error: (e as Error).message }, 400);
   }
 
+  // Partner membership applies even for legacy callers without user_id.
+  // Explicit suppression is not delivery; callers must not count it as sent.
+  try {
+    if (suppressDirectPartnerEmail(await recipientIsPartner(supabaseAdmin, body.user_id, body.to), body.template)) {
+      return json({success: true, data: {status: "suppressed", reason: "partner_managed", provider_id: null}});
+    }
+  } catch {
+    return json({success: false, error: "Customer membership lookup unavailable"}, 503);
+  }
+
+  // Applies to direct calls as well as billing-worker reminders. Fail closed on lookup errors.
+  try {
+    if (requiresActiveMaintenanceVa(body.template) && !await hasActiveMaintenanceVa(supabaseAdmin, body.user_id, body.to, String(body.props?.billing_period || body.props?.billing_start_date || "") || undefined)) {
+      return json({ success: true, data: { status: "suppressed", reason: "no_active_virtual_account", provider_id: null } });
+    }
+  } catch {
+    return json({ success: false, error: "Maintenance virtual account lookup unavailable" }, 503);
+  }
+
   let whiteLabel: WhiteLabelEmailContext | null = null;
   try { whiteLabel = await loadWhiteLabelEmailContext(body); }
   catch (e) { return json({ success: false, error: (e as Error).message }, 403); }
@@ -295,7 +316,7 @@ Deno.serve(async (req: Request) => {
         html: rendered.html,
         text: rendered.text,
         replyTo: whiteLabel?.replyTo || body.reply_to,
-        fromName: whiteLabel?.senderName,
+        fromName: whiteLabel?.senderName || "BorderPay Velocity",
         attachments,
       });
       if (result.ok) {

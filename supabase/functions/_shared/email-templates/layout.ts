@@ -21,7 +21,7 @@ export const BORDERPAY_BRAND = {
   warning:   "#B54708",
   appUrl:    "https://app.borderpayafrica.com",
   supportEmail: "support@borderpayafrica.com",
-  heroUrl:   "https://orwrcpwsffjlvzuraxjc.supabase.co/storage/v1/object/public/email-logo.png/assets/borderpay-email-logo.png",
+  heroUrl:   "https://www.borderpayafrica.com/assets/brand/borderpay-velocity-white.png",
 };
 
 export interface RenderedEmail {
@@ -79,12 +79,12 @@ ${p.preview ? `<div style="display:none;max-height:0;overflow:hidden;font-size:1
                   <img
                     src="${escapeHtml(b.heroUrl)}"
                     width="160"
-                    alt="BorderPay Africa"
+                    alt="BorderPay Velocity"
                     style="display:block;width:160px;max-width:160px;height:auto;border:0;outline:none;text-decoration:none;color:${b.headerText};font-size:18px;font-weight:700;"
                   />
                 </td>
                 <td align="right" valign="middle" style="font-size:13px;line-height:18px;color:${b.headerText};font-weight:700;letter-spacing:0;text-align:right;">
-                  <span style="color:${b.accent};">BorderPay</span> Africa
+                  <span style="color:${b.accent};">BorderPay Velocity</span>
                 </td>
               </tr>
             </table>
@@ -106,7 +106,7 @@ ${p.preview ? `<div style="display:none;max-height:0;overflow:hidden;font-size:1
               Need help? Email <a href="mailto:${b.supportEmail}" style="color:${b.success};text-decoration:none;">${b.supportEmail}</a>
             </p>
             <p class="bp-faint" style="margin:8px 0 0;font-size:12px;color:${b.textFaint};text-align:center;">
-              &copy; ${new Date().getFullYear()} BorderPay Africa. All rights reserved.
+              BorderPay Velocity is operated by BorderPay Africa, Inc.<br />&copy; ${new Date().getFullYear()} BorderPay Africa, Inc. All rights reserved.
             </p>
           </td>
         </tr>
@@ -121,7 +121,7 @@ ${p.preview ? `<div style="display:none;max-height:0;overflow:hidden;font-size:1
 export function textLayout(p: { heading: string; body: string; ctaText?: string; ctaUrl?: string; footerNote?: string }): string {
   const cta  = p.ctaText && p.ctaUrl ? `\n\n${p.ctaText}: ${p.ctaUrl}\n` : "";
   const note = p.footerNote ? `\n\n${stripTags(p.footerNote)}` : "";
-  return `${p.heading}\n\n${stripTags(p.body)}${cta}${note}\n\n— BorderPay Africa\n${BORDERPAY_BRAND.appUrl}`;
+  return `${p.heading}\n\n${stripTags(p.body)}${cta}${note}\n\n— BorderPay Velocity\nOperated by BorderPay Africa, Inc.\n${BORDERPAY_BRAND.appUrl}`;
 }
 
 export function escapeHtml(s: string): string {

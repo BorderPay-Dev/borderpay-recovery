@@ -6,6 +6,6 @@ export function renderRestrictionNotice(kind: RestrictionKind, currencies: strin
  const body=n.paragraphs.map(p=>'<p style="margin:0 0 14px;color:'+BORDERPAY_BRAND.textMuted+';font-size:14px;line-height:1.65">'+escape(p)+'</p>').join('');
  const url='https://app.borderpayafrica.com/settings/support';
  return {subject:n.subject,
- html:htmlLayout({preview:n.subject,heading:n.heading,body,ctaText:'Contact BorderPay support',ctaUrl:url,brandTone:'warning'}),
- text:textLayout({heading:n.heading,body:n.paragraphs.join('\n\n'),ctaText:'Contact BorderPay support',ctaUrl:url,footerNote:'support@borderpayafrica.com'})};
+ html:htmlLayout({preview:n.subject,heading:n.heading,body,ctaText:'Contact BorderPay Velocity support',ctaUrl:url,brandTone:'warning'}),
+ text:textLayout({heading:n.heading,body:n.paragraphs.join('\n\n'),ctaText:'Contact BorderPay Velocity support',ctaUrl:url,footerNote:'support@borderpayafrica.com'})};
 }

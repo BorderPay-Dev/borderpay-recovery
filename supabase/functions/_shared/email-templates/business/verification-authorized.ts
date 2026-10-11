@@ -17,7 +17,7 @@ export function render(p: BusinessVerificationAuthorizedProps): RenderedEmail {
   const company = p.company_name || "your business";
   const subject = "Verify your business";
   const heading = "Verify your business";
-  const introText = `Hello ${name}, thank you for choosing BorderPay.`;
+  const introText = `Hello ${name}, thank you for choosing BorderPay Velocity.`;
   const closing = String(p.action_message || '').trim() ||
     `Your business verification is missing shareholder details for ${company}. Please add your shareholder in Settings > Team, then continue verification.`;
   const ctaUrl = (p.verification_url && String(p.verification_url).trim()) || `${BORDERPAY_BRAND.appUrl}/dashboard`;

@@ -8,12 +8,12 @@ export interface IndividualVerificationReminderProps {
 
 export function render(p: IndividualVerificationReminderProps): RenderedEmail {
   const name = firstName(p.full_name);
-  const subject = "One step left to verify your BorderPay account";
+  const subject = "One step left to verify your BorderPay Velocity account";
   const heading = "You are one step away";
-  const introText = `Hello ${name}, your BorderPay account is almost ready.`;
+  const introText = `Hello ${name}, your BorderPay Velocity account is almost ready.`;
   const closing =
     String(p.action_message || "").trim() ||
-    "Complete identity verification in your dashboard so BorderPay can finish setting up your account for sending, receiving, and global account features.";
+    "Complete identity verification in your dashboard so BorderPay Velocity can finish setting up your account for sending, receiving, and global account features.";
   const ctaUrl = (p.verification_url && String(p.verification_url).trim()) || `${BORDERPAY_BRAND.appUrl}/dashboard`;
 
   return {

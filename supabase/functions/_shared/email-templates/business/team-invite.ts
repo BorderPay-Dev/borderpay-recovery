@@ -20,9 +20,9 @@ export function render(p: BusinessTeamInviteProps): RenderedEmail {
   const role = String(p.role || "member").toLowerCase();
   const ttl = Number(p.expires_in_days || 7);
   const roleCopy = ROLE_COPY[role] || "access the business workspace";
-  const subject = `${inviter} invited you to ${company} on BorderPay`;
+  const subject = `${inviter} invited you to ${company} on BorderPay Velocity`;
   const heading = "You're invited to a business workspace";
-  const introText = `${inviter} invited you to join ${company} on BorderPay Africa.`;
+  const introText = `${inviter} invited you to join ${company} on BorderPay Velocity.`;
   const body = `
     <p style="margin:0 0 14px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">
       Accept this invite using the email address that received it. Once accepted, you'll be able to ${escapeHtml(roleCopy)} according to your assigned role.
@@ -65,7 +65,7 @@ export function render(p: BusinessTeamInviteProps): RenderedEmail {
     }),
     text: textLayout({
       heading,
-      body: `${inviter} invited you to join ${company} on BorderPay Africa as ${role}. Accept with the same email address that received this invite. The invite expires in ${ttl} day${ttl === 1 ? "" : "s"}.`,
+      body: `${inviter} invited you to join ${company} on BorderPay Velocity as ${role}. Accept with the same email address that received this invite. The invite expires in ${ttl} day${ttl === 1 ? "" : "s"}.`,
       ctaText: "Accept invite",
       ctaUrl: p.invite_url,
       footerNote,

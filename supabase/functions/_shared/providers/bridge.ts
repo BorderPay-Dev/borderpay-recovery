@@ -59,6 +59,9 @@ export class BridgeProvider implements PaymentProvider {
 
   // ── Identity ──────────────────────────────────────────────────────────────
   async createCustomer(input: CustomerCreateInput): Promise<CustomerCreateResult> {
+    if (input.account_type !== "business") {
+      throw new BridgeProviderError("BorderPay onboarding is available to business accounts only.", {status:403,bridge_code:"business_onboarding_only"});
+    }
     if (!bridgeOnboardingEnabled()) {
       const paused = bridgeOnboardingPausedBody();
       throw new BridgeProviderError(paused.error, { status: 503, bridge_code: paused.code });
@@ -68,15 +71,8 @@ export class BridgeProvider implements PaymentProvider {
       email:          input.email,
       address:        { country: input.country_code },
     };
-    if (input.account_type === "individual") {
-      const [first_name, ...rest] = (input.full_name || "").trim().split(/\s+/);
-      body.first_name = first_name || "User";
-      body.last_name  = rest.join(" ") || "Unknown";
-      if (input.phone_e164) body.phone = input.phone_e164;
-    } else {
-      Object.assign(body, bridgeBusinessNameFields(input.company_name));
-      if (input.registration_number) body.business_registration_number = input.registration_number;
-    }
+    Object.assign(body, bridgeBusinessNameFields(input.company_name));
+    if (input.registration_number) body.business_registration_number = input.registration_number;
     body.metadata = { borderpay_user_id: input.borderpay_user_id };
 
     const r = await bridgeFetch({
@@ -169,6 +165,9 @@ export class BridgeProvider implements PaymentProvider {
   // to stay tolerant of API revisions. On failure we include the raw
   // body so the operator can see what Bridge actually rejected.
   async createKycLink(input: KycLinkInput): Promise<KycLinkResult> {
+    if (input.account_type !== "business") {
+      throw new BridgeProviderError("BorderPay onboarding is available to business accounts only.", {status:403,bridge_code:"business_onboarding_only"});
+    }
     const body: Record<string, unknown> = {
       type:         input.account_type,
       redirect_uri: input.redirect_url || KYC_REDIRECT_URL,
@@ -179,11 +178,7 @@ export class BridgeProvider implements PaymentProvider {
     } else {
       // Embedded-customer mode.
       if (input.email)        body.email = input.email;
-      if (input.account_type === "individual") {
-        if (input.full_name)  body.full_name = input.full_name;
-      } else {
-        if (input.company_name) body.full_name = input.company_name;
-      }
+      if (input.company_name) body.full_name = input.company_name;
     }
     const idemSource =
       input.customer_id ?? input.email ?? input.full_name ?? crypto.randomUUID();

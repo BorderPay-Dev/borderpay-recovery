@@ -11,9 +11,9 @@ export function render(p: BusinessPinResetLinkProps): RenderedEmail {
   const ttl = p.expires_in_minutes ?? 30;
   const company = String(p.company_name || "your business");
   const name = String(p.contact_full_name || company);
-  const subject = "Reset your BorderPay PIN";
+  const subject = "Reset your BorderPay Velocity PIN";
   const heading = "Reset your transaction PIN";
-  const introText = `Hi ${name}, use the secure link below to set a new PIN for your BorderPay business account.`;
+  const introText = `Hi ${name}, use the secure link below to set a new PIN for your BorderPay Velocity business account.`;
   const body = `
     <p style="margin:0 0 12px;color:${BORDERPAY_BRAND.textMuted};font-size:14px;line-height:1.65;text-align:center;">
       This link expires in <strong style="color:${BORDERPAY_BRAND.text};">${ttl} minute${ttl === 1 ? "" : "s"}</strong> and can only be used once.
@@ -24,7 +24,7 @@ export function render(p: BusinessPinResetLinkProps): RenderedEmail {
   return {
     subject,
     html: htmlLayout({ preview: subject, heading, introText, body, ctaText: "Reset PIN", ctaUrl: p.reset_url }),
-    text: textLayout({ heading, body: `${company}\nReset your BorderPay PIN (expires in ${ttl}m):`, ctaText: "Reset PIN", ctaUrl: p.reset_url }),
+    text: textLayout({ heading, body: `${company}\nReset your BorderPay Velocity PIN (expires in ${ttl}m):`, ctaText: "Reset PIN", ctaUrl: p.reset_url }),
   };
 }
 
