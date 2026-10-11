@@ -190,7 +190,7 @@ async function accessEnforcementEnabled(): Promise<boolean> {
   return String(data ?? "").trim().toLowerCase() === "true";
 }
 
-async function reconcileSubscriptionAccess(dryRun = false, limit = 10) {
+async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
   const { data: reconciliation, error: reconciliationError } = await db.rpc("reconcile_subscription_access_actions", {
     p_dry_run: dryRun,
     p_limit: Math.max(1, Math.min(limit, 500)),

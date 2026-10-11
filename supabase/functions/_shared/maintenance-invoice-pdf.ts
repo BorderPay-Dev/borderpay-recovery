@@ -13,7 +13,7 @@ export function legalAddress(a:any):string {
 export async function maintenancePdf(db:any,i:any) {
  const {data:master,error:me}=await db.from('user_profiles').select('id,bridge_customer_id').eq('email','founder@borderpayafrica.com').single();if(me||!master?.bridge_customer_id)throw Error('Master receiving account unavailable');
  const accounts=await bridgeProvider.listVirtualAccounts(master.bridge_customer_id);
- const usd=accounts.filter(a=>String(a.currency).toUpperCase()==='USD'&&String(a.status)==='active');
+ const usd=accounts.filter(a=>String(a.currency).toUpperCase()==='USD'&&['active','activated'].includes(String(a.status).toLowerCase()));
  if(usd.length!==1)throw Error('A single active master USD receiving account is required');
  const details:any=usd[0].account_details;const src=details?.source_deposit_instructions||details;
  const account=src?.bank_account_number||src?.account_number;const routing=src?.bank_routing_number||src?.routing_number;
@@ -24,7 +24,21 @@ export async function maintenancePdf(db:any,i:any) {
  const {data:business,error:be}=await db.from('business_profiles').select('company_name,address,city,state,postal_code,country,bridge_customer_id,bridge_kyb_status').eq('user_id',i.user_id).single();if(be)throw be;
  const verifiedLocal=business?.bridge_customer_id===p.bridge_customer_id&&['approved','verified'].includes(business?.bridge_kyb_status);
  const buyerName=String(raw?.business_legal_name||raw?.business_name||raw?.legal_name||(verifiedLocal?business.company_name:'')||'').trim();
- const candidates=[raw?.registered_address,raw?.address_of_incorporation,raw?.business_address,verifiedLocal?{street_line_1:business.address,city:business.city,subdivision:business.state,postal_code:business.postal_code,country:business.country}:null];
+ const merchantAccounts=await bridgeProvider.listVirtualAccounts(p.bridge_customer_id);
+ // The customer endpoint may redact street addresses. Named receiving instructions
+ // can supply the provider's beneficiary address; never use the bank's own address.
+ const normalizeName=(v:unknown)=>String(v||'').normalize('NFKD').replace(/\p{M}/gu,'').replace(/[^\p{L}\p{N}]/gu,'').toLowerCase();
+ const beneficiaryAddresses=merchantAccounts.flatMap(a=>{
+   const d:any=a.account_details;const sources=Array.isArray(d?.source_deposit_instructions)?d.source_deposit_instructions:[d?.source_deposit_instructions];
+   return sources.flatMap((v:any)=>{
+     const name=v?.bank_beneficiary_name||v?.account_holder_name||v?.beneficiary_name;
+     if(!name||normalizeName(name)!==normalizeName(buyerName))return [];
+     const addr=v?.bank_beneficiary_address||v?.beneficiary_address;
+     if(typeof addr==='string'&&addr.trim().length>=15)return [{street_line_1:addr,country:business?.country||raw?.registered_address?.country}];
+     return addr&&typeof addr==='object'?[addr]:[];
+   });
+ });
+ const candidates=[raw?.registered_address,raw?.address_of_incorporation,raw?.business_address,verifiedLocal?{street_line_1:business.address,city:business.city,subdivision:business.state,postal_code:business.postal_code,country:business.country}:null,...beneficiaryAddresses];
  const address=candidates.find(a=>a?.country&&String(a.street_line_1||a.street_line1||a.line1||'').trim());
  const buyerAddress=legalAddress(address);if(!buyerName||!buyerAddress||!address?.country)throw Error('Verified company name and full street address required for invoice');
  const invoiceNumber=maintenanceInvoiceNumber(i);const styles=await loadPdfStyleAssets(db);
