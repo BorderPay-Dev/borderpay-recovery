@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { classifyFcmFailure, isAuthorizedWorkerToken } from "./policy.ts";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -11,14 +12,6 @@ const json = (body: unknown, status = 200) => new Response(JSON.stringify(body),
   status,
   headers: { "Content-Type": "application/json" },
 });
-
-function jwtRole(token: string): string {
-  try {
-    const encoded = token.split(".")[1] || "";
-    const normalized = encoded.replaceAll("-", "+").replaceAll("_", "/");
-    return String(JSON.parse(atob(normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=")))?.role || "");
-  } catch { return ""; }
-}
 
 function base64Url(value: Uint8Array | string): string {
   const binary = typeof value === "string" ? value : String.fromCharCode(...value);
@@ -92,15 +85,11 @@ async function sendFcm(account: ServiceAccount, accessToken: string, token: stri
 Deno.serve(async (req) => {
   if (req.method !== "POST") return json({ success: false, error: "POST only" }, 405);
   const token = (req.headers.get("Authorization") || "").replace(/^Bearer\s+/i, "").trim();
+  if (!token) return json({ success: false, error: "Unauthorized" }, 401);
   // Cron stores its independently rotatable bearer in app_config. Read it with
   // the service client so the value is never copied into source or logs.
   const { data: configuredWorkerToken } = await supabase.rpc("app_config_get", { p_key: "worker_auth_token" });
-  if (!token || !(
-    (WORKER_TOKEN && token === WORKER_TOKEN)
-    || token === SERVICE_ROLE
-    || token === String(configuredWorkerToken || "")
-    || jwtRole(token) === "service_role"
-  )) {
+  if (!isAuthorizedWorkerToken(token, [WORKER_TOKEN, SERVICE_ROLE, String(configuredWorkerToken || "")])) {
     return json({ success: false, error: "Unauthorized" }, 401);
   }
   if (!FIREBASE_JSON) return json({ success: false, code: "firebase_service_account_missing" }, 503);
@@ -155,9 +144,9 @@ Deno.serve(async (req) => {
     for (const device of devices) {
       const result = await sendFcm(account, accessToken, device.token, item);
       if (result.ok) { successes++; continue; }
-      const serialized = JSON.stringify(result.payload).slice(0, 500);
-      errors.push(`${result.status}:${serialized}`);
-      if (result.status === 404 || serialized.includes("UNREGISTERED")) {
+      const failure = classifyFcmFailure(result.status, result.payload);
+      errors.push(`${result.status}:${failure.code}`);
+      if (failure.revokeDevice) {
         await supabase.from("push_device_tokens").update({ active: false, updated_at: new Date().toISOString() }).eq("id", device.id);
       }
     }
