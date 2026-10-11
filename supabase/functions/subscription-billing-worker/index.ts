@@ -1,5 +1,5 @@
 import { runBusinessMaintenanceCycle, queueConfirmedMaintenanceNotices } from "./business-maintenance.ts";
-import { maintenancePdf, pdfBase64 } from "../_shared/maintenance-invoice-pdf.ts";
+import { requestMaintenancePdf } from "../_shared/maintenance-invoice-client.ts";
 import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
 import { resolveUsageNoticeRecipient } from "../_shared/business-usage-recipient.ts";
 import { maintenanceEmailCapacity } from "../_shared/maintenance-email-capacity.ts";
@@ -361,8 +361,8 @@ async function sendEmails(remindersOnly = false, maintenanceOnly = false) {
       props = plan.props;
       if(subscription.account_type==='business') {
         try {
-          const pdf=await maintenancePdf(db,invoice);
-          attachments=[{name:pdf.name,content:pdfBase64(pdf.bytes)}];props={...props,customer_name:pdf.buyerName,invoice_number:pdf.invoiceNumber,pdf_attached:true};
+          const pdf=await requestMaintenancePdf(URL,SERVICE_ROLE,invoice.id);
+          attachments=[{name:pdf.name,content:pdf.content}];props={...props,customer_name:pdf.buyerName,invoice_number:pdf.invoiceNumber,pdf_attached:true};
         } catch(error) {
           await db.from('subscription_email_jobs').update({next_attempt_at:new Date(Date.now()+300000).toISOString(),last_error:'invoice_pdf_unavailable',attempt_count:job.attempt_count+1}).eq('id',job.id);
           failed++;continue;
@@ -479,7 +479,7 @@ Deno.serve(async (req) => {
     const out: Record<string, unknown> = {};
     if(mode==='maintenance_invoice_preview') {
       const {data:invoice,error}=await db.from('subscription_external_invoices').select('*').eq('id',String(body.invoice_id||'')).single();if(error)throw error;
-      const pdf=await maintenancePdf(db,invoice);return json({success:true,name:pdf.name,content:pdfBase64(pdf.bytes)});
+      const pdf=await requestMaintenancePdf(URL,SERVICE_ROLE,invoice.id);return json({success:true,name:pdf.name,content:pdf.content});
     }
     if(mode==='maintenance_cycle') {
       out.business_calendar=await runBusinessMaintenanceCycle(db,URL,SERVICE_ROLE);

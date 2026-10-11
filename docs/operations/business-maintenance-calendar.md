@@ -13,3 +13,5 @@ The master bank instructions are fetched server-side, require one active USD acc
 Operational checks: review `subscription_external_invoices`, `subscription_provider_access_actions`, `subscription_email_jobs`, and `email_log`. An accepted email is not evidence of bank reactivation. Verify the provider status separately. Preserve exemptions and provider restriction reasons.
 
 Validation: deterministic calendar/email safety tests, SQL payment-trigger tests inside a rolled-back transaction, existing Invoice Hub PDF regression tests, and rendered PDF inspection. The SQL regression script uses September/October 2026 fixtures and must only be run within a transaction that ends in ROLLBACK.
+
+PDF rendering runs in the internal `maintenance-invoice-renderer` function, one invoice per request, to remain within the existing Edge CPU limit. The billing worker calls it before restriction and before attaching a PDF. Named-account beneficiary addresses are accepted only when the beneficiary name matches the verified company name (case, punctuation and accent normalization); bank branch addresses are never substituted.

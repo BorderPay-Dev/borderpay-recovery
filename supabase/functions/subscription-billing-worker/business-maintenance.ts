@@ -1,5 +1,5 @@
 import { maintenanceDates, maintenanceNotice, verifiedUnpaid } from '../_shared/maintenance-calendar.ts';
-import { maintenancePdf } from '../_shared/maintenance-invoice-pdf.ts';
+import { requestMaintenancePdf } from '../_shared/maintenance-invoice-client.ts';
 import { bridgeProvider } from '../_shared/providers/bridge.ts';
 
 export async function runBusinessMaintenanceCycle(db:any, base:string, token:string) {
@@ -27,7 +27,7 @@ export async function runBusinessMaintenanceCycle(db:any, base:string, token:str
       if(!unpaid){results.push({invoice_id:i.id,status:'payment_pending_or_unresolved'});continue;}
       if(Date.now()>=dates.deactivateAt) {
         // Do not restrict a merchant if the required invoice cannot be produced.
-        await maintenancePdf(db,i);
+        await requestMaintenancePdf(base,token,i.id);
         const {data:restricted,error:restrictError}=await db.rpc('restrict_business_maintenance_invoice',{p_invoice_id:i.id});if(restrictError)throw restrictError;
         results.push({invoice_id:i.id,status:restricted?'restriction_ready':'not_restricted'});
       } else {
