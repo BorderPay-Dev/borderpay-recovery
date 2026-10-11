@@ -1,3 +1,4 @@
+import { subscribeUserActivity } from '../../utils/notifications/liveUpdates';
 import { getCustomerBrand } from "../../utils/branding/brand";
 import { recordNativeReviewVisit } from '../../utils/reviews/appReview';
 /**
@@ -660,25 +661,31 @@ export function MainApp({ userId, onLogout, onLock, newDeviceDetected, onDismiss
       if (!force && !shouldRunShellSync(userId, 'unread')) return;
       syncInFlight = true;
       try {
-        const unreadRes = await backendAPI.financial.getSnapshot(20);
+        const unreadRes = await backendAPI.notifications.getUnreadCount();
         if (cancelled) return;
 
         if (unreadRes?.success) {
-          const n = Number((unreadRes as any)?.data?.notifications_unread_count ?? 0);
+          const n = Number((unreadRes as any)?.data?.unread_count ?? 0);
           if (Number.isFinite(n)) updateUnreadCount(n);
         }
       } catch { /* non-fatal */ }
       finally { syncInFlight = false; }
     };
     void syncUnread(true);
-    const onFocus = () => { void syncUnread(false); };
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') void syncUnread(false);
+    const changed = () => {
+      void syncUnread(true);
+      window.dispatchEvent(new CustomEvent('borderpay:activity-updated', { detail: { userId } }));
     };
+    const unsubscribe = subscribeUserActivity(userId, changed);
+    const onFocus = () => { void syncUnread(true); };
+    const onVisibility = () => { if (document.visibilityState === 'visible') void syncUnread(true); };
+    const poll = setInterval(() => { if (document.visibilityState === 'visible') void syncUnread(true); }, 30_000);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibility);
     return () => {
       cancelled = true;
+      unsubscribe();
+      clearInterval(poll);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
     };

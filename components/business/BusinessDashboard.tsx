@@ -773,20 +773,20 @@ export function BusinessDashboard({ userId, onLogout, onNavigate }: BusinessDash
               const amount = txn.amount == null || txn.amount === '' ? NaN : Number(txn.amount);
               const currency = String(txn.currency || '').toUpperCase();
               const date = new Date(txn.created_at);
-              const status = String(txn.status || '').replace(/_/g, ' ');
+              const status = txn.status === 'completed' ? 'Processed' : String(txn.status || '').replace(/_/g, ' ');
               return <div key={txn.id || index} className={`px-4 py-3.5 flex items-center gap-3 ${index ? `border-t ${tc.borderLight}` : ''}`}>
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${credit ? 'bg-emerald-500/10' : tc.bgAlt}`}>
                   {credit ? <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-400"/> : <ArrowUpRight className={`w-3.5 h-3.5 ${tc.text}`}/>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`text-sm font-medium ${tc.text} truncate`}>{sanitizeCustomerFacingText(txn.description || txn.type || 'Transaction')}</p>
+                  <p className={`text-sm font-medium ${tc.text} truncate`}>{sanitizeCustomerFacingText(txn.metadata?.counterparty_name || txn.metadata?.sender_name || txn.metadata?.recipient_name || (credit ? 'Incoming payment' : 'Outgoing payment'))}</p>
                   <p className={`text-[11px] ${tc.textMuted} mt-0.5 capitalize`}>
                     {Number.isFinite(date.getTime()) ? date.toLocaleDateString(undefined, {month:'short',day:'numeric'}) : ''}
                     {status ? ' · ' + sanitizeCustomerFacingText(status) : ''}
                   </p>
                 </div>
                 <p className={`text-sm font-semibold tabular-nums text-right flex-shrink-0 ${credit ? 'text-emerald-400' : tc.text}`}>
-                  {Number.isFinite(amount) && currency ? <>{credit ? '+' : '−'}{Math.abs(amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}<span className={`block text-[10px] ${tc.textMuted}`}>{currency}</span></> : '—'}
+                  {Number.isFinite(amount) && currency ? <>{credit ? '+' : '−'}{({USD:'$',USDC:'$',USDT:'$',EUR:'€',EURC:'€',GBP:'£'} as Record<string,string>)[currency] || ''}{Math.abs(amount).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}<span className={`block text-[10px] ${tc.textMuted}`}>{currency}</span></> : '—'}
                 </p>
               </div>;
             }) : <div className={`px-5 py-8 text-center ${tc.textMuted}`} role="status">

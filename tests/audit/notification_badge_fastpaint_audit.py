@@ -30,6 +30,7 @@ def read(rel: str) -> str:
 def main() -> int:
     main_app = read("components/app/MainApp.tsx")
     notifications = read("components/notifications/NotificationsScreen.tsx")
+    activity = read("utils/notifications/activityRows.ts")
 
     checks: list[tuple[str, bool, str]] = []
 
@@ -79,7 +80,7 @@ def main() -> int:
         and "readCachedActivityNotifications()" in notifications
         and "composeNotificationRows(readCachedNotifications(), readCachedActivityNotifications())" in notifications
         and "backendAPI.transactions.getTransactions(100, 0)" in notifications
-        and "__activity_source: 'transactions'" in notifications,
+        and "__activity_source: 'transactions'" in activity,
         "NotificationsScreen must first-paint from the same transaction/recent activity caches used by Dashboard and Transactions",
     ))
 

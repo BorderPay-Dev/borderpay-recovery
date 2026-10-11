@@ -62,6 +62,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Verify notification status transitions
+        run: deno test --unstable-sloppy-imports --node-modules-dir=none tests/notification-lifecycle.test.ts
+
       - name: Type check
         run: npm run type-check
 

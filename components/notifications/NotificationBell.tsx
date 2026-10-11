@@ -1,3 +1,4 @@
+import { composeNotificationRows, transactionToNotification } from '../../utils/notifications/activityRows';
 /**
  * BorderPay Africa - Notification Bell
  * In-app notification center with badge
@@ -22,7 +23,6 @@ import { authAPI } from '../../utils/supabase/client';
 import { toast } from 'sonner';
 import { backendAPI } from '../../utils/api/backendAPI';
 import { normalizeTransactionReceipt } from '../../utils/transactions/receipt';
-import { ReceiptProviderDetails } from '../transactions/ReceiptProviderDetails';
 import { txDirection } from '../../utils/transactions/direction';
 
 interface Notification {
@@ -70,9 +70,12 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
   }, []);
 
   useEffect(() => {
-    if (isOpen) {
-      loadNotifications();
-    }
+    if (!isOpen) return;
+    void loadNotifications();
+    const refresh = () => { void loadNotifications(); };
+    window.addEventListener('borderpay:activity-updated', refresh);
+    const poll = setInterval(refresh, 30_000);
+    return () => { clearInterval(poll); window.removeEventListener('borderpay:activity-updated', refresh); };
   }, [isOpen]);
 
   const getAccessToken = (): string | null => {
@@ -94,10 +97,10 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
       // Skip if signal already aborted (e.g. rapid unmount/remount)
       if (controller.signal.aborted) return;
 
-      const result: any = await backendAPI.financial.getSnapshot(50);
+      const result: any = await backendAPI.notifications.getUnreadCount();
       if (controller.signal.aborted) return;
       if (result.success && result.data) {
-        setUnreadCount(Number((result.data as any).notifications_unread_count || 0));
+        setUnreadCount(Number((result.data as any).unread_count || 0));
       }
     } catch (error: any) {
       // Silently ignore abort and network errors for polling
@@ -108,13 +111,14 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
     // Keep existing rows visible; only show spinner on a cold open.
     if (notifications.length === 0) setLoading(true);
     try {
-      const result: any = await backendAPI.financial.getSnapshot(50);
+      const [result, tx]: any[] = await Promise.all([
+        backendAPI.notifications.getNotifications(50), backendAPI.transactions.getTransactions(50, 0),
+      ]);
       if (result.success && result.data) {
-        const items = Array.isArray((result.data as any)?.notifications)
-          ? (result.data as any).notifications
-          : (Array.isArray(result.data) ? result.data : []);
-        setNotifications(Array.isArray(items) ? items : []);
-        setUnreadCount(items.filter((n: any) => !n?.read).length);
+        const activity = tx?.success ? (tx.data?.transactions || []).map(transactionToNotification).filter(Boolean) : [];
+        const items = composeNotificationRows(result.data.notifications || [], activity);
+        setNotifications(items as Notification[]);
+        setUnreadCount(Number(result.data.unread_count || 0));
       }
     } catch (_) {
       // Silent — notifications panel shows empty state
@@ -327,10 +331,6 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
                 ) : (
                   <div className="divide-y divide-white/5">
                     {notifications.map((notification) => {
-                      const receipt = normalizeTransactionReceipt({
-                        amount: notification.metadata?.amount ?? notification.metadata?.net_amount,
-                        metadata: notification.metadata,
-                      });
                       const direction = txDirection({
                         type: notification.type,
                         title: notification.title,
@@ -370,52 +370,6 @@ export function NotificationBell({ className = '' }: NotificationBellProps) {
                               <p className="text-white/60 text-xs mb-2 line-clamp-2">
                                 {message}
                               </p>
-                              {(receipt?.hasFees || receipt?.hasBridgeReceipt || receipt?.hasProviderDetails) && (
-                                <div className="mb-2 grid grid-cols-2 gap-y-1 text-[10px] text-white/50">
-                                  {receipt.hasBridgeReceipt ? (
-                                    <>
-                                      <span>Incoming funds</span>
-                                      <span className="text-right font-mono">{formatReceiptMoney(receipt.sourceAmount ?? receipt.initialAmount, receipt.sourceCurrency || currency)}</span>
-                                      {(receipt.serviceChargeAmount ?? receipt.developerFeeAmount) > 0 && (
-                                        <>
-                                          <span>Service charge</span>
-                                          <span className="text-right font-mono">-{formatReceiptMoney(receipt.serviceChargeAmount ?? receipt.developerFeeAmount, receipt.sourceCurrency || currency)}</span>
-                                        </>
-                                      )}
-                                      <span>Available for conversion</span>
-                                      <span className="text-right font-mono">{formatReceiptMoney(receipt.availableAmount ?? receipt.finalAmount, receipt.sourceCurrency || currency)}</span>
-                                      {receipt.exchangeRate && receipt.destinationCurrency && (
-                                        <>
-                                          <span>Exchange rate</span>
-                                          <span className="text-right font-mono">1 {receipt.sourceCurrency || currency} = {receipt.exchangeRate} {receipt.destinationCurrency}</span>
-                                        </>
-                                      )}
-                                      <span className="font-semibold text-white/70">Outgoing funds</span>
-                                      <span className="text-right font-mono font-semibold text-white/70">{formatReceiptMoney(receipt.destinationAmount ?? receipt.finalAmount, receipt.destinationCurrency || currency)}</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <span>{isCredit ? 'Received' : 'Sent'}</span>
-                                      <span className="text-right font-mono">{formatReceiptMoney(receipt.initialAmount, currency)}</span>
-                                      {receipt.developerFeeAmount > 0 && (
-                                        <>
-                                          <span>Transaction fee</span>
-                                          <span className="text-right font-mono">-{formatReceiptMoney(receipt.developerFeeAmount, currency)}</span>
-                                        </>
-                                      )}
-                                      {receipt.exchangeFeeAmount > 0 && (
-                                        <>
-                                          <span>Exchange fee</span>
-                                          <span className="text-right font-mono">-{formatReceiptMoney(receipt.exchangeFeeAmount, currency)}</span>
-                                        </>
-                                      )}
-                                      <span className="font-semibold text-white/70">{isCredit ? 'You receive' : 'Net delivered'}</span>
-                                      <span className="text-right font-mono font-semibold text-white/70">{formatReceiptMoney(receipt.finalAmount, currency)}</span>
-                                    </>
-                                  )}
-                                  <ReceiptProviderDetails receipt={receipt} />
-                                </div>
-                              )}
                               <div className="flex items-center justify-between">
                                 <span className="text-white/40 text-[10px]">
                                   {formatTime(notification.created_at)}
