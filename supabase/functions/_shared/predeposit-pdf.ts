@@ -229,8 +229,8 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
   if(args.agreementDraft){paragraph("DRAFT FOR REVIEW - NOT EXECUTED. Do not present this agreement as signed or approved.",9,muted);y+=12;}
   parties();
   if (!args.agreementOnly) { items(); totalPanel();
-    if(args.paymentUrl){ if(args.billingDates){ensure(55);text("Pay online",left,y,11,bold);y+=21;}else section("Pay online");paragraph("Pay securely via Flutterwave. Payment confirmation is automatic.",9,muted);
-      const label="Open secure payment link";ensure(26);text(label,left,y,10,bold);const linkY=y;
+    if(args.paymentUrl){ if(args.billingDates){ensure(55);text("Card payment",left,y,11,bold);y+=21;}else section("Card payment");paragraph("Pay securely by card. Payment confirmation is automatic.",9,muted);
+      const label="Pay by card";ensure(26);text(label,left,y,10,bold);const linkY=y;
       page.node.addAnnot(doc.context.register(doc.context.obj({Type:"Annot",Subtype:"Link",Rect:[left,height-linkY-16,left+170,height-linkY+2],Border:[0,0,0],A:{Type:"Action",S:"URI",URI:PDFString.of(args.paymentUrl)}})));y+=26; }
     bankInstructions();
     if(args.paymentNote){ const size=args.billingDates ? 8 : 8.5;ensure(wrap(args.paymentNote,right-left,size).length*(size+5));paragraph(args.paymentNote,size,muted);y+=10;}
@@ -316,8 +316,14 @@ export async function renderInvoiceDocument(args: Args): Promise<Uint8Array> {
     page = pages[i];
     if (generated.has(page)) {
       line(792);
-      if (brandLogo) page.drawImage(brandLogo, { x: left, y: height - 817, width: 18, height: 18 });
-      text("Powered by BorderPay", brandLogo ? 72 : left, 802, 8, bold);
+      let footerTextX = left;
+      if (brandLogo) {
+        const scale = Math.min(90 / brandLogo.width, 18 / brandLogo.height);
+        const logoWidth = brandLogo.width * scale, logoHeight = brandLogo.height * scale;
+        page.drawImage(brandLogo, { x: left, y: height - 817, width: logoWidth, height: logoHeight });
+        footerTextX = left + logoWidth + 10;
+      }
+      text("Powered by BorderPay", footerTextX, 802, 8, bold);
       const reference = args.invoiceNumber;
       const labelSize = fit(reference, 250, 7, font, 4);
       text(reference, right, 803, labelSize, font, muted, "right");
