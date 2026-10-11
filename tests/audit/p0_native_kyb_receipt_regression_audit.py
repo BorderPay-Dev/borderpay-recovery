@@ -10,8 +10,8 @@ guard = (ROOT / "supabase/functions/_shared/bridge-verification-url.ts").read_te
 receipt = (ROOT / "utils/transactions/receipt.ts").read_text()
 receipt_component = (ROOT / "components/transactions/ReceiptProviderDetails.tsx").read_text()
 worker = (ROOT / "supabase/functions/process-pending-events/index.ts").read_text()
-screens = "\n".join((ROOT / path).read_text() for path in [
-    "components/transactions/TransactionsScreen.tsx",
+transaction_screen = (ROOT / "components/transactions/TransactionsScreen.tsx").read_text()
+compact_screens = "\n".join((ROOT / path).read_text() for path in [
     "components/app/Dashboard.tsx",
     "components/notifications/NotificationBell.tsx",
     "components/notifications/NotificationsScreen.tsx",
@@ -35,7 +35,8 @@ checks = {
     "native schemes are rejected centrally": "Native origins such as capacitor://localhost are intentionally rejected" in guard,
     "legacy callback parameter is removed": 'target.searchParams.delete("redirect_uri")' in guard,
     "customer receipt label is provider-neutral": "BorderPay transaction ID" in receipt and "Bridge transaction ID" not in receipt_component,
-    "all four customer activity surfaces render details": screens.count("ReceiptProviderDetails") >= 8,
+    "transaction history retains complete receipt details": "<ReceiptProviderDetails" in transaction_screen,
+    "dashboard and notification lists stay compact": "ReceiptProviderDetails" not in compact_screens,
     "receipt includes bank identity fields": all(key in receipt for key in ["sourceBankName", "sourceBankRoutingNumber", "receivingBankName"]),
     "receipt includes bank tracing fields": all(key in receipt for key in ["trackingNumber", "traceId", "imad", "uetr"]),
     "receipt includes blockchain tracing fields": all(key in receipt for key in ["sourceTransactionHash", "destinationTransactionHash", "gasFeeAmount"]),

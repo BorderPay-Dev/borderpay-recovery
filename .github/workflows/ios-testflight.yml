@@ -66,8 +66,16 @@ jobs:
           : "${APP_STORE_CONNECT_KEY_IDENTIFIER:?Missing APP_STORE_CONNECT_KEY_IDENTIFIER GitHub secret}"
           : "${APP_STORE_CONNECT_PRIVATE_KEY:?Missing APP_STORE_CONNECT_PRIVATE_KEY GitHub secret}"
 
+      - name: Set up Deno for notification regression tests
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Verify notification status transitions
+        run: deno test --unstable-sloppy-imports --node-modules-dir=none tests/notification-lifecycle.test.ts
 
       - name: Type check
         run: npm run type-check

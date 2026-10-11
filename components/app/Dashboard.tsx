@@ -49,7 +49,6 @@ import { Skeleton } from '../common/Skeleton';
 import { KycReminderPopup } from '../activation/KycReminderPopup';
 import { txDirection } from '../../utils/transactions/direction';
 import { normalizeTransactionReceipt } from '../../utils/transactions/receipt';
-import { ReceiptProviderDetails } from '../transactions/ReceiptProviderDetails';
 import { sanitizeCustomerFacingText } from '../../utils/presentation/customerBranding';
 import { financialCacheKey } from '../../utils/financial/cacheScope';
 import { bridgeVirtualAccountCurrenciesForCountry } from '../../utils/compliance/partnerCountryPolicy';
@@ -1053,7 +1052,7 @@ export function Dashboard({ userId, onLogout, onNavigate, currentScreen: parentS
               const sym = CURRENCY_CONFIG[txn.currency]?.symbol || txn.currency || '$';
               const receipt = txn.receipt || normalizeTransactionReceipt({ amount: txn.amount, metadata: txn.metadata });
               const displayAmount = Number(receipt?.finalAmount ?? txn.amount ?? 0);
-              const amt = displayAmount.toFixed(2);
+              const amt = Math.abs(displayAmount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
               return (
                 <div
                   key={txn.id || i}
@@ -1067,10 +1066,11 @@ export function Dashboard({ userId, onLogout, onNavigate, currentScreen: parentS
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className={`text-sm font-medium ${tc.text} truncate`}>
-                        {sanitizeCustomerFacingText(txn.description || txn.type || 'Transaction')}
+                        {sanitizeCustomerFacingText(txn.metadata?.counterparty_name || txn.metadata?.sender_name || txn.metadata?.recipient_name || (isCredit ? 'Incoming payment' : 'Outgoing payment'))}
                       </p>
                       <div className={`flex items-center gap-2 text-[11px] ${tc.textMuted} mt-0.5`}>
                         <span>{formatTxDate(txn.created_at)}</span>
+                        {txn.status === 'completed' && <span>Processed</span>}
                         {txn.status === 'pending' && (
                           <span className="px-1.5 py-px rounded-full bg-amber-500/15 text-amber-300 text-[10px] font-semibold uppercase tracking-wider">Pending</span>
                         )}
@@ -1083,52 +1083,6 @@ export function Dashboard({ userId, onLogout, onNavigate, currentScreen: parentS
                       {isCredit ? '+' : '−'}{sym}{amt}
                     </p>
                   </div>
-                  {(receipt?.hasFees || receipt?.hasBridgeReceipt || receipt?.hasProviderDetails) && (
-                    <div className={`ml-11 mt-2 grid grid-cols-2 gap-y-1 text-[11px] ${tc.textMuted}`}>
-                      {receipt.hasBridgeReceipt ? (
-                        <>
-                          <span>Incoming funds</span>
-                          <span className="text-right font-mono">{formatReceiptMoney(receipt.sourceAmount ?? receipt.initialAmount, receipt.sourceCurrency || txn.currency)}</span>
-                          {(receipt.serviceChargeAmount ?? receipt.developerFeeAmount) > 0 && (
-                            <>
-                              <span>Service charge</span>
-                              <span className="text-right font-mono">-{formatReceiptMoney(receipt.serviceChargeAmount ?? receipt.developerFeeAmount, receipt.sourceCurrency || txn.currency)}</span>
-                            </>
-                          )}
-                          <span>Available for conversion</span>
-                          <span className="text-right font-mono">{formatReceiptMoney(receipt.availableAmount ?? receipt.finalAmount, receipt.sourceCurrency || txn.currency)}</span>
-                          {receipt.exchangeRate && receipt.destinationCurrency && (
-                            <>
-                              <span>Exchange rate</span>
-                              <span className="text-right font-mono">1 {receipt.sourceCurrency || txn.currency} = {receipt.exchangeRate} {receipt.destinationCurrency}</span>
-                            </>
-                          )}
-                          <span className={tc.text}>Outgoing funds</span>
-                          <span className={`text-right font-mono ${tc.text}`}>{formatReceiptMoney(receipt.destinationAmount ?? receipt.finalAmount, receipt.destinationCurrency || txn.currency)}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>{isCredit ? 'Received' : 'Sent'}</span>
-                          <span className="text-right font-mono">{formatReceiptMoney(receipt.initialAmount, txn.currency)}</span>
-                          {receipt.developerFeeAmount > 0 && (
-                            <>
-                              <span>Transaction fee</span>
-                              <span className="text-right font-mono">-{formatReceiptMoney(receipt.developerFeeAmount, txn.currency)}</span>
-                            </>
-                          )}
-                          {receipt.exchangeFeeAmount > 0 && (
-                            <>
-                              <span>Exchange fee</span>
-                              <span className="text-right font-mono">-{formatReceiptMoney(receipt.exchangeFeeAmount, txn.currency)}</span>
-                            </>
-                          )}
-                          <span className={tc.text}>{isCredit ? 'You receive' : 'Net delivered'}</span>
-                          <span className={`text-right font-mono ${tc.text}`}>{formatReceiptMoney(receipt.finalAmount, txn.currency)}</span>
-                        </>
-                      )}
-                      <ReceiptProviderDetails receipt={receipt} />
-                    </div>
-                  )}
                 </div>
               );
             })}

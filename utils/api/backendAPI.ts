@@ -1,3 +1,4 @@
+import { shouldReplaceLifecycle } from '../transactions/lifecycle';
 /**
  * BorderPay Africa - Backend API Integration
  * Clean API layer — only endpoints actively used by the current UI.
@@ -741,7 +742,7 @@ export const transactionAPI = {
         .range(offset, offset + limit - 1),
       supabase
         .from('transactions')
-        .select('id,type,amount,currency,status,description,reference,metadata,created_at,provider,bridge_transfer_id')
+        .select('id,type,amount,currency,status,description,reference,metadata,created_at,updated_at,provider,bridge_transfer_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1),
@@ -796,9 +797,11 @@ export const transactionAPI = {
           amount: receipt?.finalAmount ?? amountMajorAbs,
           currency,
           description: String(row?.description || descriptionFromRow({ ...row, entity_type: row?.type, direction, metadata })),
-          status: statusFromMetadata({ ...metadata, status: row?.status }),
+          status: statusFromMetadata({ status: row?.status }),
           created_at: row?.created_at || new Date().toISOString(),
-          metadata,
+          updated_at: row?.updated_at,
+          bridge_transfer_id: row?.bridge_transfer_id,
+          metadata: { ...metadata, bridge_transfer_id: row?.bridge_transfer_id || metadata.bridge_transfer_id, status: row?.status, status_updated_at: row?.updated_at },
           receipt: receipt || undefined,
         };
       });
@@ -815,23 +818,6 @@ export const transactionAPI = {
       row?.id ||
       '',
     ).trim();
-    const lifecycleRank = (row: any): number => {
-      const md = row?.metadata || {};
-      const raw = String(md?.state || md?.status || md?.activity_type || row?.status || '').toLowerCase();
-      if (['refunded', 'returned', 'failed', 'error', 'canceled', 'cancelled'].includes(raw)) return 50;
-      if (['refund_in_flight', 'refund_pending', 'return_in_flight'].includes(raw)) return 40;
-      if (['in_review', 'under_review', 'review', 'pending_review', 'manual_review'].includes(raw)) return 30;
-      if (['approved', 'completed', 'processed', 'payment_processed', 'settled', 'succeeded', 'success'].includes(raw)) return 20;
-      if (['pending', 'submitted', 'funds_received', 'payment_submitted', 'queued', 'processing'].includes(raw)) return 10;
-      return 0;
-    };
-    const shouldReplaceLifecycle = (previous: any | undefined, next: any): boolean => {
-      if (!previous) return true;
-      const prevRank = lifecycleRank(previous);
-      const nextRank = lifecycleRank(next);
-      if (nextRank !== prevRank) return nextRank > prevRank;
-      return new Date(next?.created_at || 0).getTime() >= new Date(previous?.created_at || 0).getTime();
-    };
     const byLifecycle = new Map<string, any>();
     const lifecycleRows = [...ledgerTransactions, ...bridgeTransferTransactions];
     for (let i = 0; i < lifecycleRows.length; i += 1) {
