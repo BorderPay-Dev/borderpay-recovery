@@ -31,7 +31,7 @@ checks = {
     "country must be authoritative ISO2": '/^[A-Z]{2}$/' in worker,
     "EEA countries remain represented": '"AT", "BE", "BG", "HR", "CY", "CZ"' in worker,
     "billing route is independent from SCA": "Billing routing is intentionally independent from SCA" in worker,
-    "blocked identity fails closed": "maintenance_region_unresolved" in worker and "identityApproved" in worker and "account_frozen_at" in worker,
+    "blocked identity fails closed": "maintenance_region_unresolved" in worker and "identityApproved" in worker and "blocked.has(String(data?.account_status" in worker,
     "daily billing synchronizes approved businesses": '["bill_due", "drain"].includes(mode)' in worker,
     "future invoice delivery is deferred until period end": "maintenanceDue > Date.now()" in worker and "new Date(maintenanceDue).toISOString()" in worker,
     "manual preparation is explicit": 'prepareApprovedBusinessBilling(false, true)' in worker,
