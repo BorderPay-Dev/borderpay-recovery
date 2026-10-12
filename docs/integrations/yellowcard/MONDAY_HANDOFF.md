@@ -1,5 +1,7 @@
 # Yellow Card enablement handoff
 
+> Current scope: [Primary EUR infrastructure and optional staff-authorized Bridge USD](PRIMARY_EUR_OPTIONAL_USD.md). Historical broader/shared-account assumptions below are superseded by that specification. No production cutover is authorized by this draft.
+
 > Superseded scope, 5 October 2026: YC confirmed one BorderPay-owned third-party collection account, not merchant-specific named accounts. Read [SHARED_ACCOUNT_MIGRATION.md](SHARED_ACCOUNT_MIGRATION.md) for the current plan. The dedicated-merchant account/fiat-wallet items below remain uncontracted future capabilities and must not be enabled for this proposal. The original list is retained as audit history.
 
 Prepared 3 October 2026 for the 5 October discussion. Internal engineering document; no customer data.

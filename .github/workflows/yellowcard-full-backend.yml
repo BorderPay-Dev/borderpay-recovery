@@ -33,7 +33,7 @@ jobs:
       - name: Typecheck backend entry points
         run: deno check --no-config supabase/functions/yellowcard-full-webhook/index.ts supabase/functions/yellowcard-full-worker/index.ts supabase/functions/yellowcard-full-accounts/index.ts supabase/functions/yellowcard-identity-callback/handler.ts
       - name: Synthetic backend acceptance (no network or production secrets)
-        run: deno test --no-config tests/yellowcard-full-product.test.ts tests/yellowcard-full-readiness.test.ts tests/yellowcard-migration-policy.test.ts tests/yellowcard-backend-core.test.ts tests/yellowcard-webhook-lifecycle.test.ts
+        run: deno test --no-config tests/yellowcard-full-product.test.ts tests/yellowcard-full-readiness.test.ts tests/yellowcard-migration-policy.test.ts tests/yellowcard-named-account-policy.test.ts tests/yellowcard-backend-core.test.ts tests/yellowcard-webhook-lifecycle.test.ts
       - name: Apply draft schema to ephemeral PostgreSQL and verify security invariants
         env:
           PGHOST: localhost

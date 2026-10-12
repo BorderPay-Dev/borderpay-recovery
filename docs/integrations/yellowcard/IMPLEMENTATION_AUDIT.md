@@ -1,5 +1,7 @@
 # Yellow Card implementation audit — 3 October 2026
 
+> Current scope: [Primary EUR infrastructure and optional staff-authorized Bridge USD](PRIMARY_EUR_OPTIONAL_USD.md). Historical broader/shared-account assumptions below are superseded by that specification. No production cutover is authorized by this draft.
+
 **Release status: draft backend implementation; no deployment or database migration authorized.**
 
 This is the second audit, after the full public-document inventory. It distinguishes implemented code, synthetic validation, and acceptance that requires YC's enabled account. No production credentials or customer information are included.

@@ -1,5 +1,7 @@
 # YC shared-account migration decision — 5 October 2026
 
+> Current scope: [Primary EUR infrastructure and optional staff-authorized Bridge USD](PRIMARY_EUR_OPTIONAL_USD.md). Historical broader/shared-account assumptions below are superseded by that specification. No production cutover is authorized by this draft.
+
 Status: internal implementation plan on draft PR 266. No deployment, merchant activation, provider write, fund movement or campaign send is authorized by this document. It supersedes the merchant-named-account assumptions in the 3 October handoff for the current YC proposal.
 
 ## Confirmed discussion versus outstanding agreement

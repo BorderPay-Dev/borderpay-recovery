@@ -1,5 +1,7 @@
 # Yellow Card full-product backend
 
+> Current scope: [Primary EUR infrastructure and optional staff-authorized Bridge USD](PRIMARY_EUR_OPTIONAL_USD.md). Historical broader/shared-account assumptions below are superseded by that specification. No production cutover is authorized by this draft.
+
 Status: draft implementation and synthetic acceptance testing; **not deployed or approved for merchant cutover**.
 
 See [Implementation audit](IMPLEMENTATION_AUDIT.md) for implemented components, unresolved integration work and the Monday acceptance sequence. [Public API review](PUBLIC_API_REVIEW.md) covers all 135 indexed public pages and 69 reference operations; source schemas and retrieval hashes are retained alongside it.
