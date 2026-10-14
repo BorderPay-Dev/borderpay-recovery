@@ -1,6 +1,9 @@
+import { renderStatusReceipt } from "../transaction-receipt.ts";
+import type { TransactionEmailReceipt } from "../../transaction-email-receipt.ts";
 import { htmlLayout, textLayout, escapeHtml, fmtMoney, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
 export interface TransactionStatusProps {
+  email_receipt?: TransactionEmailReceipt;
   company_name?: string | null;
   status: "in_review" | "approved" | "canceled" | "refunded" | "refund_in_flight";
   amount: number;
@@ -79,6 +82,7 @@ function formatUtcDateTime(value?: string | null): string | null {
 export function render(p: TransactionStatusProps): RenderedEmail {
   const company = p.company_name || "your business";
   const c = COPY[p.status] ?? COPY.in_review;
+  if (p.email_receipt) return renderStatusReceipt(p, company, c);
   const transactionFeeAmount = Number(p.developer_fee_amount ?? 0);
   const exchangeFeeAmount = Number(p.exchange_fee_amount ?? 0);
   const grossAmount = Number(p.gross_amount ?? p.amount);

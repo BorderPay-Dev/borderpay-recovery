@@ -15,6 +15,7 @@ const settlement = {
   type: 'payment_processed', amount: '9888.05', currency: 'usdc',
   developer_fee_amount: '264.51', exchange_fee_amount: '0',
   deposit_id: 'deposit-fixture', destination_payment_rail: 'base',
+  source: { sender_name: 'Buyer Fixture Ltd', tracking_number: 'tracking-fixture', reference: 'INV-fixture', payment_rail: 'sepa' },
   receipt: { initial_amount: '8876.00', developer_fee: '264.51', exchange_fee: '0',
     subtotal_amount: '8611.49', final_amount: '9888.05', exchange_rate: '1.148239' },
 };
@@ -114,6 +115,15 @@ Deno.test('actual VA settlement handler sends the correct receipt without a seco
       equal(emails[0].props.destination_amount, 9888.05);
       equal(emails[0].props.destination_currency, 'USDC');
       equal(emails[0].props.developer_fee_amount, 264.51);
+      equal(emails[0].props.email_receipt.sender_name, 'Buyer Fixture Ltd');
+      equal(emails[0].props.email_receipt.source_tracking_number, 'tracking-fixture');
+      equal(emails[0].props.email_receipt.charge_currency, 'EUR');
+      for (const render of [renderBusiness, renderIndividual]) {
+        const email = render(emails[0].props);
+        for (const content of [email.html, email.text]) {
+          if (!content.includes('tracking-fixture') || !content.includes('Buyer Fixture Ltd') || !content.includes('264.51 EUR (2.98%)')) throw new Error('Worker-to-email receipt regression');
+        }
+      }
       if (mutations.some(m => /apply_bridge|wallet_balance|balance_ledger/.test(m.path))) throw new Error('Settlement must not mutate balances');
       const notification = mutations.find(m => m.path.endsWith('/notifications'))?.body;
       equal(notification?.metadata.balance_impact, 'none');
