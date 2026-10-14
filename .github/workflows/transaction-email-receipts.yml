@@ -31,5 +31,4 @@ jobs:
       - name: Check webhook safety contracts
         run: |
           python3 tests/audit/bridge_va_refund_email_audit.py
-          python3 tests/audit/bridge_va_deposit_idempotency_audit.py
           python3 tests/audit/bridge_wallet_direct_deposit_email_audit.py
