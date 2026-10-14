@@ -46,3 +46,6 @@ update user_profiles set bridge_account_status='deposits_restricted' where right
 update auth.users set email_confirmed_at=null where right(id::text,2)='17';
 -- 18: legacy user_id ownership still qualifies.
 update bridge_virtual_accounts set user_id=business_user_id,business_user_id=null where right(business_user_id::text,2)='18';
+
+alter table user_profiles add column kyc_verified_at timestamptz;
+alter table user_profiles add column bridge_kyc_completed_at timestamptz;
