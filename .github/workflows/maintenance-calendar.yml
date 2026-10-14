@@ -10,6 +10,9 @@ on:
       - 'supabase/functions/_shared/email-templates/subscription/**'
       - 'tests/maintenance-calendar.test.ts'
       - 'tests/maintenance-access-policy.test.ts'
+      - 'tests/maintenance-reactivation-notice.test.ts'
+      - 'supabase/functions/_shared/email-templates/index.ts'
+      - 'supabase/migrations/20261014020000_maintenance_reactivation_email.sql'
       - 'tests/sql/maintenance-reactivation*.sql'
       - 'supabase/migrations/20261014010000_maintenance_reactivation_status.sql'
       - 'supabase/functions/bridge-reconcile-accounts/**'
@@ -24,7 +27,7 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      - run: deno test --no-config --node-modules-dir=none tests/maintenance-calendar.test.ts tests/maintenance-access-policy.test.ts
+      - run: deno test --no-config --node-modules-dir=none tests/maintenance-calendar.test.ts tests/maintenance-access-policy.test.ts tests/maintenance-reactivation-notice.test.ts
       - run: deno check --no-config --node-modules-dir=none supabase/functions/subscription-billing-worker/index.ts supabase/functions/send-email/index.ts supabase/functions/flutterwave-subscription-collection/index.ts supabase/functions/maintenance-invoice-renderer/index.ts supabase/functions/bridge-reconcile-accounts/index.ts
   database:
     runs-on: ubuntu-latest
@@ -52,3 +55,9 @@ jobs:
           psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-reactivation-fixture.sql
           psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014010000_maintenance_reactivation_status.sql
           psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-reactivation-regression.sql
+      - name: Verify reactivation notification outbox on synthetic data
+        run: |
+          psql -v ON_ERROR_STOP=1 -c 'create database maintenance_notice_test'
+          psql -d maintenance_notice_test -v ON_ERROR_STOP=1 -f tests/sql/maintenance-reactivation-email-fixture.sql
+          psql -d maintenance_notice_test -v ON_ERROR_STOP=1 -f supabase/migrations/20261014020000_maintenance_reactivation_email.sql
+          psql -d maintenance_notice_test -v ON_ERROR_STOP=1 -f tests/sql/maintenance-reactivation-email-regression.sql

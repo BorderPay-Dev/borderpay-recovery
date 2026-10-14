@@ -1,3 +1,4 @@
+import { resolveReactivationNotice } from "../_shared/maintenance-reactivation-notice.ts";
 import { maintenanceReactivationDisposition } from "../_shared/maintenance-access-policy.ts";
 import { runBusinessMaintenanceCycle, queueConfirmedMaintenanceNotices } from "./business-maintenance.ts";
 import { requestMaintenancePdf } from "../_shared/maintenance-invoice-client.ts";
@@ -286,15 +287,19 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
       failed++;
     }
   }
-  return { reconciliation, processed: data?.length ?? 0, completed, failed };
+  const {data:reactivationNotices,error:noticeError}=await db.rpc("queue_maintenance_reactivation_emails");
+  if(noticeError)throw noticeError;
+  return { reconciliation, processed: data?.length ?? 0, completed, failed, reactivationNotices };
 }
 
-async function sendEmails(remindersOnly = false, maintenanceOnly = false) {
+async function sendEmails(remindersOnly = false, maintenanceOnly = false, reactivationsOnly = false, userId?: string) {
   const capacity=await maintenanceEmailCapacity(db);
   if(capacity<=0)return {sent:0,deferred:true,reason:"daily_email_allowance_reserved"};
   let pending = db.from("subscription_email_jobs").select("*")
     .eq("status", "pending").lte("next_attempt_at", new Date().toISOString()).order("created_at").limit(Math.min(30,capacity));
-  if (maintenanceOnly) pending = pending.eq("template", "business.subscription_external_invoice");
+  if (maintenanceOnly) pending = pending.in("template", ["business.subscription_external_invoice","business.subscription_access_reactivated"]);
+  if (reactivationsOnly) pending = pending.eq("template", "business.subscription_access_reactivated");
+  if (userId) pending = pending.eq("user_id",userId);
   if (remindersOnly) pending = pending.eq("template", "business.subscription_external_invoice").contains("props", { notice: "balance_reminder" });
   const { data, error } = await pending;
   if (error) throw error;
@@ -324,6 +329,11 @@ async function sendEmails(remindersOnly = false, maintenanceOnly = false) {
     }
 
     let props = job.props;
+    if(job.template==="business.subscription_access_reactivated") {
+      const confirmed=await resolveReactivationNotice(db,bridgeProvider,job);
+      if(!confirmed){await db.from("subscription_email_jobs").update({status:"failed",last_error:"suppressed:reactivation_no_longer_confirmed"}).eq("id",job.id);continue;}
+      props=confirmed.props;job.recipient=confirmed.recipient;
+    }
     let attachments: Array<{name:string;content:string}> = [];
     if (job.template === "business.business_activity_update" && job.props?.usage_notice === true) {
       props = await resolveUsageNoticeRecipient(db, job);
@@ -492,6 +502,11 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({}));
     const { mode = "drain" } = body;
     const out: Record<string, unknown> = {};
+    if(mode==="reactivation_emails") {
+      const userId=body.user_id?String(body.user_id):undefined;
+      const {data:queued,error}=await db.rpc("queue_maintenance_reactivation_emails",{p_user_id:userId||null});if(error)throw error;
+      return json({success:true,data:{queued,emails:await sendEmails(false,false,true,userId)}});
+    }
     if(mode==='maintenance_invoice_preview') {
       const {data:invoice,error}=await db.from('subscription_external_invoices').select('*').eq('id',String(body.invoice_id||'')).single();if(error)throw error;
       const pdf=await requestMaintenancePdf(URL,SERVICE_ROLE,invoice.id);return json({success:true,name:pdf.name,content:pdf.content});
@@ -533,7 +548,7 @@ Deno.serve(async (req) => {
       out.access = await reconcileSubscriptionAccess(false);
     }
     if (mode === "access_dry_run") out.access = await reconcileSubscriptionAccess(true);
-    if (mode === "access") out.access = await reconcileSubscriptionAccess(false);
+    if (mode === "access") {out.access = await reconcileSubscriptionAccess(false);out.reactivation_emails=await sendEmails(false,false,true);}
     if (["grace","drain","access","emails"].includes(mode)) out.maintenance_notices=await queueConfirmedMaintenanceNotices(db);
     if (mode === "announcement") out.announcement = await queueAnnouncement();
     if (["emails", "drain", "announcement", "onboarding"].includes(mode)) {
