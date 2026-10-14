@@ -95,7 +95,7 @@ Deno.test('actual VA settlement handler sends the correct receipt without a seco
       return new Response(null, { status: 204 });
     }
     if (url.pathname.includes('/auth/v1/admin/users/')) return Response.json({ id: '00000000-0000-4000-8000-000000000001', email_confirmed_at: '2026-01-01' });
-    if (url.pathname.endsWith('/bridge_virtual_accounts')) return Response.json([{ bridge_customer_id: 'customer-fixture', currency: 'EUR', developer_fee_percent: 3, account_details: accountDetails }]);
+    if (url.pathname.endsWith('/bridge_virtual_accounts')) return Response.json([{ bridge_customer_id: 'customer-fixture', currency: 'EUR', status: 'deactivated', developer_fee_percent: 3, account_details: { ...accountDetails, status: 'deactivated', id: 'va-fixture' } }]);
     if (url.pathname.endsWith('/business_profiles')) return Response.json([{ user_id: '00000000-0000-4000-8000-000000000001', company_name: 'Receipt Fixture Ltd' }]);
     if (url.pathname.endsWith('/user_profiles')) return Response.json([{ id: '00000000-0000-4000-8000-000000000001', account_type: 'business', email: 'receipt@example.invalid', is_admin: false }]);
     if (url.pathname.endsWith('/notifications')) return Response.json([]);
@@ -110,6 +110,11 @@ Deno.test('actual VA settlement handler sends the correct receipt without a seco
         source: 'bridge', payload: { event_object: { ...settlement, currency: eventCurrency,
           id: 'activity-fixture', virtual_account_id: 'va-fixture', customer_id: 'customer-fixture' } } } as any);
       equal(emails.length, 1);
+      const projectedVa = mutations.find(m => m.path.endsWith('/bridge_virtual_accounts'))?.body;
+      equal(projectedVa.status, 'deactivated');
+      equal(projectedVa.account_details.id, 'va-fixture');
+      equal(projectedVa.account_details.receipt, undefined);
+      equal(projectedVa.account_details.source_deposit_instructions.currency, 'eur');
       equal(emails[0].props.source_amount, 8876);
       equal(emails[0].props.available_amount, 8611.49);
       equal(emails[0].props.destination_amount, 9888.05);

@@ -4,6 +4,8 @@ on:
     paths:
       - 'supabase/functions/process-pending-events/**'
       - 'supabase/functions/_shared/transaction-email-receipt.ts'
+      - 'supabase/functions/_shared/bridge-va-resource-projection.ts'
+      - 'tests/bridge-va-resource-projection.test.ts'
       - 'supabase/functions/_shared/email-templates/**'
       - 'tests/transaction-email-receipt.test.ts'
       - 'tests/va-settlement-receipt.test.ts'
@@ -22,6 +24,7 @@ jobs:
         run: >-
           deno test --no-config --node-modules-dir=none --allow-env --allow-net
           tests/transaction-email-receipt.test.ts
+          tests/bridge-va-resource-projection.test.ts
           tests/va-settlement-receipt.test.ts
           tests/bridge-transfer-webhook-owner.test.ts
           tests/bridge-wallet-activity-resource.test.ts
