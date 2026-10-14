@@ -79,6 +79,6 @@ begin
 
   return jsonb_build_object('dry_run',false,'eligible_deactivate',deactivate_count,'eligible_reactivate',reactivate_count);
 end;
-$function$
+$function$;
 
 commit;
