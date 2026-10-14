@@ -1,0 +1,33 @@
+name: Maintenance invoice restoration
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261014030000_restore_eligible_maintenance_invoices.sql'
+      - 'tests/sql/maintenance-invoice-restore-*.sql'
+      - '.github/workflows/maintenance-invoice-restore.yml'
+permissions:
+  contents: read
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic_ci_only
+          POSTGRES_DB: maintenance_restore_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d maintenance_restore_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: synthetic_ci_only
+      PGDATABASE: maintenance_restore_test
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-invoice-restore-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261014030000_restore_eligible_maintenance_invoices.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-invoice-restore-regression.sql
