@@ -1,6 +1,9 @@
+import { renderTransactionReceipt } from "../transaction-receipt.ts";
+import type { TransactionEmailReceipt } from "../../transaction-email-receipt.ts";
 import { htmlLayout, textLayout, escapeHtml, fmtMoney, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
 export interface TransactionNotificationProps {
+  email_receipt?: TransactionEmailReceipt;
   company_name:  string;
   direction:     "credit" | "debit";
   amount:        number;
@@ -21,6 +24,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
   const occurredAt = p.occurred_at ? new Date(p.occurred_at).toUTCString() : new Date().toUTCString();
   const accentColor = isCredit ? BORDERPAY_BRAND.success : BORDERPAY_BRAND.warning;
 
+  const receipt = p.email_receipt ? renderTransactionReceipt(p.email_receipt) : null;
   const body = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDERPAY_BRAND.border};border-radius:12px;padding:16px;margin:8px 0 0;">
       <tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">Account</td>
@@ -39,6 +43,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
           <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;text-align:right;">${escapeHtml(occurredAt)}</td></tr>
       ${p.new_balance != null ? `<tr><td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">New balance</td>
           <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;font-family:'DM Mono',monospace;text-align:right;">${escapeHtml(fmtMoney(p.new_balance, p.currency))}</td></tr>` : ""}
+      ${receipt?.html || ""}
     </table>`;
 
   const ctaUrl = `${BORDERPAY_BRAND.appUrl}/transactions`;
@@ -54,7 +59,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
     }),
     text: textLayout({
       heading,
-      body: `${company}\n${isCredit ? "Received" : "Sent"} ${amountStr}\nReference: ${p.reference}\n${p.counterparty ? (isCredit ? "From" : "To") + ": " + p.counterparty + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}`,
+      body: `${company}\n${isCredit ? "Received" : "Sent"} ${amountStr}\nReference: ${p.reference}\n${p.description ? "Description: " + p.description : ""}\n${p.counterparty ? (isCredit ? "From" : "To") + ": " + p.counterparty + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}${receipt ? "\n" + receipt.text : ""}`,
       ctaText: "Open BorderPay Velocity", ctaUrl,
     }),
   };

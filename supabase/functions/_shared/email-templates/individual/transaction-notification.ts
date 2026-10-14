@@ -1,6 +1,9 @@
+import { renderTransactionReceipt } from "../transaction-receipt.ts";
+import type { TransactionEmailReceipt } from "../../transaction-email-receipt.ts";
 import { htmlLayout, textLayout, firstName, escapeHtml, fmtMoney, BORDERPAY_BRAND, RenderedEmail } from "../layout.ts";
 
 export interface TransactionNotificationProps {
+  email_receipt?: TransactionEmailReceipt;
   full_name?:    string;
   direction:     "credit" | "debit";
   amount:        number;
@@ -24,6 +27,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
        <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;font-family:'DM Mono',monospace;text-align:right;">${escapeHtml(fmtMoney(p.new_balance, p.currency))}</td></tr>`
     : "";
 
+  const receipt = p.email_receipt ? renderTransactionReceipt(p.email_receipt) : null;
   const body = `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid ${BORDERPAY_BRAND.border};border-radius:12px;padding:16px;margin:8px 0 0;">
       <tr>
@@ -42,6 +46,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
         <td style="padding:8px 0;color:${BORDERPAY_BRAND.textMuted};font-size:13px;">When</td>
         <td style="padding:8px 0;color:${BORDERPAY_BRAND.text};font-size:13px;text-align:right;">${escapeHtml(occurredAt)}</td>
       </tr>
+      ${receipt?.html || ""}
       ${balanceLine}
     </table>`;
 
@@ -59,7 +64,7 @@ export function render(p: TransactionNotificationProps): RenderedEmail {
     }),
     text: textLayout({
       heading,
-      body: `${isCredit ? "Received" : "Sent"} ${fmtMoney(p.amount, p.currency)}\nReference: ${p.reference}\n${p.description ? "Description: " + p.description + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}`,
+      body: `${isCredit ? "Received" : "Sent"} ${fmtMoney(p.amount, p.currency)}\nReference: ${p.reference}\n${p.description ? "Description: " + p.description + "\n" : ""}When: ${occurredAt}${p.new_balance != null ? "\nNew balance: " + fmtMoney(p.new_balance, p.currency) : ""}${receipt ? "\n" + receipt.text : ""}`,
       ctaText: "Open BorderPay Velocity",
       ctaUrl,
     }),

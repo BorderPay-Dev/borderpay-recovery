@@ -1,0 +1,35 @@
+name: Transaction email receipt safety
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/process-pending-events/**'
+      - 'supabase/functions/_shared/transaction-email-receipt.ts'
+      - 'supabase/functions/_shared/email-templates/**'
+      - 'tests/transaction-email-receipt.test.ts'
+      - 'tests/va-settlement-receipt.test.ts'
+      - '.github/workflows/transaction-email-receipts.yml'
+permissions:
+  contents: read
+jobs:
+  receipts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Test receipts and webhook handling using synthetic data
+        run: >-
+          deno test --no-config --node-modules-dir=none --allow-env --allow-net
+          tests/transaction-email-receipt.test.ts
+          tests/va-settlement-receipt.test.ts
+          tests/bridge-transfer-webhook-owner.test.ts
+          tests/bridge-wallet-activity-resource.test.ts
+          tests/maintenance-reactivation-notice.test.ts
+      - name: Check deployed entrypoints
+        run: deno check --no-config --node-modules-dir=none supabase/functions/process-pending-events/index.ts supabase/functions/send-email/index.ts
+      - name: Check webhook safety contracts
+        run: |
+          python3 tests/audit/bridge_va_refund_email_audit.py
+          python3 tests/audit/bridge_va_deposit_idempotency_audit.py
+          python3 tests/audit/bridge_wallet_direct_deposit_email_audit.py

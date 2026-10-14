@@ -1,3 +1,4 @@
+import { bridgeTransactionEmailReceipt, type TransactionEmailReceipt } from "../_shared/transaction-email-receipt.ts";
 import { isRecordedFraudHold } from '../_shared/account-restriction-copy.ts';
 /**
  * process-pending-events — background worker for the unified webhook queue.
@@ -275,6 +276,7 @@ async function emailAccountMaintenanceFeeBestEffort(userId: string, accountType:
 }
 
 async function emailTransactionStatusBestEffort(params: {
+  emailReceipt: TransactionEmailReceipt;
   userId: string;
   accountType: AccountType;
   status: TransactionEmailStatus;
@@ -314,6 +316,7 @@ async function emailTransactionStatusBestEffort(params: {
       ? "business.transaction_status"
       : "individual.transaction_status";
     let props: Record<string, unknown> = {
+      email_receipt: params.emailReceipt,
       status: params.status,
       amount: params.amount,
       currency: params.currency,
@@ -376,6 +379,7 @@ async function emailTransactionStatusBestEffort(params: {
 }
 
 async function emailWalletActivityBestEffort(params: {
+  emailReceipt: TransactionEmailReceipt;
   userId: string;
   accountType: AccountType;
   direction: "credit" | "debit";
@@ -396,6 +400,7 @@ async function emailWalletActivityBestEffort(params: {
       ? "business.transaction_notification"
       : "individual.transaction_notification";
     let props: Record<string, unknown> = {
+      email_receipt: params.emailReceipt,
       direction: params.direction,
       amount: params.amount,
       currency: params.currency,
@@ -2133,6 +2138,7 @@ export async function handleBridgeVirtualAccount(ev: PendingEvent): Promise<void
     });
     if (statusAmountMinor !== null) {
       await emailTransactionStatusBestEffort({
+        emailReceipt: bridgeTransactionEmailReceipt(d, { kind: "virtual_account", sourceCurrency: currency, receipt: statusReceipt }),
         userId: resolved,
         accountType: account_type,
         status: nonCreditStatus,
@@ -2232,6 +2238,7 @@ export async function handleBridgeVirtualAccount(ev: PendingEvent): Promise<void
           : { bridge_event_id: ev.event_id, kind: "virtual_account_deposit_status", status: "approved" },
       });
       await emailTransactionStatusBestEffort({
+        emailReceipt: bridgeTransactionEmailReceipt(d, { kind: "virtual_account", sourceCurrency: currency, receipt: statusReceipt }),
         userId: resolved,
         accountType: account_type,
         status: "approved",
@@ -2361,6 +2368,7 @@ export async function handleBridgeVirtualAccount(ev: PendingEvent): Promise<void
         : { bridge_event_id: ev.event_id, kind: "virtual_account_deposit_status", status: "approved" },
     });
     await emailTransactionStatusBestEffort({
+        emailReceipt: bridgeTransactionEmailReceipt(d, { kind: "virtual_account", sourceCurrency: currency, receipt: approvedReceipt }),
       userId: resolved,
       accountType: account_type,
       status: "approved",
@@ -2680,6 +2688,7 @@ export async function handleBridgeWallet(ev: PendingEvent): Promise<void> {
     if (isDirectWalletDeposit) {
       const availableBalance = Number(d?.available_balance);
       await emailWalletActivityBestEffort({
+        emailReceipt: bridgeTransactionEmailReceipt(d, { kind: "wallet", sourceCurrency: currency }),
         userId: resolved,
         accountType: account_type,
         direction: "credit",
@@ -2963,6 +2972,7 @@ export async function handleBridgeTransfer(ev: PendingEvent): Promise<void> {
         idempotencyMatch: { bridge_transfer_id: String(transferId), kind: "transfer_status", status: emailStatus },
       });
       await emailTransactionStatusBestEffort({
+        emailReceipt: bridgeTransactionEmailReceipt(d, { kind: "transfer", sourceCurrency: currency }),
         userId: owner.resolved,
         accountType: owner.account_type ?? "individual",
         status: emailStatus,
