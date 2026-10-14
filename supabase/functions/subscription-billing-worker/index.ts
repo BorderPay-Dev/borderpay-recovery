@@ -1,3 +1,4 @@
+import { maintenanceReactivationDisposition } from "../_shared/maintenance-access-policy.ts";
 import { runBusinessMaintenanceCycle, queueConfirmedMaintenanceNotices } from "./business-maintenance.ts";
 import { requestMaintenancePdf } from "../_shared/maintenance-invoice-client.ts";
 import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
@@ -224,6 +225,7 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
       .maybeSingle();
     if (!claimed?.id) continue;
     try {
+      let alreadyActiveVa: {virtual_account_id:string;currency:string;rail?:string;status?:string}|undefined;
       const {data:sub,error:subError}=await db.from("subscriptions").select("account_type,status").eq("id",action.subscription_id).single();if(subError)throw subError;
       const {data:exemption,error:exemptionError}=await db.from("maintenance_billing_exemptions").select("user_id").eq("user_id",action.user_id).maybeSingle();if(exemptionError)throw exemptionError;
       if(exemption || sub.status!=="active")throw Error("maintenance_action_no_longer_eligible");
@@ -231,6 +233,12 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
         const {data:allowed,error:guardError}=await db.rpc("business_maintenance_action_allowed",{p_action_id:action.id});if(guardError)throw guardError;if(!allowed)throw Error("maintenance_action_no_longer_eligible");
         const live=await bridgeProvider.getCustomerProfile(action.bridge_customer_id);
         if(String((live.raw as any)?.status)!=="active")throw Error("provider_customer_not_active");
+        if(action.action==="reactivate") {
+          const vas=await bridgeProvider.listVirtualAccounts(action.bridge_customer_id);
+          const va=vas.find(v=>v.virtual_account_id===action.bridge_virtual_account_id);
+          if(!va)throw Error("provider_account_not_found");
+          if(maintenanceReactivationDisposition(va.status)==="already_active")alreadyActiveVa=va;
+        }
         if(action.action==="deactivate") {
           const vas=await bridgeProvider.listVirtualAccounts(action.bridge_customer_id);
           const va=vas.find(v=>v.virtual_account_id===action.bridge_virtual_account_id);
@@ -241,7 +249,7 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
       }
       const providerResult = action.action === "deactivate"
         ? await bridgeProvider.deactivateVirtualAccount(action.bridge_customer_id, action.bridge_virtual_account_id, action.idempotency_key)
-        : await bridgeProvider.reactivateVirtualAccount(action.bridge_customer_id, action.bridge_virtual_account_id, action.idempotency_key);
+        : alreadyActiveVa ?? await bridgeProvider.reactivateVirtualAccount(action.bridge_customer_id, action.bridge_virtual_account_id, action.idempotency_key);
       const providerStatus = String(providerResult.status || "").toLowerCase();
       if (action.action === "deactivate" && providerStatus !== "deactivated") throw new Error(`unexpected_provider_status:${providerStatus || "missing"}`);
       if (action.action === "reactivate" && !["active", "activated"].includes(providerStatus)) throw new Error(`unexpected_provider_status:${providerStatus || "missing"}`);

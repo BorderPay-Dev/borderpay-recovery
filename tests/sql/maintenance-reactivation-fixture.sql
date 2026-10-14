@@ -1,0 +1,11 @@
+-- Synthetic, isolated CI database only. Never run this fixture in production.
+create table subscriptions(id uuid primary key,user_id uuid,account_type text,status text,payment_status text,restricted_at timestamptz,last_billed_at timestamptz);
+create table bridge_virtual_accounts(user_id uuid,business_user_id uuid,bridge_customer_id text,bridge_virtual_account_id text,currency text,status text,deactivation_reason text,account_details jsonb,created_at timestamptz default now());
+create table subscription_external_invoices(subscription_id uuid,status text,paid_at timestamptz,billing_period date);
+create table subscription_provider_access_actions(id uuid default gen_random_uuid(),subscription_id uuid,user_id uuid,bridge_virtual_account_id text,bridge_customer_id text,action text,reason text,status text default 'pending',idempotency_key text unique,attempt_count int default 0,last_attempt_at timestamptz,next_attempt_at timestamptz default now(),updated_at timestamptz default now(),last_error text);
+create function is_partner_customer(uuid) returns boolean language sql as $$select false$$;
+insert into subscriptions select ('00000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,('10000000-0000-4000-8000-'||lpad(n::text,12,'0'))::uuid,'business','active','active',null,now() from generate_series(1,6)n;
+insert into bridge_virtual_accounts select user_id,null,'customer-'||id::text,'va-'||id::text,'EUR',case when right(id::text,1)='5' then 'deactivated' else 'closed' end,case when right(id::text,1)='3' then null else 'subscription_nonpayment' end,jsonb_build_object('status',case when right(id::text,1)='2' then 'closed' else 'deactivated' end),now() from subscriptions;
+insert into subscription_provider_access_actions(subscription_id,user_id,bridge_customer_id,bridge_virtual_account_id,action,reason,status,idempotency_key) select s.id,s.user_id,v.bridge_customer_id,v.bridge_virtual_account_id,'deactivate','subscription_nonpayment','completed','prior-deactivation-'||s.id from subscriptions s join bridge_virtual_accounts v on v.user_id=s.user_id where right(s.id::text,1)<>'4';
+insert into subscription_external_invoices select id,'paid',now(),current_date-40 from subscriptions;
+insert into subscription_external_invoices select id,'payment_link_created',null,current_date-40 from subscriptions where right(id::text,1)='6';
