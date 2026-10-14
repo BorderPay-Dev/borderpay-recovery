@@ -1,3 +1,4 @@
+import { bridgeVaResourcePayload } from "../_shared/bridge-va-resource-projection.ts";
 import { bridgeTransactionEmailReceipt, type TransactionEmailReceipt } from "../_shared/transaction-email-receipt.ts";
 import { isRecordedFraudHold } from '../_shared/account-restriction-copy.ts';
 /**
@@ -1773,9 +1774,10 @@ function normalizeBridgeVirtualAccountRail(value: unknown): string | null {
   return null;
 }
 
-function normalizeBridgeVirtualAccountStatus(value: unknown): "active" | "suspended" | "closed" {
+function normalizeBridgeVirtualAccountStatus(value: unknown): "active" | "suspended" | "closed" | "deactivated" {
   const status = String(value ?? "").trim().toLowerCase();
-  if (["closed", "deleted", "disabled", "deactivated", "inactive"].includes(status)) return "closed";
+  if (status === "deactivated") return "deactivated";
+  if (["closed", "deleted", "disabled", "inactive"].includes(status)) return "closed";
   if (["suspended", "paused"].includes(status)) return "suspended";
   return "active";
 }
@@ -1893,7 +1895,7 @@ async function upsertBridgeVirtualAccountProjection(params: {
       null,
   };
 
-  await supabase.from("bridge_virtual_accounts").upsert({
+  const { error: projectionError } = await supabase.from("bridge_virtual_accounts").upsert({
     bridge_virtual_account_id: String(params.vaId),
     bridge_customer_id:        String(params.customer),
     user_id:                   account_type === "individual" ? resolved : null,
@@ -1909,6 +1911,7 @@ async function upsertBridgeVirtualAccountProjection(params: {
     developer_fee_percent:     effectiveFee,
     updated_at:                new Date().toISOString(),
   }, { onConflict: "bridge_virtual_account_id" });
+  if (projectionError) throw new Error(`bridge_va_projection_failed: ${projectionError.message}`);
 
   if (status === "active") {
     await supabase.from("pending_va_requests")
@@ -1946,7 +1949,7 @@ export async function handleBridgeVirtualAccount(ev: PendingEvent): Promise<void
   const payloadCustomer = d?.customer_id ?? d?.customer?.id;
   const { data: existingVa } = await supabase
     .from("bridge_virtual_accounts")
-    .select("bridge_customer_id,developer_fee_percent,account_details,currency")
+    .select("bridge_customer_id,developer_fee_percent,account_details,currency,status")
     .eq("bridge_virtual_account_id", String(vaId))
     .maybeSingle();
   const customer = payloadCustomer ?? existingVa?.bridge_customer_id;
@@ -1960,12 +1963,25 @@ export async function handleBridgeVirtualAccount(ev: PendingEvent): Promise<void
     t.includes("debit") ||
     t.includes("withdraw") ||
     t.includes("transfer");
-  const currency = bridgeVirtualAccountSourceCurrency(d, existingVa?.account_details, existingVa?.currency);
+  const resourcePayload = await bridgeVaResourcePayload({
+    isActivity,
+    payload: d,
+    existingStatus: existingVa?.status,
+    existingDetails: objectValue(existingVa?.account_details) ?? {},
+    loadCurrent: async () => {
+      const accounts = await bridgeProvider.listVirtualAccounts(String(customer));
+      const current = accounts.find((account) => account.virtual_account_id === String(vaId));
+      if (!current) throw new Error("bridge_va_resource_not_found");
+      return { ...objectValue(current.account_details), id: String(vaId), status: current.status, currency: current.currency, rail: current.rail,
+        developer_fee_percent: current.developer_fee_percent };
+    },
+  });
+  const currency = bridgeVirtualAccountSourceCurrency(resourcePayload, existingVa?.account_details, existingVa?.currency);
   const eventCurrency = normalizeCurrencyCode(d?.currency) ?? currency;
   const owner = await upsertBridgeVirtualAccountProjection({
     vaId: String(vaId),
     customer: String(customer),
-    payload: d,
+    payload: { ...resourcePayload, id: String(vaId) },
     currency,
     existingFeePercent: existingVa?.developer_fee_percent,
     existingAccountDetails: existingVa?.account_details,
