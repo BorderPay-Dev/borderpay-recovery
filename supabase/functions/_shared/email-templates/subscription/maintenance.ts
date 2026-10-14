@@ -52,3 +52,9 @@ export function renderPaymentStatus(p: Record<string, unknown>): RenderedEmail {
   const body = `Hello ${String(p.customer_name || 'there')},\n\n${outcome === 'completed' ? 'Your account maintenance payment has been confirmed.' : 'Your maintenance payment has not been confirmed. Please contact Support if you have already paid.'}\n\nAmount: ${amount}\nDate: ${dateLabel(p.date)}\nReference: ${String(p.transaction_reference)}\n\nThank you,\nBorderPay Support`;
   return message(heading, body);
 }
+
+export function renderAccessReactivated(p: Record<string, unknown>): RenderedEmail {
+ const currencies=Array.isArray(p.reactivated_currencies)?[...new Set(p.reactivated_currencies.map(String))]:[];
+ if(!currencies.length||currencies.some(c=>!['USD','EUR','GBP'].includes(c)))throw Error('Confirmed active account currencies required');
+ return message('Your global receiving accounts are active again',`Hello ${String(p.customer_name||'there')},\n\nYour ${currencies.join(', ')} global receiving account${currencies.length>1?'s have':' has'} been reactivated following confirmation of your maintenance payment.\n\nYou can now receive payments into ${currencies.length>1?'these accounts':'this account'} again. Open BorderPay to view and share your current receiving details.\n\nNo additional maintenance payment is required for this reactivation.\n\nIf you need help, contact support@borderpayvelocity.xyz.\n\nThank you,\nBorderPay Velocity Support`);
+}

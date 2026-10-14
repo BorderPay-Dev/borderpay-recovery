@@ -3,7 +3,7 @@ import { renderMigrationNotice } from "./business-migration.ts";
 import { render as accountStatement } from "./account-statement.ts";
 import { renderActive as bankingTransitionActive, renderRestricted as bankingTransitionRestricted } from "./banking-transition.ts";
 import {render as businessInvoiceContractHub} from "./business/invoice-contract-hub.ts";
-import { renderExternalInvoice, renderPaymentStatus } from "./subscription/maintenance.ts";
+import { renderExternalInvoice, renderPaymentStatus, renderAccessReactivated } from "./subscription/maintenance.ts";
 import { render as mobileAppUpdate } from "./mobile-app-update.ts";
 /**
  * Email template registry — single source of truth for every transactional
@@ -79,6 +79,7 @@ export type TemplateName =
   | "business.invoice_contract_hub"
   | "business.subscription_external_invoice"
   | "individual.subscription_external_invoice"
+  | "business.subscription_access_reactivated"
   | "business.subscription_payment_status"
   | "individual.subscription_payment_status"
   | "individual.email_verification"
@@ -145,6 +146,7 @@ export const TEMPLATES: Record<TemplateName, Renderer> = {
   "business.invoice_contract_hub": businessInvoiceContractHub,
   "business.subscription_external_invoice": renderExternalInvoice,
   "individual.subscription_external_invoice": renderExternalInvoice,
+  "business.subscription_access_reactivated": renderAccessReactivated,
   "business.subscription_payment_status": renderPaymentStatus,
   "individual.subscription_payment_status": renderPaymentStatus,
   "individual.email_verification":      individualEmailVerification,
