@@ -41,7 +41,7 @@ export async function maintenancePdf(db:any,i:any) {
  const candidates=[raw?.registered_address,raw?.address_of_incorporation,raw?.business_address,verifiedLocal?{street_line_1:business.address,city:business.city,subdivision:business.state,postal_code:business.postal_code,country:business.country}:null,...beneficiaryAddresses];
  const address=candidates.find(a=>a?.country&&String(a.street_line_1||a.street_line1||a.line1||'').trim());
  const buyerAddress=legalAddress(address);if(!buyerName||!buyerAddress||!address?.country)throw Error('Verified company name and full street address required for invoice');
- const invoiceNumber=maintenanceInvoiceNumber(i);const styles=await loadPdfStyleAssets(db,i.billing_period >= "2026-10-31" ? "black-wordmark" : "mark");
+ const invoiceNumber=maintenanceInvoiceNumber(i);const styles=await loadPdfStyleAssets(db,"black-wordmark");
  const font=await db.storage.from('predeposit-render-assets').download('NotoSans-Regular.ttf');if(font.error||!font.data)throw Error('Invoice font unavailable');
  const month=new Intl.DateTimeFormat('en',{month:'long',year:'numeric',timeZone:'UTC'}).format(new Date(i.billing_period+'T00:00:00Z'));
  const inv={currency:i.currency,revision:1,merchant:{legal_name:'BorderPay Africa, Inc.',incorporation_country:'USA'},buyer:{legal_name:buyerName,address:buyerAddress,country:address.country},items:[{description:'Account maintenance fee - '+month,quantity:1,unit_amount_minor:Math.round(Number(i.amount)*100)}]} as Invoice;
