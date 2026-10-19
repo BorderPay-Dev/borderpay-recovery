@@ -1,0 +1,56 @@
+name: Monthly signup and login audit
+on:
+  schedule:
+    - cron: '23 6 19 * *'
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'components/auth/ForgotPassword.tsx'
+      - 'utils/auth/passwordResetRequest.ts'
+      - 'tests/password-reset-request.test.ts'
+      - 'scripts/ci/monthly-auth-audit.mjs'
+      - '.github/workflows/monthly-auth-audit.yml'
+permissions:
+  contents: read
+concurrency:
+  group: monthly-auth-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  reset-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+      - run: deno test tests/password-reset-request.test.ts
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci --ignore-scripts
+      - run: npm run build
+      - run: node --check scripts/ci/monthly-auth-audit.mjs
+  live-auth:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: reset-regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '24'
+      - name: Install pinned browser test runtime
+        run: |
+          npm install --prefix "$RUNNER_TEMP/auth-audit" --ignore-scripts --no-audit --no-fund playwright@1.61.1
+          node "$RUNNER_TEMP/auth-audit/node_modules/playwright/cli.js" install --with-deps chromium
+      - name: Check live signup and login
+        env:
+          AUTH_AUDIT_EMAIL: ${{ secrets.AUTH_AUDIT_EMAIL }}
+          AUTH_AUDIT_PASSWORD: ${{ secrets.AUTH_AUDIT_PASSWORD }}
+          AUTH_AUDIT_ANON_KEY: ${{ secrets.AUTH_AUDIT_ANON_KEY }}
+        run: |
+          export AUTH_AUDIT_PLAYWRIGHT_MODULE="$RUNNER_TEMP/auth-audit/node_modules/playwright/index.mjs"
+          node scripts/ci/monthly-auth-audit.mjs
