@@ -2,7 +2,7 @@
 
 Each invoice covers its calendar month, is due on that month's last day, and has seven full grace days. September 2026 is due September 30, grace ends October 7, and enforcement starts October 8 UTC. October is due October 31, with enforcement November 8. Future invoices cannot extend older debt.
 
-The bounded calendar cycle runs every ten minutes and is controlled by `business_calendar_maintenance_enabled`. Before restricting access it checks tenant membership, team exemptions, verified business identity, service availability before period end, separate account restrictions, the invoice's current status, and Flutterwave verification. Unknown/pending payment results never authorize deactivation. Required invoice generation must succeed first.
+The bounded calendar cycle runs every ten minutes and is controlled by `business_calendar_maintenance_enabled`. Before restricting access it checks tenant membership, team exemptions, verified business identity, business approval before period end and an eligible receiving account, separate account restrictions, the invoice's current status, and Flutterwave verification. Unknown/pending payment results never authorize deactivation. Required invoice generation must succeed first.
 
 Provider actions recheck the outstanding debt and live customer status. Only maintenance-deactivated accounts are eligible for automatic reactivation; paying maintenance does not clear compliance holds. The Flutterwave webhook retains its signature, transaction verification, currency, amount and reference checks, then nudges access reconciliation. Scheduled processing retries failed provider calls.
 
@@ -15,3 +15,5 @@ Operational checks: review `subscription_external_invoices`, `subscription_provi
 Validation: deterministic calendar/email safety tests, SQL payment-trigger tests inside a rolled-back transaction, existing Invoice Hub PDF regression tests, and rendered PDF inspection. The SQL regression script uses September/October 2026 fixtures and must only be run within a transaction that ends in ROLLBACK.
 
 PDF rendering runs in the internal `maintenance-invoice-renderer` function, one invoice per request, to remain within the existing Edge CPU limit. The billing worker calls it before restriction and before attaching a PDF. Named-account beneficiary addresses are accepted only when the beneficiary name matches the verified company name (case, punctuation and accent normalization); bank branch addresses are never substituted.
+
+Billing month is determined by business approval, not signup or VA creation/sync time. A September-approved business with its receiving account created in October remains eligible for the September invoice. October-approved businesses are not eligible for September. This does not remove provider-compliance holds, team/partner exclusions or payment-verification checks.
