@@ -1,5 +1,5 @@
 import { resolveReactivationNotice } from "../_shared/maintenance-reactivation-notice.ts";
-import { maintenanceReactivationDisposition } from "../_shared/maintenance-access-policy.ts";
+import { maintenanceReactivationDisposition, maintenanceProviderActionAllowed } from "../_shared/maintenance-access-policy.ts";
 import { runBusinessMaintenanceCycle, queueConfirmedMaintenanceNotices } from "./business-maintenance.ts";
 import { requestMaintenancePdf } from "../_shared/maintenance-invoice-client.ts";
 import { hasActiveMaintenanceVa, requiresActiveMaintenanceVa } from "../_shared/maintenance-va-email-policy.ts";
@@ -233,7 +233,7 @@ async function reconcileSubscriptionAccess(dryRun = false, limit = 20) {
       if(sub.account_type==="business") {
         const {data:allowed,error:guardError}=await db.rpc("business_maintenance_action_allowed",{p_action_id:action.id});if(guardError)throw guardError;if(!allowed)throw Error("maintenance_action_no_longer_eligible");
         const live=await bridgeProvider.getCustomerProfile(action.bridge_customer_id);
-        if(String((live.raw as any)?.status)!=="active")throw Error("provider_customer_not_active");
+        if(!maintenanceProviderActionAllowed(action.action,(live.raw as any)?.status))throw Error("provider_customer_not_active");
         if(action.action==="reactivate") {
           const vas=await bridgeProvider.listVirtualAccounts(action.bridge_customer_id);
           const va=vas.find(v=>v.virtual_account_id===action.bridge_virtual_account_id);

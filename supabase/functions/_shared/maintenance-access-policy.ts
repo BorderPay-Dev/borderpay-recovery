@@ -12,3 +12,9 @@ export function maintenanceReactivationDisposition(status: unknown): "already_ac
  if (value === "deactivated") return "reactivate";
  throw new Error("provider_account_not_reactivatable");
 }
+
+/** A maintenance payment cannot remove an independent provider compliance hold. */
+export function maintenanceProviderActionAllowed(action: unknown, status: unknown): boolean {
+  if (action !== "deactivate" && action !== "reactivate") return false;
+  return status === "active" || (action === "deactivate" && status === "deposits_restricted");
+}
