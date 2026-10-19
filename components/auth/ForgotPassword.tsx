@@ -50,7 +50,7 @@ export function ForgotPassword({ onNavigateToLogin, onNavigateToResetPassword }:
       setSuccess(true);
     } catch (_err) {
       // Never expose provider responses or whether an account exists.
-      setError('We couldn't request your reset link. Please try again shortly.');
+      setError("We couldn't request your reset link. Please try again shortly.");
     } finally {
       setIsLoading(false);
     }

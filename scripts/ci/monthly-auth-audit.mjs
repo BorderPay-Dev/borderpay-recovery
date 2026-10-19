@@ -50,7 +50,7 @@ try {
   });
   await run('invalid login rejected',async()=>{
     const r=await request('/auth/v1/token?grant_type=password',{email:'audit@example.invalid',password:crypto.randomBytes(24).toString('hex')});
-    check(r.status===400 && r.body.code==='invalid_credentials');
+    check(r.status===400 && (r.body.code || r.body.error_code)==='invalid_credentials');
   });
   await run('private profile requires authentication',async()=>{
     check([401,403].includes((await request('/functions/v1/get-user-profile',{})).status));
