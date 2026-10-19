@@ -1,0 +1,35 @@
+name: Maintenance approval-date eligibility
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261019010000_maintenance_billing_by_approval_date.sql'
+      - 'tests/sql/maintenance-approval-date-regression.sql'
+      - '.github/workflows/maintenance-approval-date.yml'
+permissions:
+  contents: read
+jobs:
+  approval-date:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic_ci_only
+          POSTGRES_DB: maintenance_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U postgres -d maintenance_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: synthetic_ci_only
+      PGDATABASE: maintenance_test
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - run: |
+          psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-external-wallet-fixture.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261015010000_bill_active_va_external_wallet_businesses.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261019010000_maintenance_billing_by_approval_date.sql
+          psql -v ON_ERROR_STOP=1 -f tests/sql/maintenance-approval-date-regression.sql
