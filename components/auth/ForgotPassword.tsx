@@ -1,6 +1,7 @@
 import { BorderPayLogo } from '../cards/BorderPayLogo';
 
 import React, { useState } from 'react';
+import { requestPasswordReset } from '../../utils/auth/passwordResetRequest';
 import { BASE_URL, ANON_KEY } from '../../utils/supabase/client';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -42,23 +43,14 @@ export function ForgotPassword({ onNavigateToLogin, onNavigateToResetPassword }:
     setIsLoading(true);
 
     try {
-      // Enumeration-safe: the backend always returns a uniform generic response
-      // whether or not an account exists. Show the SAME success state regardless —
-      // never reveal account existence ("user not found"), never surface raw
-      // server messages here.
-      await fetch(`${BASE_URL}/auth-reset-password`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({ email }),
-      });
+      // Account existence remains private. HTTP, timeout and malformed-response
+      // failures must still let the user retry instead of claiming an email was sent.
+      await requestPasswordReset(`${BASE_URL}/auth-reset-password`, ANON_KEY, email);
 
       setSuccess(true);
     } catch (_err) {
-      // Only true network/transport failures reach here — generic, non-revealing.
-      setError('Something went wrong. Please check your connection and try again.');
+      // Never expose provider responses or whether an account exists.
+      setError("We couldn't request your reset link. Please try again shortly.");
     } finally {
       setIsLoading(false);
     }
@@ -93,7 +85,7 @@ export function ForgotPassword({ onNavigateToLogin, onNavigateToResetPassword }:
 
             <h2 className="text-xl font-bold text-white mb-2">Check Your Email</h2>
             <p className="text-gray-400 mb-6">
-              We've sent a password reset link to <strong className="text-white">{email}</strong>
+              If an account exists for <strong className="text-white">{email.trim()}</strong>, you'll receive a password reset link. Check your inbox and spam folder.
             </p>
 
             <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6">
