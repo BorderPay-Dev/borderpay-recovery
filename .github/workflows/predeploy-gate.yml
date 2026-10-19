@@ -41,6 +41,7 @@ jobs:
           tests/bridge-initiation-http.test.ts
           tests/bridge-transfer-webhook-owner.test.ts
           tests/va-settlement-receipt.test.ts
+          tests/maintenance-provider-action.test.ts
           tests/maintenance-invoice-email.test.ts
           tests/account-statement-email.test.ts
           tests/affiliate-reward-sync.test.ts
