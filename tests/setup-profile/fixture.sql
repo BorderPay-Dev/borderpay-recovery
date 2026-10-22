@@ -1,0 +1,15 @@
+alter table auth.users add column raw_app_meta_data jsonb default '{}';
+create table public.users(id uuid primary key,full_name text);
+create table public.user_security(user_id uuid primary key,pin_set boolean,two_factor_enabled boolean,secret_totp_seed text);
+create table public.business_profiles(user_id uuid primary key,bridge_kyb_status text,country text,company_name text);
+create table public.app_config(key text primary key,value text);
+create table kyb.applications(id uuid primary key,tenant_id uuid,internal_status text);
+create table kyb.members(tenant_id uuid,user_id uuid);
+alter table public.user_profiles add column kyc_status text;
+insert into public.user_profiles(id,email,account_type,account_status,kyc_status) values('00000000-0000-4000-8000-000000000003','new-business@example.test','business','pending_kyc','unverified');
+insert into auth.users(id,email,email_confirmed_at) values('00000000-0000-4000-8000-000000000003','new-business@example.test',now());
+insert into public.users values('00000000-0000-4000-8000-000000000003','Synthetic Founder');
+insert into public.business_profiles values('00000000-0000-4000-8000-000000000003','not_started','GB','Synthetic New Business');
+insert into public.app_config values('kyb_portal_onboarding','{"enabled":true,"new_business_only":true}');
+insert into kyb.applications values('10000000-0000-4000-8000-000000000001','20000000-0000-4000-8000-000000000001','in_review');
+insert into kyb.members values('20000000-0000-4000-8000-000000000001','00000000-0000-4000-8000-000000000002');

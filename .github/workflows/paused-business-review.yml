@@ -1,0 +1,42 @@
+name: Paused business read-only workspace checks
+on:
+  push:
+    branches: [fix/paused-business-review-view]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: synthetic_test_password
+          POSTGRES_DB: read_only_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://postgres:synthetic_test_password@localhost:5432/read_only_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno test --no-config tests/paused-business-review/profile.test.ts
+      - run: deno check --no-config supabase/functions/get-user-profile/index.ts
+      - name: Verify grants, tenant isolation and preserved restrictions
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/paused-business-review/fixture.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261003010000_paused_business_review_workspace.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f supabase/migrations/20261003020000_review_after_secure_link.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/paused-business-review/assertions.sql
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci --ignore-scripts
+      - run: npm run build
