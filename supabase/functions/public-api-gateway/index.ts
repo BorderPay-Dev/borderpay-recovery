@@ -205,7 +205,7 @@ function mapBridgeError(e: unknown): GatewayHandlerResult {
         success: false,
         error: {
           code: normalizedCode,
-          message: e.bridge_error || e.message || "Bridge request failed",
+          message: "The financial service could not complete this request. Retry with the same Idempotency-Key or contact BorderPay support.",
         },
       },
     };

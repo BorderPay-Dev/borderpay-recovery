@@ -1,3 +1,8 @@
+## 1.0.2 — Business-only partner onboarding
+- Business accounts only for API and white-label onboarding; legacy personal-account flags cannot enable signup.
+- Public payment requests use `borderpay_wallet` and `wallet_id`.
+- Sandbox customer operations require explicit test-environment enablement.
+
 # BorderPay API Changelog
 
 ## v1.0.1 - 2026-07-06

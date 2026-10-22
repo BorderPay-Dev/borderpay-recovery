@@ -38,7 +38,7 @@ export interface BorderPayGatewayHealth {
   gateway: string;
 }
 
-export type AccountType = "individual" | "business";
+export type AccountType = "business";
 
 /** Customer data is recorded by hosted onboarding. This resumes that customer's verification. */
 export interface CreateCustomerRequest {
@@ -82,7 +82,7 @@ export interface CreateVirtualAccountResponseData {
 
 export interface TransferParty {
   payment_rail:
-    | "bridge_wallet"
+    | "borderpay_wallet"
     | "base"
     | "tron"
     | "ach"
@@ -91,7 +91,7 @@ export interface TransferParty {
     | "faster_payments";
   currency: "USDC" | "USDT" | "EURC" | "USD" | "EUR" | "GBP";
   amount?: string;
-  bridge_wallet_id?: string;
+  wallet_id?: string;
   external_account_id?: string;
   external_wallet_id?: string;
   address?: string;
@@ -120,4 +120,11 @@ export interface CreateWebhookResponseData {
   endpoint_url: string;
   signing_secret: string;
   created_at: string;
+}
+
+export interface OnboardingAuthorizationRequest {
+  external_user_id: string;
+  onboarding_channel: "api" | "white_label";
+  requested_account_types?: ["business"];
+  expires_in_seconds?: number;
 }

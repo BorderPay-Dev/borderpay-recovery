@@ -1,3 +1,4 @@
+import { isBusinessAccount, BUSINESS_ONLY_MESSAGE } from "./business-only.ts";
 import {
   allowedAccountTypes,
   resolveTenantOnboardingPolicy,
@@ -12,6 +13,7 @@ export async function prepareWhiteLabelSignup(
   body: any,
   secret: string,
 ) {
+  if (!isBusinessAccount(body.account_type)) throw new Error(BUSINESS_ONLY_MESSAGE);
   const release = await loadPublishedWhiteLabel(db, { origin });
   if (!release) {
     throw new Error("This customer app is not available for signup.");

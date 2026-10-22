@@ -1,0 +1,95 @@
+name: Business partner API release
+on:
+  push:
+    branches: [fix/business-only-partner-api]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        type: boolean
+        default: false
+        description: Deploy the two tested onboarding functions
+      deploy_config:
+        type: boolean
+        default: false
+        description: Publish business-only white-label configuration
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 24
+      - name: Verify business eligibility, tenant isolation, payment authorization and aliases
+        run: deno test --no-config --allow-env --allow-read --allow-net tests/business-partner-policy.test.ts tests/api-customer-runtime.test.ts tests/business-public-contract.test.ts
+      - name: Type-check deployed entrypoints
+        run: deno check --no-config supabase/functions/public-api-gateway/index.ts supabase/functions/auth-signup/index.ts supabase/functions/white-label-config/index.ts
+      - name: Build and test public SDK
+        working-directory: docs/api/sdk/typescript
+        run: |
+          npm ci --ignore-scripts
+          npm run build
+          node test/customer.conformance.mjs
+          node test/webhook.conformance.mjs
+      - name: Validate and package public docs
+        run: |
+          python3 scripts/ci/verify_api_contract_pack.py
+          python3 scripts/ci/verify_api_mock_fixtures.py
+          python3 scripts/ci/build_public_business_docs.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: business-partner-docs
+          path: dist-partner-docs/
+          retention-days: 7
+  deploy:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Check production baseline
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          functions=json.load(urllib.request.urlopen(req))
+          versions={f['slug']:f['version'] for f in functions}
+          assert versions['auth-signup']==450 and versions['public-api-gateway']==268, 'Production changed since audit; rebase before deployment'
+          PYBASE
+      - name: Deploy only business signup and partner API
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}
+        run: |
+          supabase functions deploy auth-signup --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+          supabase functions deploy public-api-gateway --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api
+
+  deploy-config:
+    if: github.event_name == 'workflow_dispatch' && inputs.deploy_config
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Publish white-label business eligibility
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          functions=json.load(urllib.request.urlopen(req))
+          assert next(f['version'] for f in functions if f['slug']=='white-label-config')==6, 'Configuration changed since audit'
+          PYBASE
+          supabase functions deploy white-label-config --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api

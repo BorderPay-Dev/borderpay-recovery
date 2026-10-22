@@ -1,15 +1,15 @@
-# BorderPay API v1 Curl Cookbook (Step 2F)
+# BorderPay API v1 Curl Cookbook
 
-Source of truth: `docs/api/openapi-v1.yaml` (v1.0.1)
+Business accounts only, for API and white-label onboarding. Owners and directors are verified within business KYB; they do not open personal accounts.
 
 ## 0) Environment
 ```bash
-export GATEWAY_URL="https://orwrcpwsffjlvzuraxjc.supabase.co/functions/v1/public-api-gateway"
-export ADMIN_URL="https://orwrcpwsffjlvzuraxjc.supabase.co/functions/v1/api-gateway-admin"
-export API_KEY="<issued_plain_api_key>"
-export ADMIN_JWT="<admin_jwt_or_service_role>"
+export GATEWAY_URL="https://sandbox.api.borderpayafrica.com"
+export API_KEY="<BorderPay_partner_test_key>"
 export MODE="sandbox"
+export CUSTOMER_ACCESS_TOKEN="<authenticated_business_customer_session>"
 ```
+BorderPay must enable your tenant's sandbox customer operations before onboarding or payment tests. A successful health check is not payment-sandbox approval. Use synthetic data only. Never use production credentials as a fallback.
 
 ## 1) Gateway health
 ```bash
@@ -19,8 +19,30 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/health" \
   -H "x-borderpay-mode: $MODE" \
-  -d '{"method":"GET"}'
+  -d '{
+  "method": "GET"
+}'
 ```
+
+## Business signup authorization
+```bash
+curl -s "$GATEWAY_URL" \
+  -X POST \
+  -H "Authorization: Bearer $API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "x-borderpay-route: /v1/onboarding-authorizations" \
+  -H "x-borderpay-mode: $MODE" \
+  -H "Idempotency-Key: business-signup-001" \
+  -d '{
+  "external_user_id": "synthetic-business-001",
+  "onboarding_channel": "api",
+  "requested_account_types": [
+    "business"
+  ]
+}'
+```
+
+Complete hosted business signup with that authorization, then authenticate the business user. Their session must belong to your partner tenant. Complete business KYB, including the relevant directors, owners and control persons. Financial services remain subject to approval.
 
 ## 2) Create customer
 ```bash
@@ -30,32 +52,29 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/customers" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-customer-001" \
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Idempotency-Key: customer-verify-001" \
   -d '{
-    "account_type":"individual",
-    "email":"partner-user@example.com",
-    "country_code":"NG",
-    "full_name":"Partner User",
-    "borderpay_user_id":"partner_ref_001"
-  }'
+  "account_type": "business"
+}'
 ```
+
+This resumes the authenticated business verification; it does not accept arbitrary identity data or create an unrelated account.
 
 ## 3) Create wallet
 ```bash
-export CUSTOMER_ID="<customer_id_from_previous_response>"
-
 curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/wallets" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-wallet-001" \
-  -d "{
-    \"customer_id\":\"$CUSTOMER_ID\",
-    \"symbol\":\"USDC\",
-    \"chain\":\"BASE\"
-  }"
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Idempotency-Key: wallet-001" \
+  -d '{
+  "symbol": "USDC",
+  "chain": "BASE"
+}'
 ```
 
 ## 4) Create virtual account
@@ -66,17 +85,14 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/virtual-accounts" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-va-001" \
-  -d "{
-    \"customer_id\":\"$CUSTOMER_ID\",
-    \"currency\":\"USD\",
-    \"destination\":{
-      \"rail\":\"base\",
-      \"currency\":\"usdc\",
-      \"address\":\"0x0000000000000000000000000000000000000001\"
-    }
-  }"
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Idempotency-Key: virtual-account-001" \
+  -d '{
+  "currency": "USD"
+}'
 ```
+
+Do not supply a settlement destination: BorderPay selects it using the approved business region and account policy.
 
 ## 5) Create transfer
 ```bash
@@ -86,23 +102,23 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/transfers" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-transfer-001" \
-  -d "{
-    \"source\":{
-      \"payment_rail\":\"stablecoin\",
-      \"currency\":\"USDC\",
-      \"chain\":\"BASE\",
-      \"amount\":\"10.00\",
-      \"customer_id\":\"$CUSTOMER_ID\"
-    },
-    \"destination\":{
-      \"payment_rail\":\"stablecoin\",
-      \"currency\":\"USDC\",
-      \"chain\":\"BASE\",
-      \"address\":\"0x0000000000000000000000000000000000000002\"
-    },
-    \"idempotency_key\":\"idem-transfer-001\"
-  }"
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Idempotency-Key: payment-001" \
+  -d '{
+  "source": {
+    "payment_rail": "borderpay_wallet",
+    "currency": "USDC",
+    "amount": "10.00",
+    "wallet_id": "<business_wallet_id>"
+  },
+  "destination": {
+    "payment_rail": "base",
+    "currency": "USDC",
+    "external_wallet_id": "<saved_external_wallet_id>",
+    "address": "<saved_wallet_address>"
+  },
+  "transaction_pin": "<business_customer_transaction_pin>"
+}'
 ```
 
 ## 6) Create payout
@@ -113,24 +129,25 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/payouts" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-payout-001" \
-  -d "{
-    \"source\":{
-      \"payment_rail\":\"stablecoin\",
-      \"currency\":\"USDT\",
-      \"chain\":\"TRON\",
-      \"amount\":\"15.00\",
-      \"customer_id\":\"$CUSTOMER_ID\"
-    },
-    \"destination\":{
-      \"payment_rail\":\"stablecoin\",
-      \"currency\":\"USDT\",
-      \"chain\":\"TRON\",
-      \"address\":\"TQn9Y2khEsLJW1ChVWFMSMeRDow5KcbLSE\"
-    },
-    \"idempotency_key\":\"idem-payout-001\"
-  }"
+  -H "X-BorderPay-Customer-Authorization: Bearer $CUSTOMER_ACCESS_TOKEN" \
+  -H "Idempotency-Key: payout-001" \
+  -d '{
+  "source": {
+    "payment_rail": "borderpay_wallet",
+    "currency": "USDC",
+    "amount": "10.00",
+    "wallet_id": "<business_wallet_id>"
+  },
+  "destination": {
+    "payment_rail": "ach",
+    "currency": "USD",
+    "external_account_id": "<saved_external_account_id>"
+  },
+  "transaction_pin": "<business_customer_transaction_pin>"
+}'
 ```
+
+The examples show non-EEA transaction PIN authorization. For EEA business payouts, first authorize the exact payment through `/v1/payment-authorizations` with PIN and TOTP; use the returned `sca_authorization_id` and the same payment Idempotency-Key. See the [integration guide](../PARTNER_INTEGRATION.md). Never invent a biometric or SCA confirmation.
 
 ## 7) Register webhook endpoint
 ```bash
@@ -140,89 +157,33 @@ curl -s "$GATEWAY_URL" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-webhook-001" \
-  -d '{"endpoint_url":"https://example.com/borderpay/webhooks"}'
-```
-
-## 8) Admin: create tenant
-```bash
-curl -s "$ADMIN_URL" \
-  -X POST \
-  -H "Authorization: Bearer $ADMIN_JWT" \
-  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: webhook-001" \
   -d '{
-    "action":"upsert_tenant",
-    "tenant_name":"Partner Sandbox A",
-    "default_mode":"sandbox",
-    "rate_limit_per_minute":120
-  }'
+  "endpoint_url": "https://example.com/borderpay/webhooks"
+}'
 ```
 
-## 9) Admin: issue API key
-```bash
-export TENANT_ID="<tenant_id_from_previous_response>"
+## 8) Tenant access
+Request partner product approval from BorderPay. Tenant administration is not a public customer API.
 
-curl -s "$ADMIN_URL" \
-  -X POST \
-  -H "Authorization: Bearer $ADMIN_JWT" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"action\":\"create_api_key\",
-    \"tenant_id\":\"$TENANT_ID\",
-    \"key_label\":\"partner-primary\",
-    \"scopes\":[
-      \"customers:write\",
-      \"wallets:write\",
-      \"virtual_accounts:write\",
-      \"transfers:write\",
-      \"payouts:write\",
-      \"webhooks:write\"
-    ]
-  }"
-```
+## 9) API credentials
+Issue scoped credentials from your approved partner workspace. Keep keys on your server and configure your permitted egress IPs.
 
 ## 10) Idempotency replay check
 ```bash
-# First call
-curl -is "$GATEWAY_URL" \
+curl -s "$GATEWAY_URL" \
   -X POST \
   -H "Authorization: Bearer $API_KEY" \
   -H "Content-Type: application/json" \
   -H "x-borderpay-route: /v1/webhooks" \
   -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-replay-001" \
-  -d '{"endpoint_url":"https://example.com/replay"}'
-
-# Replay call (same body + same key) should return X-Idempotent-Replay: true
-curl -is "$GATEWAY_URL" \
-  -X POST \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "x-borderpay-route: /v1/webhooks" \
-  -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-replay-001" \
-  -d '{"endpoint_url":"https://example.com/replay"}'
+  -H "Idempotency-Key: webhook-replay-001" \
+  -d '{
+  "endpoint_url": "https://example.com/borderpay/webhooks"
+}'
 ```
+
+Repeat the exact request with the same key to test a replay; use synthetic sandbox resources. For payments, never generate a new key merely because a response timed out.
 
 ## 11) Idempotency mismatch check
-```bash
-# First
-curl -s "$GATEWAY_URL" \
-  -X POST \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "x-borderpay-route: /v1/webhooks" \
-  -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-mismatch-001" \
-  -d '{"endpoint_url":"https://example.com/a"}'
-
-# Second with different body should fail 409 idempotency_replay_mismatch
-curl -s "$GATEWAY_URL" \
-  -X POST \
-  -H "Authorization: Bearer $API_KEY" \
-  -H "Content-Type: application/json" \
-  -H "x-borderpay-route: /v1/webhooks" \
-  -H "x-borderpay-mode: $MODE" \
-  -H "Idempotency-Key: idem-mismatch-001" \
-  -d '{"endpoint_url":"https://example.com/b"}'
-```
+Changing the payload while reusing a completed operation key must be rejected. Do not test mismatch behavior with real funds.

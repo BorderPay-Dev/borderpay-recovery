@@ -1,3 +1,4 @@
+import { isBusinessAccount, BUSINESS_ONLY_MESSAGE } from "../_shared/business-only.ts";
 import { prepareWhiteLabelSignup } from "../_shared/white-label-onboarding.ts";
 import { loadPublishedWhiteLabel } from "../_shared/white-label-config.ts";
 // auth-signup v92 — signup creates the app account before hosted verification.
@@ -305,11 +306,11 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
     const normalizedAccountType: "individual" | "business" = parsedAccountType;
-    if (normalizedAccountType !== "business" && !onboardingToken && !managedWhiteLabel) {
+    if (!isBusinessAccount(normalizedAccountType)) {
       return json({
         success: false,
         code: "business_signup_only",
-        error: "BorderPay direct signup is currently available to registered businesses only.",
+        error: BUSINESS_ONLY_MESSAGE,
       }, 403);
     }
     if (normalizedAccountType === "business" && !company_name) {

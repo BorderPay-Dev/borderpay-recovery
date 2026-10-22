@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://docs.borderpayafrica.com/</loc>
+  </url>
+  <url>
+    <loc>https://docs.borderpayafrica.com/artifacts/api/openapi-v1.yaml</loc>
+  </url>
+  <url>
+    <loc>https://docs.borderpayafrica.com/artifacts/api/postman/BorderPay_API_v1.postman_collection.json</loc>
+  </url>
+  <url>
+    <loc>https://docs.borderpayafrica.com/artifacts/api/curl/API_V1_CURL_COOKBOOK.md</loc>
+  </url>
+</urlset>

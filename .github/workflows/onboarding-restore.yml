@@ -1,0 +1,36 @@
+name: Restore onboarding operator access
+on:
+  push:
+    branches: [fix/business-only-partner-api]
+    paths:
+      - supabase/functions/bridge-missing-customer-migration/**
+      - tests/onboarding-repair-service-auth.test.ts
+      - .github/workflows/onboarding-restore.yml
+permissions:
+  contents: read
+jobs:
+  verify-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Validate operator auth, duplicates, restrictions and notifications
+        run: deno test --no-config --allow-env --allow-read --allow-net tests/onboarding-repair-service-auth.test.ts tests/onboarding-repair.test.ts tests/onboarding-repair-handler.test.ts
+      - name: Check deployed entrypoint
+        run: deno check --no-config supabase/functions/bridge-missing-customer-migration/index.ts
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Deploy only the existing repair function
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.BUSINESS_API_DEPLOY_TOKEN }}
+        run: |
+          python3 - <<'PYBASE'
+          import urllib.request,json,os
+          req=urllib.request.Request('https://api.supabase.com/v1/projects/orwrcpwsffjlvzuraxjc/functions/bridge-missing-customer-migration',headers={'Authorization':'Bearer '+os.environ['SUPABASE_ACCESS_TOKEN']})
+          info=json.load(urllib.request.urlopen(req))
+          assert info['version']==186, 'Production changed since audit'
+          PYBASE
+          supabase functions deploy bridge-missing-customer-migration --project-ref orwrcpwsffjlvzuraxjc --no-verify-jwt --use-api

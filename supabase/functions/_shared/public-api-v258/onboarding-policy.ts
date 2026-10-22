@@ -64,7 +64,7 @@ export function resolveTenantOnboardingPolicy(metadata: unknown): TenantOnboardi
     ? root.onboarding as Record<string, unknown>
     : {};
   return {
-    individual_signup_enabled: raw.individual_signup_enabled === true,
+    individual_signup_enabled: false,
     business_signup_enabled: raw.business_signup_enabled === true,
     white_label_signup_enabled: raw.white_label_signup_enabled === true,
   };
@@ -76,7 +76,6 @@ export function allowedAccountTypes(
 ): OnboardingAccountType[] {
   if (channel === "white_label" && !policy.white_label_signup_enabled) return [];
   const result: OnboardingAccountType[] = [];
-  if (policy.individual_signup_enabled) result.push("individual");
   if (policy.business_signup_enabled) result.push("business");
   return result;
 }
@@ -116,7 +115,7 @@ export async function verifyOnboardingToken(
   if (claims.iss !== "borderpay" || claims.aud !== "partner_onboarding") throw new Error("Invalid onboarding token audience");
   if (!claims.jti || !claims.tenant_id || !claims.api_key_id || !claims.external_user_id) throw new Error("Incomplete onboarding token");
   if (!Array.isArray(claims.allowed_account_types) || claims.allowed_account_types.length === 0) throw new Error("No account type authorized");
-  if (claims.allowed_account_types.some((type) => type !== "individual" && type !== "business")) throw new Error("Invalid authorized account type");
+  if (claims.allowed_account_types.some((type) => type !== "business")) throw new Error("Invalid authorized account type");
   if (claims.onboarding_channel !== "api" && claims.onboarding_channel !== "white_label") throw new Error("Invalid onboarding channel");
   if (!Number.isFinite(claims.exp) || claims.exp <= nowSeconds) throw new Error("Onboarding token expired");
   if (!Number.isFinite(claims.iat) || claims.iat > nowSeconds + 60) throw new Error("Invalid onboarding token issue time");
