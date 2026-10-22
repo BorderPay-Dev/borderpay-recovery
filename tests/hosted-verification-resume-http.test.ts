@@ -20,6 +20,7 @@ Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current custo
   const originalFetch = globalThis.fetch;
   let business = false;
   let partner = false;
+  let migration = false;
   const appOrigin = () => partner ? 'https://app.partner.example' : 'https://app.borderpayafrica.com';
   let status = 'incomplete';
   let accepted = true;
@@ -29,7 +30,16 @@ Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current custo
   globalThis.fetch = async (input, init) => {
     const request = new Request(input, init);
     const url = new URL(request.url);
+    if (url.origin === 'https://kyb.borderpayvelocity.xyz') {
+      assert(migration && url.pathname === '/api/launch', 'only authorised migration calls BorderPay intake');
+      assert(request.headers.get('Authorization') === 'Bearer session', 'handoff retains authenticated caller');
+      return Response.json({url:'https://kyb.borderpayvelocity.xyz/#launch=synthetic',expiresAt:new Date(Date.now()+120000).toISOString()});
+    }
     if (url.origin === database) {
+      if (url.pathname.endsWith('/rpc/kyb_migration_context')) {
+        assert((await request.json()).p_user === 'owner', 'migration lookup uses authenticated user');
+        return Response.json({eligible:migration});
+      }
       if (url.pathname === '/auth/v1/user') return Response.json({ id: 'owner', email: 'owner@example.invalid', email_confirmed_at: '2026-01-01' });
       if (request.method === 'PATCH') { patches.push(await request.json()); return new Response(null, { status: 204 }); }
       if (url.pathname.endsWith('/bridge_kyc_traces')) return new Response(null, { status: 201 });
@@ -94,5 +104,10 @@ Deno.test('accepted-ToS incomplete KYC/KYB and awaiting UBO resume current custo
       }
     }
     }
+    business=true;partner=false;migration=true;status='paused';calls=[];
+    const moved=await call('kyb');
+    assert(moved.status===200&&moved.body.data.verification_mode==='borderpay','authorised paused business must reach own KYB');
+    assert(moved.body.data.link_url==='https://kyb.borderpayvelocity.xyz/#launch=synthetic'&&!moved.body.data.tos_link_url,'migration returns own KYB without provider terms');
+    assert(calls.length===0,'migration never calls or changes provider');
   } finally { globalThis.fetch = originalFetch; }
 });
