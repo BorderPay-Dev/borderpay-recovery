@@ -1,0 +1,19 @@
+name: Receiving routing contracts
+on:
+  pull_request:
+    paths:
+      - 'supabase/functions/_shared/providers/receiving-routing.ts'
+      - 'supabase/functions/_shared/providers/rain-receiving.ts'
+      - 'tests/receiving-routing.test.ts'
+      - '.github/workflows/receiving-routing.yml'
+permissions:
+  contents: read
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+      - uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed
+        with:
+          deno-version: v2.x
+      - run: deno test tests/receiving-routing.test.ts
