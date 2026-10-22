@@ -1,0 +1,9 @@
+{
+  "cards": "-----BEGIN PUBLIC KEY-----\nMIIBITANBgkqhkiG9w0BAQEFAAOCAQ4AMIIBCQKCAQBKh0Ow2ADYAz8yXjNaez++\nPZnyGmYx0enkvZlMbDgcSfO4Z7921Fx5NZ1k513nSI7rP9Lgp1weKQwnaDrALHaj\nHGCzTThC70ElW9eO3QVhAQ930dflhz0k9xsIrdFpqlFFQTRGZ8Ylzj+2rlBWYAsN\nOegW8BQq7JLRNQX9Fi55ENpNVxwQsNKtLRdzKYAlJ3G0W7R0po5lh4DxuFnQ/ngE\nARKvI8y4cty4mXi7j+pS3AJekmZwMefzyLCY97T/pWdqVOVzOl7BhUNynQfZvHcG\nrt6faSAMbK4mvljfxoAkEIsxL5t2xzR+AWHBeeF0GdGHCdpyfKUyJm8oq1FIuqZZ\nAgMBAAE=\n-----END PUBLIC KEY-----",
+  "compliance": "-----BEGIN PUBLIC KEY-----\nMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAxQuT+5FedgTfMVyJEWuY\nJM6YaoYC06ZU/Pgp0RIWefbyZuG1vBbwol2bxt/hfyMfBroz+ErSvPcVV0qB8vGU\n189cPG3HwrtHk2xDDKbB178cHAseCZNkv0UhdZbndnbg4Aih6Hc5RZvV9P8e6GUa\no6WkMDtw6CqQCHWhKRAqzb3Ev3aseXBPLcko2vhyieRC+lJ85OMPL90dbhERjcLN\nelcgMucivxMThB4/VVhCDg79kZfseIBXBmxHn86OASPUKPluoAXCVjsy0g5OfwbP\ncAJ2TlzBh4Rr+zof5ROfnfYjhdAJXnhOlArcY2JXBhqVldJC+TLabGCHmHeCg3O+\n+jobpQN/1E/GfIZZLaSHhwjQP2qDj1pTpnhiEcsR3tV1gBvLpq2nG1PRKutg+MLx\nGmSmUF1LvDiMxGgojTTrsdve5Fdkf9VIK5kIqAXgk3DwqWdkjJnD0JLSY4N2wbEB\nytGOkdpc+POxBeT/eWRlrU40X5grPZeGEbNRLrI8+ezpHlhYYbt7vI4M/0ZM9qF8\nY1sGEF2ma1BfjipXgrFLqQtgf/Vn/m2Wr/zndWKk+YLWzzAqTK8wr0rHlwS8dib6\nSB/nYiXhoGpxHwRI7PEM5eb/aAmI6rEWuxOg//vSGpPAvTb8vdDw6LSsPOrXZTcL\nsIlY4esD2zcFgNUttt3nfskCAwEAAQ==\n-----END PUBLIC KEY-----",
+  "complianceEffectiveFrom": "2026-10-01",
+  "sources": [
+    "https://reap.readme.io/reference/webhooks",
+    "https://reap-ra.readme.io/docs/webhook-setup"
+  ]
+}
